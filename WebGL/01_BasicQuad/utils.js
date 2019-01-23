@@ -82,7 +82,7 @@ function CreateProgram(gl, vsFilename, fgFilename)
     gl.compileShader(vs);
     if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS))
     {
-        alert('vs compile failed');
+        alert('vs compile failed ' + gl.getShaderInfoLog(vs));
         return gl.getShaderInfoLog(vs);
     }
 
@@ -101,14 +101,14 @@ function CreateProgram(gl, vsFilename, fgFilename)
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS))
     {
-        alert('program link failed');
+        alert('program link failed ' + gl.getProgramInfoLog(program));
         return gl.getProgramInfoLog(program);
     }
 
     gl.validateProgram(program);
     if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS))
     {
-        alert('program validate failed');
+        alert('program validate failed ' + getProgramInfoLog(program));
         return gl.getProgramInfoLog(program);
     }
 

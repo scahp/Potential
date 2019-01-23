@@ -11,11 +11,15 @@
     </style>
 </head>
 
-<body onload="Init()">
+<body onload="Init()" onkeydown="OnKeyDown(event)"
+ onkeyup="OnKeyUp(event)" onmousemove="OnMouseMove(event)" 
+ onmousedown="OnMouseButtonDown(event)" onmouseup="OnMouseButtonUp(event)">
     <canvas id="webgl-surface" width = 300 height = 300>
     </canvas>
     <script src="utils.js"></script>
+    <script src="jMath.js"></script>
     <script src="app.js"></script>
+
 </body>
 
 </html>
