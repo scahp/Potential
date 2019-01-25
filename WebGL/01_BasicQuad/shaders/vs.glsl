@@ -1,10 +1,10 @@
 precision mediump float;
 
 attribute vec3 Pos;
-attribute vec3 Color;
+attribute vec4 Color;
 
 uniform mat4 MVP;
-varying vec3 Color_;
+varying vec4 Color_;
 
 void main()
 {
