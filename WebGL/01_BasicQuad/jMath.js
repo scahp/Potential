@@ -59,6 +59,14 @@ jVec3.prototype.Mul = function(value)
     return this;
 }
 
+jVec3.prototype.Div = function(value)
+{
+    this.x /= value;
+    this.y /= value;
+    this.z /= value;
+    return this;
+}
+
 jVec3.prototype.GetLength = function()
 {
     return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
@@ -100,31 +108,49 @@ jVec4.prototype.Transform = function(matrix)
     var z = b.m[2][0] * this.x + b.m[2][1] * this.y + b.m[2][2] * this.z + b.m[2][3] * this.w;
     var w = b.m[3][0] * this.x + b.m[3][1] * this.y + b.m[3][2] * this.z + b.m[3][3] * this.w;
     
-    this.x = x; this.y = y; this.z = z; this.w = w;
+    this.x = x / w; this.y = y / w; this.z = z / w; this.w = 1.0;
     return this;
 }
 
-jVec4.prototype.Add = function(out, a, b)
+jVec4.prototype.Add = function(b)
 {
-    out.x = a.x + b.x;
-    out.y = a.y + b.y;
-    out.z = a.z + b.z;
-    out.w = a.w + b.w;
+    this.x = this.x + b.x;
+    this.y = this.y + b.y;
+    this.z = this.z + b.z;
+    this.w = this.w + b.w;
     return this;
 }
 
-jVec4.prototype.Sub = function(out, a, b)
+jVec4.prototype.Sub = function(b)
 {
-    out.x = a.x - b.x;
-    out.y = a.y - b.y;
-    out.z = a.z - b.z;
-    out.w = a.w - b.w;
+    this.x = this.x - b.x;
+    this.y = this.y - b.y;
+    this.z = this.z - b.z;
+    this.w = this.w - b.w;
+    return this;
+}
+
+jVec4.prototype.Neg = function()
+{
+    this.x = -this.x;
+    this.y = -this.y;
+    this.z = -this.z;
+    this.w = -this.w;
     return this;
 }
 
 jVec4.prototype.Mul = function(value)
 {
     this.x *= value; this.y *= value; this.z *= value; this.w *= value;
+    return this;
+}
+
+jVec4.prototype.Div = function(value)
+{
+    this.x /= value;
+    this.y /= value;
+    this.z /= value;
+    this.w /= value;
     return this;
 }
 ////////////////////////////////////////////////
@@ -144,7 +170,7 @@ var Sub = function(out, a, b)
     return out;
 }
 
-var CrossProduct = function(out, a, b)
+var CrossProduct3 = function(out, a, b)
 {
     out.x = a.y * b.z - b.y * a.z;
     out.y = a.z * b.x - b.z * a.x;
@@ -152,12 +178,17 @@ var CrossProduct = function(out, a, b)
     return out;
 }
 
-var DotProduct = function(out, a, b)
+var GetDotProduct3 = function(a, b)
 {
-    out = a.x * b.x + a.y * b.y + a.z * b.z;
-    return out;
+    var result = a.x * b.x + a.y * b.y + a.z * b.z;
+    return result;
 }
 
+var GetDotProduct4 = function(a, b)
+{
+    var result = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+    return result;
+}
 
 ////////////////////////////////////////////////
 // jMat4
@@ -335,6 +366,16 @@ jMat4.prototype.Transpose = function()
     return this;
 }
 
+jMat4.prototype.GetCol = function(index)
+{
+    return CreateVec4(this.m[0][index], this.m[1][index], this.m[2][index], this.m[3][index]);
+}
+
+jMat4.prototype.GetRow = function(index)
+{
+    return CreateVec4(this.m[index][0], this.m[index][1], this.m[index][2], this.m[index][3]);
+}
+
 ///////////////////////////////////////////////////
 // Math Util
 
@@ -349,15 +390,11 @@ var CreateViewMatrix = function(eye, target, up)
     upVec.GetNormalize();
 
     var rightVec = new jVec3();
-    CrossProduct(rightVec, targetVec, upVec);
+    CrossProduct3(rightVec, targetVec, upVec);
     rightVec = rightVec.GetNormalize();
 
-    CrossProduct(upVec, rightVec, targetVec);
+    CrossProduct3(upVec, rightVec, targetVec);
     upVec = upVec.GetNormalize();
-
-    targetVec.x = -targetVec.x;
-    targetVec.y = -targetVec.y;
-    targetVec.z = -targetVec.z;
 
     var InvRot = new jMat4();
     InvRot.m[0][0] = rightVec.x; 
@@ -366,16 +403,20 @@ var CreateViewMatrix = function(eye, target, up)
     InvRot.m[1][0] = upVec.x; 
     InvRot.m[1][1] = upVec.y; 
     InvRot.m[1][2] = upVec.z;
-    InvRot.m[2][0] = targetVec.x; 
-    InvRot.m[2][1] = targetVec.y; 
-    InvRot.m[2][2] = targetVec.z;
+    InvRot.m[2][0] = -targetVec.x; 
+    InvRot.m[2][1] = -targetVec.y; 
+    InvRot.m[2][2] = -targetVec.z;
 
-    var InvPos = CreatePosMat4(-eye.x, -eye.y, -eye.z);
-    
-    var viewMat = CloneMat4(InvRot);
-    viewMat.Mul(InvPos);
-    
-    return viewMat;
+    // var InvPos = CreatePosMat4(-eye.x, -eye.y, -eye.z);
+    // var viewMat = CloneMat4(InvRot);
+    // viewMat.Mul(InvPos);
+    // return viewMat;
+
+    var InvPos = CreateVec4(-eye.x, -eye.y, -eye.z, 1.0);
+    InvRot.m[0][3] = GetDotProduct4(InvRot.GetRow(0), InvPos);
+    InvRot.m[1][3] = GetDotProduct4(InvRot.GetRow(1), InvPos);
+    InvRot.m[2][3] = GetDotProduct4(InvRot.GetRow(2), InvPos);
+    return InvRot;
 }
 
 var CreatePerspectiveMatrix = function(width, height, fovRadian, far, near)
