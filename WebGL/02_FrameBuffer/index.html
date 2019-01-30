@@ -1,0 +1,25 @@
+<html>
+
+<head>
+    <title>webgl</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            position: absolute;
+        }
+    </style>
+</head>
+
+<body onload="Init()" onkeydown="OnKeyDown(event)"
+ onkeyup="OnKeyUp(event)" onmousemove="OnMouseMove(event)" 
+ onmousedown="OnMouseButtonDown(event)" onmouseup="OnMouseButtonUp(event)">
+    <canvas id="webgl-surface" width = 300 height = 300>
+    </canvas>
+    <script src="utils.js"></script>
+    <script src="jMath.js"></script>
+    <script src="PrimitiveUtil.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
