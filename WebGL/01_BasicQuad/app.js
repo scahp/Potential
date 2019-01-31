@@ -26,7 +26,7 @@ var getRightVector = function(cameraIndex)
     var forwardVector = getForwardVector(0);
     var upVector = getUpVector(0);
     var out = CreateVec3(0.0, 0.0, 0.0);
-    out = CrossProduct(out, upVector, forwardVector);
+    out = CrossProduct3(out, upVector, forwardVector);
     return out.GetNormalize();
 }
 
@@ -276,8 +276,7 @@ jWebGL.prototype.Init = function()
             length2/2,      length2,    0.0,            0, 1, 0, 1,
             0.0,            length,     0.0,            0, 1, 0, 1,
             -length2/2,     length2,    0.0,            0, 1, 0, 1,
-        ];
-       
+        ];       
 
         var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
         var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
