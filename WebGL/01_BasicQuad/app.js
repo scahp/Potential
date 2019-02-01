@@ -7,9 +7,6 @@ var getForwardVector = function(cameraIndex)
 {
     var camera = Cameras[cameraIndex];
     var forwardVector = CreateVec3(camera.target.x - camera.pos.x, camera.target.y - camera.pos.y, camera.target.z - camera.pos.z);
-    forwardVector.x = -forwardVector.x;
-    forwardVector.y = -forwardVector.y;
-    forwardVector.z = -forwardVector.z;
     return forwardVector.GetNormalize();
 }
 
@@ -26,7 +23,7 @@ var getRightVector = function(cameraIndex)
     var forwardVector = getForwardVector(0);
     var upVector = getUpVector(0);
     var out = CreateVec3(0.0, 0.0, 0.0);
-    out = CrossProduct3(out, upVector, forwardVector);
+    out = CrossProduct3(out, forwardVector, upVector);
     return out.GetNormalize();
 }
 
@@ -423,11 +420,11 @@ jWebGL.prototype.Init = function()
         }
         if (KeyState['w'])
         {
-            forward(-1, 0);
+            forward(1, 0);
         }
         if (KeyState['s'])
         {
-            forward(1, 0);
+            forward(-1, 0);
         }
 
         if (CoordinateObject)

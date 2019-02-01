@@ -381,31 +381,31 @@ jMat4.prototype.GetRow = function(index)
 
 var CreateViewMatrix = function(eye, target, up)
 {
-    var targetVec = new jVec3();
-    Sub(targetVec, target, eye);
-    targetVec = targetVec.GetNormalize();
+    var zAxis = new jVec3();
+    Sub(zAxis, target, eye);
+    zAxis = zAxis.GetNormalize();
 
-    var upVec = new jVec3();
-    Sub(upVec, up, eye);
-    upVec.GetNormalize();
+    var yAxis = new jVec3();
+    Sub(yAxis, up, eye);
+    yAxis.GetNormalize();
 
-    var rightVec = new jVec3();
-    CrossProduct3(rightVec, targetVec, upVec);
-    rightVec = rightVec.GetNormalize();
+    var xAxis = new jVec3();
+    CrossProduct3(xAxis, zAxis, yAxis);
+    xAxis = xAxis.GetNormalize();
 
-    CrossProduct3(upVec, rightVec, targetVec);
-    upVec = upVec.GetNormalize();
+    CrossProduct3(yAxis, xAxis, zAxis);
+    yAxis = yAxis.GetNormalize();
 
     var InvRot = new jMat4();
-    InvRot.m[0][0] = rightVec.x; 
-    InvRot.m[0][1] = rightVec.y; 
-    InvRot.m[0][2] = rightVec.z;
-    InvRot.m[1][0] = upVec.x; 
-    InvRot.m[1][1] = upVec.y; 
-    InvRot.m[1][2] = upVec.z;
-    InvRot.m[2][0] = -targetVec.x; 
-    InvRot.m[2][1] = -targetVec.y; 
-    InvRot.m[2][2] = -targetVec.z;
+    InvRot.m[0][0] = xAxis.x; 
+    InvRot.m[0][1] = xAxis.y; 
+    InvRot.m[0][2] = xAxis.z;
+    InvRot.m[1][0] = yAxis.x; 
+    InvRot.m[1][1] = yAxis.y; 
+    InvRot.m[1][2] = yAxis.z;
+    InvRot.m[2][0] = -zAxis.x; 
+    InvRot.m[2][1] = -zAxis.y; 
+    InvRot.m[2][2] = -zAxis.z;
 
     // var InvPos = CreatePosMat4(-eye.x, -eye.y, -eye.z);
     // var viewMat = CloneMat4(InvRot);
