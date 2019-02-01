@@ -7,9 +7,6 @@ var getForwardVector = function(cameraIndex)
 {
     var camera = Cameras[cameraIndex];
     var forwardVector = CreateVec3(camera.target.x - camera.pos.x, camera.target.y - camera.pos.y, camera.target.z - camera.pos.z);
-    forwardVector.x = -forwardVector.x;
-    forwardVector.y = -forwardVector.y;
-    forwardVector.z = -forwardVector.z;
     return forwardVector.GetNormalize();
 }
 
@@ -26,7 +23,7 @@ var getRightVector = function(cameraIndex)
     var forwardVector = getForwardVector(cameraIndex);
     var upVector = getUpVector(cameraIndex);
     var out = CreateVec3(0.0, 0.0, 0.0);
-    out = CrossProduct3(out, upVector, forwardVector);
+    out = CrossProduct3(out, forwardVector, upVector);
     return out.GetNormalize();
 }
 
@@ -39,6 +36,21 @@ var rotateFowardAxis = function(cameraIndex, radian)
     var matRotate = CreateRotationAxisMat4(forwardVector, radian);
     var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
     
+    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
+    camera.target.Transform(mat);
+    camera.up.Transform(mat);
+    camera.pos.Transform(mat);
+}
+
+var rotateDefaultUpAxis = function(cameraIndex, radian)
+{
+    var camera = Cameras[cameraIndex];
+    var upVector = CreateVec3(0.0, 1.0, 0.0);
+
+    var matPosA = CreatePosMat4(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+    var matRotate = CreateRotationAxisMat4(upVector, radian);
+    var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
+
     var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
     camera.target.Transform(mat);
     camera.up.Transform(mat);
@@ -187,6 +199,28 @@ var drawStaticObject = function(gl, StaticObject, cameraIndex, texture)
     
     var mvpLoc = gl.getUniformLocation(StaticObject.program, 'MVP');
     gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mpvArray));
+
+    var pixelSizeLoc = gl.getUniformLocation(StaticObject.program, 'PixelSize');
+    if (pixelSizeLoc)
+    {
+        var pixelSize = [1.0 / gl.canvas.width, 1.0 / gl.canvas.height];
+        gl.uniform2fv(pixelSizeLoc, pixelSize);
+    }
+
+    var sizeLoc = gl.getUniformLocation(StaticObject.program, 'Pos');
+    if (sizeLoc)
+    {
+        var size = [10, 10];
+        gl.uniform2fv(sizeLoc, size);
+    }
+
+    var sizeLoc = gl.getUniformLocation(StaticObject.program, 'Size');
+    if (sizeLoc)
+    {
+        var aspect = gl.canvas.height / gl.canvas.width;
+        var size = [gl.canvas.width * 0.3 * aspect, gl.canvas.height * 0.3];
+        gl.uniform2fv(sizeLoc, size);
+    }
     ////////////////////////////////////////////
 
     if (texture)
@@ -236,15 +270,19 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
     var matMV = CloneMat4(matProjection).Mul(matView);
     
     var debugStaticObject = [];
+    var debugStaticObject2 = [];
     if (createDebugStaticObject)
     {
         for(var i=0;i<12;++i)
             debugStaticObject.push(CreateLine(gl, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, 1.0, CreateVec4(1.0, 1.0, 1.0, 1.0)));
+
+        for(var i=0;i<6;++i)
+            debugStaticObject2.push(CreateQuad(gl, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), CreateVec4(1.0, 1.0, 1.0, 1.0)));
     }
 
     var newCamera = {matView:matView, matProjection:matProjection
         , matViewProjection:matMV, pos:pos, target:target, up:up
-        , debugStaticObject:debugStaticObject, fovRad:fovRad, near:near, far,far};
+        , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far,far};
     Cameras.push(newCamera);
     return newCamera;
 }
@@ -298,15 +336,41 @@ var updateCameraFrustum = function(gl, cameraIndex)
     updateLine(debgObj[2], origin, far_rb, CreateVec4(1.0, 1.0, 1.0, 1.0));
     updateLine(debgObj[3], origin, far_lb, CreateVec4(1.0, 1.0, 1.0, 1.0));
 
-    updateLine(debgObj[4], near_lt, near_rt, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[5], near_lb, near_rb, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[6], near_lt, near_lb, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[7], near_rt, near_rb, CreateVec4(1.0, 1.0, 1.0, 1.0));
+    updateLine(debgObj[4], near_lt, near_rt, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    updateLine(debgObj[5], near_lb, near_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    updateLine(debgObj[6], near_lt, near_lb, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    updateLine(debgObj[7], near_rt, near_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
 
-    updateLine(debgObj[8], far_lt, far_rt, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[9], far_lb, far_rb, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[10], far_lt, far_lb, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[11], far_rt, far_rb, CreateVec4(1.0, 1.0, 1.0, 1.0));
+    updateLine(debgObj[8],  far_lt, far_rt, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    updateLine(debgObj[9],  far_lb, far_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    updateLine(debgObj[10], far_lt, far_lb, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    updateLine(debgObj[11], far_rt, far_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
+
+    var debgObj2 = camera.debugStaticObject2;
+    if (debgObj2.length <= 0)
+        return;
+
+    var updateQuad = function(quad, p1, p2, p3, p4, color)
+    {
+        var vertices = [
+            p1.x,   p1.y,   p1.z,   color.x, color.y, color.z, color.w,
+            p2.x,   p2.y,   p2.z,   color.x, color.y, color.z, color.w,
+            p3.x,   p3.y,   p3.z,   color.x, color.y, color.z, color.w,
+            p4.x,   p4.y,   p4.z,   color.x, color.y, color.z, color.w,
+        ];
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    }
+
+    updateQuad(debgObj2[0], far_lt,  near_lt,  far_lb,   near_lb, CreateVec4(1.0, 0.0, 0.0, 0.3));
+    updateQuad(debgObj2[1], near_rt, far_rt,   near_rb,  far_rb, CreateVec4(0.0, 1.0, 0.0, 0.3));
+    updateQuad(debgObj2[2], far_lt,  far_rt,   near_lt,  near_rt, CreateVec4(0.0, 0.0, 1.0, 0.3));
+    updateQuad(debgObj2[3], near_lb, near_rb,  far_lb,   far_rb, CreateVec4(1.0, 1.0, 0.0, 0.3));
+
+    updateQuad(debgObj2[4], near_lt, near_rt,  near_lb,  near_rb, CreateVec4(1.0, 1.0, 1.0, 0.3));
+    updateQuad(debgObj2[5], far_lt,  far_rt,   far_lb,   far_rb, CreateVec4(1.0, 1.0, 1.0, 0.3));
 }
 /////////////////////////////////////////////////////////////
 
@@ -361,6 +425,10 @@ var Init = function()
 
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
+    var FPSElement = document.getElementById("FPS");
+    this.fpsNode = document.createTextNode("");
+    FPSElement.appendChild(this.fpsNode);
+
     jWebGL = new jWebGL(gl);
     jWebGL.Init();
 }
@@ -378,6 +446,10 @@ jWebGL.prototype.Init = function()
     this.OnResizeWindow();
 
     gl.enable(gl.DEPTH_TEST);
+    //gl.enable(gl.BLEND);
+    //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.BLEND);
+    gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
 
     var matPos = CreatePosMat4(10.0, 20.0, 30.0);
     var matRot = CreateRotMat4(
@@ -468,11 +540,11 @@ jWebGL.prototype.Init = function()
             {
                 z = k * interval;
 
-                vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);  vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.5);
-                vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval); vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.5);
+                vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);  vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.7);
+                vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval); vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.7);
 
-                vertices.push(x + interval);      vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.5);
-                vertices.push(x + -interval);     vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.5);
+                vertices.push(x + interval);      vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.7);
+                vertices.push(x + -interval);     vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.7);
             }
         }
 
@@ -535,6 +607,25 @@ jWebGL.prototype.Init = function()
     var colorObject2 = CreateRectangle(gl, CreateVec3(0, 50, -100), CreateVec3(0, 0, 0), CreateVec3(1, 1, 1)
             , CreateVec3(25, 25, 25), CreateVec4(1, 0, 0, 1));
 
+    var uiQuad;
+    {
+        var vertices = [
+            0.0, 1.0,
+            1.0, 1.0,
+            0.0, 0.0,
+            1.0, 0.0,
+        ];
+
+        var elementCount = 2;
+        var attrib0 = createAttribParameter('VertPos', 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
+        var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/tex_ui_vs.glsl', 'shaders/tex_ui_fs.glsl', [attrib0], 0, gl.DYNAMIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
+
+        newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
+        newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+        newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
+        uiQuad = newStaticObject;
+    }
+
     var processKeyEvents = function()
     {
         if (KeyState['a']) moveShift(-1, 0);
@@ -545,8 +636,8 @@ jWebGL.prototype.Init = function()
         if (KeyState['4']) rotateUpAxis(0, 0.1);
         if (KeyState['5']) rotateRightAxis(0, -0.1);
         if (KeyState['6']) rotateRightAxis(0, 0.1);
-        if (KeyState['w']) forward(-1, 0);
-        if (KeyState['s']) forward(1, 0);
+        if (KeyState['w']) forward(1, 0);
+        if (KeyState['s']) forward(-1, 0);
     }
 
     CreateCamera(gl, CreateVec3(50.0, 70.0, 46.0), CreateVec3(0.0, 50.0, -50.0)
@@ -562,8 +653,19 @@ jWebGL.prototype.Init = function()
     var t = this;
     var targetObj = Cameras[0];
 
+    var lastTime = performance.now();
+    var loopCount = 0;
     var loop = function()
     {
+        var currentTime = performance.now();
+        ++loopCount;
+        if (currentTime - lastTime > 1000)
+        {
+            this.fpsNode.nodeValue = loopCount.toFixed(0);
+            loopCount = 0;
+            lastTime = currentTime;
+        }
+
         processKeyEvents();
 
         t.Update();
@@ -592,7 +694,8 @@ jWebGL.prototype.Init = function()
 
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         t.Render(0);
-        drawStaticObject(gl, textureObject, 0, framebuffer.tbo);
+        //drawStaticObject(gl, textureObject, 0, framebuffer.tbo);      // Render To 3D Quad
+        drawStaticObject(gl, uiQuad, 0, framebuffer.tbo);               // Render To 3D UI
         requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -693,7 +796,7 @@ var OnMouseMove = function(e)
 
     if (Clicks[0])
     {
-        rotateUpAxis(0, e.movementX * -0.01);
+        rotateDefaultUpAxis(0, e.movementX * -0.01);
         rotateRightAxis(0, e.movementY * -0.01);
     }
 }
@@ -715,26 +818,21 @@ var OnMouseButtonDown = function(e)
     Clicks[0] = 1;
 }
 
-var OnTouchStart = function(e)
+var OnSliderChangeFar = function(e)
 {
-    alert('OnTouchStart');
-    console.log('TouchStart : ' + e.button);
-    Clicks[0] = 0;
+    console.log(e);
+    Cameras[1].far = e.target.valueAsNumber;
 }
 
-var OnTouchEnd = function(e)
+var OnSliderChangeNear = function(e)
 {
-    console.log('TouchEnd : ' + e.button);
-    Clicks[0] = 1;
+    console.log(e);
+    Cameras[1].near = e.target.valueAsNumber;
 }
 
-var OnTouchMove = function(e)
+var OnSliderChangeFOV = function(e)
 {
-    console.log('TouchMove : (' + e.movementX + ', ' + e.movementY + ')');
-
-    if (Clicks[0])
-    {
-        Cameras[0].rot.y += e.movementX * 0.01;
-        Cameras[0].rot.x += e.movementY * 0.01;
-    }
+    console.log(e);
+    Cameras[1].fovRad = DegreeToRadian(e.target.valueAsNumber);
 }
+
