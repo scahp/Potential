@@ -1,118 +1,10 @@
 var jWebGL;
-var KeyState = [];
 var Clicks = [];
-var Cameras = [];
+var StaticObjectArray = [];
+var TransparentStaticObjectArray = [];
+var UIStaticObject = [];
 
-var getForwardVector = function(cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    var forwardVector = CreateVec3(camera.target.x - camera.pos.x, camera.target.y - camera.pos.y, camera.target.z - camera.pos.z);
-    return forwardVector.GetNormalize();
-}
-
-var getUpVector = function(cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    var upVector = CreateVec3(camera.up.x - camera.pos.x, camera.up.y - camera.pos.y, camera.up.z - camera.pos.z);
-    return upVector.GetNormalize();
-}
-
-var getRightVector = function(cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    var forwardVector = getForwardVector(cameraIndex);
-    var upVector = getUpVector(cameraIndex);
-    var out = CreateVec3(0.0, 0.0, 0.0);
-    out = CrossProduct3(out, forwardVector, upVector);
-    return out.GetNormalize();
-}
-
-var rotateFowardAxis = function(cameraIndex, radian)
-{
-    var camera = Cameras[cameraIndex];
-    var forwardVector = getForwardVector(cameraIndex);
-    
-    var matPosA = CreatePosMat4(-camera.pos.x, -camera.pos.y, -camera.pos.z);
-    var matRotate = CreateRotationAxisMat4(forwardVector, radian);
-    var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
-    
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
-    camera.target.Transform(mat);
-    camera.up.Transform(mat);
-    camera.pos.Transform(mat);
-}
-
-var rotateDefaultUpAxis = function(cameraIndex, radian)
-{
-    var camera = Cameras[cameraIndex];
-    var upVector = CreateVec3(0.0, 1.0, 0.0);
-
-    var matPosA = CreatePosMat4(-camera.pos.x, -camera.pos.y, -camera.pos.z);
-    var matRotate = CreateRotationAxisMat4(upVector, radian);
-    var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
-
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
-    camera.target.Transform(mat);
-    camera.up.Transform(mat);
-    camera.pos.Transform(mat);
-}
-
-var rotateUpAxis = function(cameraIndex, radian)
-{
-    var camera = Cameras[cameraIndex];
-    var upVector = getUpVector(cameraIndex);
-
-    var matPosA = CreatePosMat4(-camera.pos.x, -camera.pos.y, -camera.pos.z);
-    var matRotate = CreateRotationAxisMat4(upVector, radian);
-    var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
-
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
-    camera.target.Transform(mat);
-    camera.up.Transform(mat);
-    camera.pos.Transform(mat);
-}
-
-var rotateRightAxis = function(cameraIndex, radian)
-{
-    var camera = Cameras[cameraIndex];
-    var rightVector = getRightVector(cameraIndex);
-
-    var matPosA = CreatePosMat4(-camera.pos.x, -camera.pos.y, -camera.pos.z);
-    var matRotate = CreateRotationAxisMat4(rightVector, radian);
-    var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
-
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
-    camera.target.Transform(mat);
-    camera.up.Transform(mat);
-    camera.pos.Transform(mat);
-}
-
-var forward = function(value, cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    var f = getForwardVector(cameraIndex);
-
-    f.Mul(value);
-
-    camera.pos.Add(f);
-    camera.target.Add(f);
-    camera.up.Add(f);
-}
-
-var moveShift = function(value, cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    var rightVec = getRightVector(cameraIndex);
-    rightVec.Mul(value);
-
-    camera.pos.Add(rightVec);
-    camera.target.Add(rightVec);
-    camera.up.Add(rightVec);
-
-    console.log('(pos : ' + camera.pos.x + ',' + camera.pos.y + ',' + camera.pos.z + ')(' + 'target : ' + camera.target.x + ',' + camera.target.y + ',' + camera.target.z + ')('
-     + 'up : ' + camera.up.x + ',' + camera.up.y + ',' + camera.up.z + ')');
-}
-
+// StaticObject
 var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribParameters, cameraIndex, bufferType, vertexCount, primitiveType)
 {
     var vbo = gl.createBuffer();
@@ -148,12 +40,52 @@ var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribPar
         elementCount = faces.length;
     }
 
+    var setCameraProperty = function(camera)
+    {
+        // Update StaticObject Transforms
+        var matPos = CreatePosMat4(this.pos.x, this.pos.y, this.pos.z);
+        var matRot = CreateRotMat4(this.rot.x, this.rot.y, this.rot.z);
+        var matScale = CreateScaleMat4(this.scale.x, this.scale.y, this.scale.z);
+        this.matWorld = CloneMat4(matPos).Mul(matRot).Mul(matScale);
+
+        var matMVP = CloneMat4(camera.matViewProjection).Mul(this.matWorld);
+
+        matMVP.Transpose();
+        var mpvArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
+
+        var mvpLoc = gl.getUniformLocation(this.program, 'MVP');
+        gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mpvArray));
+    }
+
     var matWorld = new jMat4();
     var pos = CreateVec3(0.0, 0.0, 0.0);
     var rot = CreateVec3(0.0, 0.0, 0.0);
     var scale = CreateVec3(1.0, 1.0, 1.0);
     return {vbo:vbo, ebo:ebo, program:program, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
-        , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType};
+        , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
+        , updateFunc:null, setRenderProperty:null, setCameraProperty:setCameraProperty};
+}
+
+var drawStaticObject = function(gl, StaticObject, cameraIndex)
+{
+    bindAttribPointer(gl, StaticObject);
+    gl.useProgram(StaticObject.program);
+
+    if (StaticObject.setRenderProperty)
+        StaticObject.setRenderProperty();
+
+    if (StaticObject.setCameraProperty)
+        StaticObject.setCameraProperty(Cameras[cameraIndex]);
+
+    if (StaticObject.ebo)
+    {
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, StaticObject.ebo);
+        gl.drawElements(StaticObject.primitiveType, StaticObject.elementCount, gl.UNSIGNED_INT, 0);
+    }
+    else
+    {
+        gl.drawArrays(StaticObject.primitiveType, 0, StaticObject.vertexCount);    
+    }
 }
 
 var createAttribParameter = function(name, count, type, normalized, stride, offset)
@@ -178,203 +110,7 @@ var bindAttribPointer = function(gl, StaticObject)
     }
 }
 
-var rotation = 0.0;
-
-var drawStaticObject = function(gl, StaticObject, cameraIndex, texture)
-{
-    bindAttribPointer(gl, StaticObject);
-    gl.useProgram(StaticObject.program);
-
-    ////////////////////////////////////////////
-    // Update StaticObject Transforms
-    var matPos = CreatePosMat4(StaticObject.pos.x, StaticObject.pos.y, StaticObject.pos.z);
-    var matRot = CreateRotMat4(StaticObject.rot.x, StaticObject.rot.y, StaticObject.rot.z);
-    var matScale = CreateScaleMat4(StaticObject.scale.x, StaticObject.scale.y, StaticObject.scale.z);
-    StaticObject.matWorld = CloneMat4(matPos).Mul(matRot).Mul(matScale);
-
-    var matMVP = CloneMat4(Cameras[cameraIndex].matViewProjection).Mul(StaticObject.matWorld);
-
-    matMVP.Transpose();
-    var mpvArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
-    
-    var mvpLoc = gl.getUniformLocation(StaticObject.program, 'MVP');
-    gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mpvArray));
-
-    var pixelSizeLoc = gl.getUniformLocation(StaticObject.program, 'PixelSize');
-    if (pixelSizeLoc)
-    {
-        var pixelSize = [1.0 / gl.canvas.width, 1.0 / gl.canvas.height];
-        gl.uniform2fv(pixelSizeLoc, pixelSize);
-    }
-
-    var sizeLoc = gl.getUniformLocation(StaticObject.program, 'Pos');
-    if (sizeLoc)
-    {
-        var size = [10, 10];
-        gl.uniform2fv(sizeLoc, size);
-    }
-
-    var sizeLoc = gl.getUniformLocation(StaticObject.program, 'Size');
-    if (sizeLoc)
-    {
-        var aspect = gl.canvas.height / gl.canvas.width;
-        var size = [gl.canvas.width * 0.3 * aspect, gl.canvas.height * 0.3];
-        gl.uniform2fv(sizeLoc, size);
-    }
-    ////////////////////////////////////////////
-
-    if (texture)
-    {
-        var tex_object = gl.getUniformLocation(StaticObject.program, 'tex_object');
-        if (tex_object)
-            gl.uniform1i(tex_object, 0);
-
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-    }
-
-    if (StaticObject.ebo)
-    {
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, StaticObject.ebo);
-        gl.drawElements(StaticObject.primitiveType, StaticObject.elementCount, gl.UNSIGNED_INT, 0);
-    }
-    else
-    {
-        gl.drawArrays(StaticObject.primitiveType, 0, StaticObject.vertexCount);    
-    }
-}
-
-var StaticObjectArray = [];
-
-////////////////////////////////////////////////////////////////
-var updateCamera = function(gl, cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    camera.matView = CreateViewMatrix(camera.pos, camera.target, camera.up);
-    camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
-    camera.matViewProjection = CloneMat4(camera.matProjection).Mul(camera.matView);
-}
-
-var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStaticObject)
-{
-    var t1 = pos.CloneVec3().Sub(target);
-    var t2_right = new jVec3();
-    CrossProduct3(t2_right, CreateVec3(0.0, 1.0, 0.0), t1);
-    var t3_up = new jVec3();
-    CrossProduct3(t3_up, t1, t2_right);
-
-    var up = t3_up.CloneVec3().Add(pos);
-    var matView = CreateViewMatrix(pos, target, up);
-    var matProjection = CreatePerspectiveMatrix(gl.canvas.width
-        , gl.canvas.height, fovRad, far, near);
-    var matMV = CloneMat4(matProjection).Mul(matView);
-    
-    var debugStaticObject = [];
-    var debugStaticObject2 = [];
-    if (createDebugStaticObject)
-    {
-        for(var i=0;i<12;++i)
-            debugStaticObject.push(CreateLine(gl, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, 1.0, CreateVec4(1.0, 1.0, 1.0, 1.0)));
-
-        for(var i=0;i<6;++i)
-            debugStaticObject2.push(CreateQuad(gl, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), CreateVec4(1.0, 1.0, 1.0, 1.0)));
-    }
-
-    var newCamera = {matView:matView, matProjection:matProjection
-        , matViewProjection:matMV, pos:pos, target:target, up:up
-        , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far,far};
-    Cameras.push(newCamera);
-    return newCamera;
-}
-
-var updateCameraFrustum = function(gl, cameraIndex)
-{
-    var camera = Cameras[cameraIndex];
-    var debgObj = camera.debugStaticObject;
-    if (debgObj.length <= 0)
-        return;
-
-    var fovRad = camera.fovRad;
-    var near = camera.near;
-    var far = camera.far;
-
-    var targetVec = camera.target.CloneVec3().Sub(camera.pos).GetNormalize();
-    var length = Math.tan(camera.fovRad) * far;
-    var rightVec = getRightVector(cameraIndex).Mul(length);
-    var upVec = getUpVector(cameraIndex).Mul(length);
-
-    var rightUp = targetVec.CloneVec3().Mul(far).Add(rightVec).Add(upVec).GetNormalize();
-    var leftUp = targetVec.CloneVec3().Mul(far).Sub(rightVec).Add(upVec).GetNormalize();
-    var rightDown = targetVec.CloneVec3().Mul(far).Add(rightVec).Sub(upVec).GetNormalize();
-    var leftDown = targetVec.CloneVec3().Mul(far).Sub(rightVec).Sub(upVec).GetNormalize();
-
-    var updateLine = function(line, start, end, color)
-    {
-        var vertices = [
-            start.x,               start.y,               start.z,           color.x, color.y, color.z, color.w,
-            end.x,                 end.y,                 end.z,             color.x, color.y, color.z, color.w,
-        ];
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, line.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    }
-
-    var origin = camera.pos.CloneVec3();
-    var far_lt = origin.CloneVec3().Add(leftUp.CloneVec3().Mul(far));
-    var far_rt = origin.CloneVec3().Add(rightUp.CloneVec3().Mul(far));
-    var far_lb = origin.CloneVec3().Add(leftDown.CloneVec3().Mul(far));
-    var far_rb = origin.CloneVec3().Add(rightDown.CloneVec3().Mul(far));
-
-    var near_lt = origin.CloneVec3().Add(leftUp.CloneVec3().Mul(near));
-    var near_rt = origin.CloneVec3().Add(rightUp.CloneVec3().Mul(near));
-    var near_lb = origin.CloneVec3().Add(leftDown.CloneVec3().Mul(near));
-    var near_rb = origin.CloneVec3().Add(rightDown.CloneVec3().Mul(near));
-
-    updateLine(debgObj[0], origin, far_rt, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[1], origin, far_lt, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[2], origin, far_rb, CreateVec4(1.0, 1.0, 1.0, 1.0));
-    updateLine(debgObj[3], origin, far_lb, CreateVec4(1.0, 1.0, 1.0, 1.0));
-
-    updateLine(debgObj[4], near_lt, near_rt, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    updateLine(debgObj[5], near_lb, near_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    updateLine(debgObj[6], near_lt, near_lb, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    updateLine(debgObj[7], near_rt, near_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
-
-    updateLine(debgObj[8],  far_lt, far_rt, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    updateLine(debgObj[9],  far_lb, far_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    updateLine(debgObj[10], far_lt, far_lb, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    updateLine(debgObj[11], far_rt, far_rb, CreateVec4(1.0, 0.0, 0.0, 1.0));
-
-    var debgObj2 = camera.debugStaticObject2;
-    if (debgObj2.length <= 0)
-        return;
-
-    var updateQuad = function(quad, p1, p2, p3, p4, color)
-    {
-        var vertices = [
-            p1.x,   p1.y,   p1.z,   color.x, color.y, color.z, color.w,
-            p2.x,   p2.y,   p2.z,   color.x, color.y, color.z, color.w,
-            p3.x,   p3.y,   p3.z,   color.x, color.y, color.z, color.w,
-            p4.x,   p4.y,   p4.z,   color.x, color.y, color.z, color.w,
-        ];
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, quad.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-        gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    }
-
-    updateQuad(debgObj2[0], far_lt,  near_lt,  far_lb,   near_lb, CreateVec4(1.0, 0.0, 0.0, 0.3));
-    updateQuad(debgObj2[1], near_rt, far_rt,   near_rb,  far_rb, CreateVec4(0.0, 1.0, 0.0, 0.3));
-    updateQuad(debgObj2[2], far_lt,  far_rt,   near_lt,  near_rt, CreateVec4(0.0, 0.0, 1.0, 0.3));
-    updateQuad(debgObj2[3], near_lb, near_rb,  far_lb,   far_rb, CreateVec4(1.0, 1.0, 0.0, 0.3));
-
-    updateQuad(debgObj2[4], near_lt, near_rt,  near_lb,  near_rb, CreateVec4(1.0, 1.0, 1.0, 0.3));
-    updateQuad(debgObj2[5], far_lt,  far_rt,   far_lb,   far_rb, CreateVec4(1.0, 1.0, 1.0, 0.3));
-}
-/////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////
+// Framebuffer
 var CraeteFramebuffer = function(gl, width, height)
 {
     var fbo = gl.createFramebuffer();
@@ -417,9 +153,7 @@ var Init = function()
     }
 
     if (!gl)
-    {
         alert('Your browser does not support webgl');
-    }
 
     var ext = gl.getExtension('OES_element_index_uint');        // To use gl.UNSIGNED_INT
 
@@ -458,174 +192,7 @@ jWebGL.prototype.Init = function()
         , DegreeToRadian(30));
     var matScale = CreateScaleMat4(1, 2, 3);
 
-    ///////////////////////////////////////////////////////////////////////////
-    var elementCount = 7;
-
-    var cameraGizmoObject;
-    // {
-    //     var length = -5;
-    //     var length2 = length*0.6;
-    //     var vertices = [
-    //         0.0,            0.0,        0.0,            1, 0, 0, 1,
-    //         0.0,            0.0,        -length,        1, 0, 0, 1,
-    //         0.0,            0.0,        -length,        0, 1, 0, 1,
-    //         length2,        0.0,        -length2,       0, 1, 0, 1,
-    //         0.0,            0.0,        -length,        0, 0, 1, 1,
-    //         -length2,       0.0,        -length2,       0, 0, 1, 1,
-    //     ];
-
-    //     var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    //     var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    //     var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.DYNAMIC_DRAW, vertices.length / elementCount, gl.LINES);
-
-    //     newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
-    //     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-    //     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-    //     cameraGizmoObject = newStaticObject;
-    //     StaticObjectArray.push(newStaticObject);
-    // }
-    // ///////////////////////////////////////////////////////////////////////////
-
-    {
-        var length = 5;
-        var length2 = length*0.6;
-        var vertices = [
-            0.0,            0.0,        0.0,            0, 0, 1, 1,
-            0.0,            0.0,        length,        0, 0, 1, 1,
-            0.0,            0.0,        length,        0, 0, 1, 1,
-            length2/2,      0.0,        length2,       0, 0, 1, 1,
-            0.0,            0.0,        length,        0, 0, 1, 1,
-            -length2/2,     0.0,        length2,       0, 0, 1, 1,
-
-            0.0,            0.0,        0.0,            1, 0, 0, 1,
-            length,         0.0,        0.0,            1, 0, 0, 1,
-            length,         0.0,        0.0,            1, 0, 0, 1,
-            length2,        0.0,        length2/2,      1, 0, 0, 1,
-            length,         0.0,        0.0,            1, 0, 0, 1,
-            length2,        0.0,        -length2/2,     1, 0, 0, 1,
-
-            0.0,            0.0,        0.0,            0, 1, 0, 1,
-            0.0,            length,     0.0,            0, 1, 0, 1,
-            0.0,            length,     0.0,            0, 1, 0, 1,
-            length2/2,      length2,    0.0,            0, 1, 0, 1,
-            0.0,            length,     0.0,            0, 1, 0, 1,
-            -length2/2,     length2,    0.0,            0, 1, 0, 1,
-        ];       
-
-        var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-        var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-        var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.LINES);
-
-        newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.rot = CreateVec3(0.0, 0.0, DegreeToRadian(rotation));
-        newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-        StaticObjectArray.push(newStaticObject);
-    }
-
-
-    var CoordinateObject;
-    {
-        var count = 150;
-        var interval = 10;
-        var halfCount = count / 2.0;
-
-        var vertices = [];
-
-        var x;
-        var z;
-        for(var i=-halfCount;i<=halfCount;++i)
-        {
-            x = i * interval;
-            for(var k=-halfCount;k<=halfCount;++k)
-            {
-                z = k * interval;
-
-                vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);  vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.7);
-                vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval); vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.7);
-
-                vertices.push(x + interval);      vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.7);
-                vertices.push(x + -interval);     vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.7);
-            }
-        }
-
-        var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-        var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-        var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.LINES);
-
-        newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-        CoordinateObject = newStaticObject;
-        StaticObjectArray.push(newStaticObject);
-    }
-    
-    {
-        var length = 500;
-        var vertices = [
-            0.0,        length,       0.0,           0, 1, 0, 1,
-            0.0,        -length,      0.0,           0, 1, 0, 1,
-        ];
-
-        var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-        var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-        var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.LINES);
-
-        newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-        StaticObjectArray.push(newStaticObject);
-    }
-
-    var CreateTemp = function(gl, pos, offset, size, scale)
-    {
-        var halfSize = size.Div(2.0);
-
-        var vertices = [
-            offset.x + (-halfSize.x),  offset.y + (halfSize.y),    offset.z,   0.0, 1.0,
-            offset.x + (halfSize.x),   offset.y + (halfSize.y),    offset.z,   1.0, 1.0,
-            offset.x + (-halfSize.x),  offset.y + (-halfSize.y),   offset.z,   0.0, 0.0,
-            offset.x + (halfSize.x),   offset.y + (-halfSize.y),   offset.z,   1.0, 0.0,
-        ];
-
-        var elementCount = 5;
-
-        var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-        var attrib1 = createAttribParameter('TexCoord', 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-        var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/tex_vs.glsl', 'shaders/tex_fs.glsl'
-        , [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
-        
-        newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
-        newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
-        return newStaticObject;
-    }
-
-    var textureObject = CreateTemp(gl, CreateVec3(0, 50, 0), CreateVec3(0, 0, 0), CreateVec3(1, 1, 1), CreateVec3(50, 50, 50));
-
-    var colorObject = CreateRectangle(gl, CreateVec3(0, 50, -100), CreateVec3(0, 0, 0), CreateVec3(1, 1, 1)
-            , CreateVec3(25, 25, 25), CreateVec4(1, 1, 1, 1));
-    var colorObject2 = CreateRectangle(gl, CreateVec3(0, 50, -100), CreateVec3(0, 0, 0), CreateVec3(1, 1, 1)
-            , CreateVec3(25, 25, 25), CreateVec4(1, 0, 0, 1));
-
-    var uiQuad;
-    {
-        var vertices = [
-            0.0, 1.0,
-            1.0, 1.0,
-            0.0, 0.0,
-            1.0, 0.0,
-        ];
-
-        var elementCount = 2;
-        var attrib0 = createAttribParameter('VertPos', 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-        var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/tex_ui_vs.glsl', 'shaders/tex_ui_fs.glsl', [attrib0], 0, gl.DYNAMIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
-
-        newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-        newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-        uiQuad = newStaticObject;
-    }
-
+    // Process Key Event
     var processKeyEvents = function()
     {
         if (KeyState['a']) moveShift(-1, 0);
@@ -640,23 +207,56 @@ jWebGL.prototype.Init = function()
         if (KeyState['s']) forward(-1, 0);
     }
 
-    CreateCamera(gl, CreateVec3(50.0, 70.0, 46.0), CreateVec3(0.0, 50.0, -50.0)
-    , DegreeToRadian(45), 1.0, 500.0, false);
-    
-    CreateCamera(gl, CreateVec3(0, 50, 0), CreateVec3(0.0, 50.0, -1.0)
-    , DegreeToRadian(40), 5.0, 200.0, true);
-
+    // Create Cameras
+    var mainCamera = CreateCamera(gl, CreateVec3(50.0, 70.0, 46.0), CreateVec3(0.0, 50.0, -50.0), DegreeToRadian(45), 1.0, 500.0, false);
+    CreateCamera(gl, CreateVec3(0, 50, 0), CreateVec3(0.0, 50.0, -1.0), DegreeToRadian(40), 5.0, 200.0, true);
     updateCamera(gl, 0);
 
-    var framebuffer = CraeteFramebuffer(gl, 512, 512);
+    // Origin Point Gizmo
+    CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0));
 
-    var t = this;
-    var targetObj = Cameras[0];
+    // Create Coordinate Guide lines
+    CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
+    CreateCoordinateYObject(gl, StaticObjectArray);
+
+    // Create frameBuffer to render at offscreen
+    var framebuffer = CraeteFramebuffer(gl, 512, 512);
+    CreateUIQuad(gl, UIStaticObject, 10, 10, 300, 300, framebuffer.tbo);
+
+    // Create cube object
+    var whiteCube = CreateRectangle(gl, StaticObjectArray, CreateVec3(0, 50, -100), CreateVec3(0, 0, 0), CreateVec3(1, 1, 1)
+        , CreateVec3(25, 25, 25), CreateVec4(1, 1, 1, 1));
+
+    var whiteCubeRotation = 0.0;
+    whiteCube.updateFunc = function()
+    {
+        whiteCubeRotation += 1.0;
+        whiteCube.rot.x += 0.01;
+        whiteCube.rot.y += 0.02;
+        whiteCube.rot.z += 0.015;
+        whiteCube.pos.x = Math.sin(whiteCubeRotation * 0.01) * 100;
+        whiteCube.pos.y = Math.cos(whiteCubeRotation * 0.02) * 20 + 50;
+    };
+
+    var redCube = CreateRectangle(gl, StaticObjectArray, CreateVec3(0, 50, -100), CreateVec3(0, 0, 0), CreateVec3(1, 1, 1)
+        , CreateVec3(25, 25, 25), CreateVec4(1, 0, 0, 1));
+
+    var redCubeRotation = 0.0;
+    redCube.updateFunc = function()
+    {
+        redCubeRotation += 1.0;
+        this.rot.y += 0.01;
+        this.pos.x = Math.sin(redCubeRotation * 0.01) * 20;
+        this.pos.y = Math.sin(redCubeRotation * 0.01) * 100 + 50;
+    };
+
+    var main = this;
 
     var lastTime = performance.now();
     var loopCount = 0;
     var loop = function()
     {
+        // Update time
         var currentTime = performance.now();
         ++loopCount;
         if (currentTime - lastTime > 1000)
@@ -667,35 +267,29 @@ jWebGL.prototype.Init = function()
         }
 
         processKeyEvents();
-
-        t.Update();
-
-        colorObject.rot.x += 0.01;
-        colorObject.rot.y += 0.02;
-        colorObject.rot.z += 0.015;
-
-        colorObject.pos.x = Math.sin(rotation * 0.01) * 100;
-        colorObject.pos.y = Math.cos(rotation * 0.02) * 20 + 50;
-        rotation += 1;
-
-        colorObject2.rot.y += 0.01;
-        colorObject2.pos.x = Math.sin(rotation * 0.01) * 20
-        colorObject2.pos.y = Math.sin(rotation * 0.01) * 100 + 50
+        main.Update();
 
         var prePass = function()
         {
             gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer.fbo);
             gl.viewport(0, 0, 512, 512);
-            t.Render(1);
+            main.Render(1);
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         };
 
         prePass();
 
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        t.Render(0);
-        //drawStaticObject(gl, textureObject, 0, framebuffer.tbo);      // Render To 3D Quad
-        drawStaticObject(gl, uiQuad, 0, framebuffer.tbo);               // Render To 3D UI
+        main.Render(0);
+
+        // Render To 3D UI
+        for(var i=0;i<UIStaticObject.length;++i)
+        {
+            if (UIStaticObject[i].updateFunc)
+                UIStaticObject[i].updateFunc();
+            drawStaticObject(gl, UIStaticObject[i], 0);
+            }
+
         requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -705,39 +299,22 @@ jWebGL.prototype.Update = function()
 {
     var gl = this.gl;
 
-    // if (CoordinateObject)
-    // {
-    //     CoordinateObject.pos.x = Math.floor(Cameras[0].pos.x / 10) * 10;
-    //     CoordinateObject.pos.z = Math.floor(Cameras[0].pos.z / 10) * 10;
-    // }
-
-    // if (cameraGizmoObject)
-    // {
-    //     var len = -5.0;
-
-    //     var camera = Cameras[0];
-    //     var f = getForwardVector(0);
-    //     f.Mul(len);
-    //     var right = getRightVector(0);
-
-    //     var vertices = [
-    //         f.x + camera.pos.x,               f.y + camera.pos.y,               f.z + camera.pos.z,           1, 0, 0, 1,
-    //         f.x + camera.target.x,            f.y + camera.target.y,            f.z + camera.target.z,        1, 0, 0, 1,
-    //         f.x + camera.pos.x,               f.y + camera.pos.y,               f.z + camera.pos.z,           0, 1, 0, 1,
-    //         f.x + camera.up.x,                f.y + camera.up.y,                f.z + camera.up.z,            0, 1, 0, 1,
-    //         f.x + camera.pos.x,               f.y + camera.pos.y,               f.z + camera.pos.z,           0, 0, 1, 1,
-    //         f.x + camera.pos.x + right.x,     f.y + camera.pos.y + right.y,     f.z + camera.pos.z + right.z, 0, 0, 1, 1,
-    //     ];
-
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, cameraGizmoObject.vbo);
-    //     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    // }
-
     for(var i=0;i<Cameras.length;++i)
     {
         updateCamera(gl, i);
         updateCameraFrustum(gl, i);
+    }
+
+    for(var i = 0;i<StaticObjectArray.length;++i)
+    {
+        if (StaticObjectArray[i].updateFunc)
+            StaticObjectArray[i].updateFunc();
+    }
+
+    for(var i = 0;i<TransparentStaticObjectArray.length;++i)
+    {
+        if (TransparentStaticObjectArray[i].updateFunc)
+            TransparentStaticObjectArray[i].updateFunc();
     }
 }
 
@@ -750,6 +327,9 @@ jWebGL.prototype.Render = function(cameraIndex)
 
     for(var i = 0;i<StaticObjectArray.length;++i)
         drawStaticObject(gl, StaticObjectArray[i], cameraIndex, null);
+
+    for(var i = 0;i<TransparentStaticObjectArray.length;++i)
+        drawStaticObject(gl, TransparentStaticObjectArray[i], cameraIndex, null);
 }
 
 jWebGL.prototype.OnResizeWindow = function()
@@ -776,63 +356,3 @@ jWebGL.prototype.OnResizeWindow = function()
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 }
-
-
-var OnKeyDown = function(e)
-{
-    console.log('KeyDown : ' + e.key);
-    KeyState[e.key] = 1;
-}
-
-var OnKeyUp = function(e)
-{
-    console.log('KeyUp : ' + e.key);
-    KeyState[e.key] = 0;
-}
-
-var OnMouseMove = function(e)
-{
-    console.log('MouseMove : (' + e.movementX + ', ' + e.movementY + ')');
-
-    if (Clicks[0])
-    {
-        rotateDefaultUpAxis(0, e.movementX * -0.01);
-        rotateRightAxis(0, e.movementY * -0.01);
-    }
-}
-
-var OnClick = function(e)
-{
-    console.log('Click : ' + e.button);
-}
-
-var OnMouseButtonUp = function(e)
-{
-    console.log('MouseButtonUp : ' + e.button);
-    Clicks[0] = 0;
-}
-
-var OnMouseButtonDown = function(e)
-{
-    console.log('MouseButtonDown : ' + e.button);
-    Clicks[0] = 1;
-}
-
-var OnSliderChangeFar = function(e)
-{
-    console.log(e);
-    Cameras[1].far = e.target.valueAsNumber;
-}
-
-var OnSliderChangeNear = function(e)
-{
-    console.log(e);
-    Cameras[1].near = e.target.valueAsNumber;
-}
-
-var OnSliderChangeFOV = function(e)
-{
-    console.log(e);
-    Cameras[1].fovRad = DegreeToRadian(e.target.valueAsNumber);
-}
-
