@@ -1,3 +1,8 @@
+var createAttribParameter = function(name, count, type, normalized, stride, offset)
+{
+    return { name:name, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
+}
+
 var CreateRectangle = function(gl, TargetObjectArray, pos, offset, size, scale, color)
 {
     var halfSize = size.Div(2.0);
@@ -349,8 +354,8 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
     uiStaticObject.texture = texture;
     uiStaticObject.setRenderProperty = function()
     {
-        if (__proto__.setRenderProperty)
-            __proto__.setRenderProperty();
+        if (this.__proto__.setRenderProperty)
+            this.__proto__.setRenderProperty();
 
         var pixelSizeLoc = gl.getUniformLocation(this.program, 'PixelSize');
         if (pixelSizeLoc)

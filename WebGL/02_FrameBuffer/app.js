@@ -57,57 +57,51 @@ var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribPar
         gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mpvArray));
     }
 
+    var setRenderProperty = function()
+    {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        for(var i=0;i<this.attribs.length;++i)
+        {
+            var attrib = this.attribs[i];
+            gl.vertexAttribPointer(attrib.loc,
+                attrib.count,
+                attrib.type,
+                attrib.normalized,
+                attrib.stride,
+                attrib.offset);
+    
+            gl.enableVertexAttribArray(attrib.loc);
+        }
+    }
+
+    var drawFunc = function(camera)
+    {
+        gl.useProgram(this.program);
+    
+        if (this.setRenderProperty)
+            this.setRenderProperty();
+    
+        if (this.setCameraProperty)
+            this.setCameraProperty(camera);
+    
+        if (this.ebo)
+        {
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo);
+            gl.drawElements(this.primitiveType, this.elementCount, gl.UNSIGNED_INT, 0);
+        }
+        else
+        {
+            gl.drawArrays(this.primitiveType, 0, this.vertexCount);    
+        }
+    }
+
     var matWorld = new jMat4();
     var pos = CreateVec3(0.0, 0.0, 0.0);
     var rot = CreateVec3(0.0, 0.0, 0.0);
     var scale = CreateVec3(1.0, 1.0, 1.0);
     return {vbo:vbo, ebo:ebo, program:program, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
-        , updateFunc:null, setRenderProperty:null, setCameraProperty:setCameraProperty};
-}
-
-var drawStaticObject = function(gl, StaticObject, cameraIndex)
-{
-    bindAttribPointer(gl, StaticObject);
-    gl.useProgram(StaticObject.program);
-
-    if (StaticObject.setRenderProperty)
-        StaticObject.setRenderProperty();
-
-    if (StaticObject.setCameraProperty)
-        StaticObject.setCameraProperty(Cameras[cameraIndex]);
-
-    if (StaticObject.ebo)
-    {
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, StaticObject.ebo);
-        gl.drawElements(StaticObject.primitiveType, StaticObject.elementCount, gl.UNSIGNED_INT, 0);
-    }
-    else
-    {
-        gl.drawArrays(StaticObject.primitiveType, 0, StaticObject.vertexCount);    
-    }
-}
-
-var createAttribParameter = function(name, count, type, normalized, stride, offset)
-{
-    return { name:name, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
-}
-
-var bindAttribPointer = function(gl, StaticObject)
-{
-    gl.bindBuffer(gl.ARRAY_BUFFER, StaticObject.vbo);
-    for(var i=0;i<StaticObject.attribs.length;++i)
-    {
-        var attrib = StaticObject.attribs[i];
-        gl.vertexAttribPointer(attrib.loc,
-            attrib.count,
-            attrib.type,
-            attrib.normalized,
-            attrib.stride,
-            attrib.offset);
-
-        gl.enableVertexAttribArray(attrib.loc);
-    }
+        , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc};
 }
 
 // Framebuffer
@@ -138,7 +132,6 @@ var CraeteFramebuffer = function(gl, width, height)
 
     return {fbo:fbo, tbo:tbo, dbo:rbo};
 }
-/////////////////////////////////////////////////////////////
 
 var Init = function()
 {
@@ -285,10 +278,12 @@ jWebGL.prototype.Init = function()
         // Render To 3D UI
         for(var i=0;i<UIStaticObject.length;++i)
         {
-            if (UIStaticObject[i].updateFunc)
-                UIStaticObject[i].updateFunc();
-            drawStaticObject(gl, UIStaticObject[i], 0);
-            }
+            var obj = UIStaticObject[i];
+            if (obj.updateFunc)
+                obj.updateFunc();
+            if (obj.drawFunc)
+                obj.drawFunc(mainCamera);
+        }
 
         requestAnimationFrame(loop);
     };
@@ -321,15 +316,16 @@ jWebGL.prototype.Update = function()
 jWebGL.prototype.Render = function(cameraIndex)
 {
     var gl = this.gl;
+    var camera = Cameras[cameraIndex];
 
     gl.clearColor(0.5, 0.5, 0.5, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     for(var i = 0;i<StaticObjectArray.length;++i)
-        drawStaticObject(gl, StaticObjectArray[i], cameraIndex, null);
+        StaticObjectArray[i].drawFunc(camera);
 
     for(var i = 0;i<TransparentStaticObjectArray.length;++i)
-        drawStaticObject(gl, TransparentStaticObjectArray[i], cameraIndex, null);
+        TransparentStaticObjectArray[i].drawFunc(camera);
 }
 
 jWebGL.prototype.OnResizeWindow = function()
