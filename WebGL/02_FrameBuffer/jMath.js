@@ -84,6 +84,9 @@ jVec3.prototype.GetNormalize = function()
         return CreateVec3(this.x / length, this.y / length, this.z / length);
     return CreateVec3(0.0, 0.0, 0.0);
 }
+
+var ZeroVec3 = CreateVec3(0.0, 0.0, 0.0);
+var OneVec3 = CreateVec3(1.0, 1.0, 1.0);
 ////////////////////////////////////////////////
 
 ////////////////////////////////////////////////
@@ -163,6 +166,9 @@ jVec4.prototype.Div = function(value)
     this.w /= value;
     return this;
 }
+
+var ZeroVec4 = CreateVec4(0.0, 0.0, 0.0, 0.0);
+var OneVec4 = CreateVec4(1.0, 1.0, 1.0, 1.0);
 ////////////////////////////////////////////////
 var Add = function(out, a, b)
 {
@@ -231,6 +237,7 @@ var CreatePosMat4 = function(x, y, z)
 
 var CreateRotMat4 = function(x, y, z)
 {
+    // Rotation Order : Z -> X -> Y
     var newMat4 = new jMat4();
     var SX = Math.sin(x);
     var CX = Math.cos(x);
@@ -239,16 +246,16 @@ var CreateRotMat4 = function(x, y, z)
     var SZ = Math.sin(z);
     var CZ = Math.cos(z);
 
-    newMat4.m[0][0] = CZ * CY;
-    newMat4.m[0][1] = -SZ * CX + CZ * SY * SX;
-    newMat4.m[0][2] = SZ * SX + CZ * SY * CX;
+    newMat4.m[0][0] = CY * CZ + SY * SX * SZ;
+    newMat4.m[0][1] = -CY * SZ + SY * SX * CZ;
+    newMat4.m[0][2] = SY * CX;
     newMat4.m[0][3] = 0.0;
-    newMat4.m[1][0] = SZ * CY;
-    newMat4.m[1][1] = CZ * CX + SZ * SY * SX;
-    newMat4.m[1][2] = -CZ * SX + SZ * SY * CX;
+    newMat4.m[1][0] = CX * SZ;
+    newMat4.m[1][1] = CX * CZ;
+    newMat4.m[1][2] = -SX;
     newMat4.m[1][3] = 0.0;
-    newMat4.m[2][0] = -SY;
-    newMat4.m[2][1] = CY * SX;
+    newMat4.m[2][0] = -SY * CZ + CY * SX * SZ;
+    newMat4.m[2][1] = SY * SZ + CY * SX * CZ;
     newMat4.m[2][2] = CY * CX;
     newMat4.m[2][3] = 0.0;
     newMat4.m[3][0] = 0.0;
@@ -388,6 +395,8 @@ jMat4.prototype.GetRow = function(index)
 
 jMat4.prototype.GetRot = function()
 {
+    // Rotation Order : Z -> X -> Y
+    // var newMat4 = new jMat4();
     // var SX = Math.sin(x);
     // var CX = Math.cos(x);
     // var SY = Math.sin(y);
@@ -395,16 +404,16 @@ jMat4.prototype.GetRot = function()
     // var SZ = Math.sin(z);
     // var CZ = Math.cos(z);
 
-    // newMat4.m[0][0] = CZ * CY;
-    // newMat4.m[0][1] = -SZ * CX + CZ * SY * SX;
-    // newMat4.m[0][2] = SZ * SX + CZ * SY * CX;
+    // newMat4.m[0][0] = CY * CZ + SY * SX * SZ;
+    // newMat4.m[0][1] = -CY * SZ + SY * SX * CZ;
+    // newMat4.m[0][2] = SY * CX;
     // newMat4.m[0][3] = 0.0;
-    // newMat4.m[1][0] = SZ * CY;
-    // newMat4.m[1][1] = CZ * CX + SZ * SY * SX;
-    // newMat4.m[1][2] = -CZ * SX + SZ * SY * CX;
+    // newMat4.m[1][0] = CX * SZ;
+    // newMat4.m[1][1] = CX * CZ;
+    // newMat4.m[1][2] = -SX;
     // newMat4.m[1][3] = 0.0;
-    // newMat4.m[2][0] = -SY;
-    // newMat4.m[2][1] = CY * SX;
+    // newMat4.m[2][0] = -SY * CZ + CY * SX * SZ;
+    // newMat4.m[2][1] = SY * SZ + CY * SX * CZ;
     // newMat4.m[2][2] = CY * CX;
     // newMat4.m[2][3] = 0.0;
     // newMat4.m[3][0] = 0.0;
@@ -412,9 +421,9 @@ jMat4.prototype.GetRot = function()
     // newMat4.m[3][2] = 0.0;
     // newMat4.m[3][3] = 1.0;
 
-    var X = Math.atan(this.m[2][1] / this.m[2][2]);
-    var Y = Math.asin(-this.m[2][0]);
-    var Z = Math.atan(this.m[1][0] / this.m[0][0]);
+    var X = Math.asin(-this.m[1][2]);
+    var Y = Math.atan(this.m[0][2] / this.m[2][2]);
+    var Z = Math.atan(this.m[1][0] / this.m[1][1]);
     return CreateVec3(X, Y, Z);
 }
 
@@ -481,4 +490,21 @@ var DegreeToRadian = function(deg)
 var RadianToDegree = function(rad)
 {
     return rad * 180.0 / Math.PI;
+}
+
+var Clamp = function(value, min, max)
+{
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
+}
+
+var GetEulerAngleFromVec3 = function(direction)
+{
+    return CreateVec3(0.0
+        , Math.atan2(-direction.z, direction.x)     // The z is pointing reverse in right hand coordinate.
+        , Math.asin(direction.y) - DegreeToRadian(90)   // Supposed default direction is (0, 1, 0), so adjust it to be (1, 0, 0).
+    );
 }
