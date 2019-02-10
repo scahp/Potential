@@ -324,6 +324,62 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
     return newStaticObject;
 }
 
+var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, color)
+{
+    if (height < 0)
+    {
+        height = 0.0;
+        console.log("capsule height must be more than or equal zero.");
+    }
+
+    var vertices = [];
+
+    vertices.push(0.0); vertices.push(0.0); vertices.push(0.0); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+
+    var slice = 9;
+    for(var j=-slice;j<=slice;++j)
+    {
+        var isUpperSphere = (j >= 0);
+
+        for(var i=0;i<=36;++i)
+        {
+            var x = Math.cos(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
+            var y = Math.sin(DegreeToRadian(j * 10)) * radius;
+            var z = Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
+            if (isUpperSphere)
+                y += height;
+            else
+                y -= height;
+            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+        }
+    }
+
+    var faces = [];
+
+    var iCount = 0;
+    for(var j=0;j<slice*2;++j)
+    {
+        for(var i=0;i<=36;++i, iCount += 1)
+        {
+            faces.push(iCount); faces.push(iCount + 37); faces.push(iCount + 1);
+            faces.push(iCount + 1); faces.push(iCount + 37); faces.push(iCount + 37 + 1);
+        }
+    }
+
+    var elementCount = 7;
+
+    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
+    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
+    var newStaticObject = createStaticObject(gl, vertices, faces, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLES);
+    
+    newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
+    newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+    newStaticObject.scale = CreateVec3(scale, scale, scale);
+    if (TargetObjectArray)
+        TargetObjectArray.push(newStaticObject);
+    return newStaticObject;
+}
+
 var CreateGizmo = function(gl, TargetObjectArray, pos, rot, scale)
 {
     var length = 5;

@@ -218,6 +218,8 @@ jWebGL.prototype.Init = function()
     arrowSegment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, CreateVec3(RayX.value, RayY.value, RayZ.value), Time.value
         , 2.0, 1.0, CreateVec4(1.0, 1.0, 1.0, 1.0), CreateVec4(1.0, 0.0, 0.0, 1.0));
 
+    CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 30.0), 10, 10, 1.0, OneVec4);
+
     var main = this;
 
     var lastTime = performance.now();
