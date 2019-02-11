@@ -56,7 +56,7 @@ var OnSliderChangeRayX = function(e)
     if (arrowSegment.segment)
     {
         arrowSegment.segment.end.x = e.target.valueAsNumber;
-        UpdateSegmentTime(arrowSegment.segment, 1.0);
+        UpdateSegmentTime(arrowSegment.segment, arrowSegment.segment.time);
     }
 }
 
@@ -66,7 +66,7 @@ var OnSliderChangeRayY = function(e)
     if (arrowSegment.segment)
     {
         arrowSegment.segment.end.y = e.target.valueAsNumber;
-        UpdateSegmentTime(arrowSegment.segment, 1.0);
+        UpdateSegmentTime(arrowSegment.segment, arrowSegment.segment.time);
     }
 }
 
@@ -76,6 +76,6 @@ var OnSliderChangeRayZ = function(e)
     if (arrowSegment.segment)
     {
         arrowSegment.segment.end.z = e.target.valueAsNumber;
-        UpdateSegmentTime(arrowSegment.segment, 1.0);
+        UpdateSegmentTime(arrowSegment.segment, arrowSegment.segment.time);
     }
 }

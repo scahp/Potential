@@ -6,39 +6,40 @@ var UIStaticObject = [];
 var arrowSegment = null;
 
 // StaticObject
-var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribParameters, cameraIndex, bufferType, vertexCount, primitiveType)
+var createStaticObject = function(gl, vsCode, fsCode, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
 {
-    var vbo = gl.createBuffer();
     var program = CreateProgram(gl, vsCode, fsCode);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), bufferType);
-    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     var attribs = [];
     for(var i=0;i<attribParameters.length;++i)
     {
         var attr = attribParameters[i];
 
+        var vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attr.datas), attr.bufferType);
+    
         var loc = gl.getAttribLocation(program, attr.name);
         attribs[i] = { name:attr.name
             , loc:loc
+            , vbo:vbo
             , count:attr.count
             , type:attr.type
             , normalized:attr.normalized
             , stride:attr.stride
             , offset:attr.offset };
     }
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
     var ebo = null;
     var elementCount = 0;
-    if (faces)
+    if (faceInfo)
     {
         ebo = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int32Array(faces), bufferType);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Int32Array(faceInfo.faces), faceInfo.bufferType);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
-        elementCount = faces.length;
+        elementCount = faceInfo.faces.length;
     }
 
     var setCameraProperty = function(camera)
@@ -50,27 +51,41 @@ var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribPar
         this.matWorld = CloneMat4(matPos).Mul(matRot).Mul(matScale);
 
         var matMVP = CloneMat4(camera.matViewProjection).Mul(this.matWorld);
+        var matMV = CloneMat4(camera.matView).Mul(this.matWorld);
+        var matM = CloneMat4(this.matWorld);
 
         matMVP.Transpose();
-        var mpvArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
-
+        var mvpArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
         var mvpLoc = gl.getUniformLocation(this.program, 'MVP');
-        gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mpvArray));
+        gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mvpArray));
+
+        matMV.Transpose();
+        var mvArray = matMV.m[0].concat(matMV.m[1],matMV.m[2],matMV.m[3]);
+        var mvLoc = gl.getUniformLocation(this.program, 'MV');
+        gl.uniformMatrix4fv(mvLoc, false, new Float32Array(mvArray));
+
+        matM.Transpose();
+        var mArray = matM.m[0].concat(matM.m[1],matM.m[2],matM.m[3]);
+        var mLoc = gl.getUniformLocation(this.program, 'M');
+        gl.uniformMatrix4fv(mLoc, false, new Float32Array(mArray));
+
+        var eyeLoc = gl.getUniformLocation(this.program, 'Eye');
+        gl.uniform3fv(eyeLoc, [camera.pos.x, camera.pos.y, camera.pos.z]);
     }
 
     var setRenderProperty = function()
     {
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         for(var i=0;i<this.attribs.length;++i)
         {
             var attrib = this.attribs[i];
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, attrib.vbo);
             gl.vertexAttribPointer(attrib.loc,
                 attrib.count,
                 attrib.type,
                 attrib.normalized,
                 attrib.stride,
-                attrib.offset);
-    
+                attrib.offset);    
             gl.enableVertexAttribArray(attrib.loc);
         }
     }
@@ -92,9 +107,17 @@ var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribPar
         }
         else
         {
-            gl.drawArrays(this.primitiveType, 0, this.vertexCount);    
+            if (this.drawArray)
+            {
+                for(var i=0;i<this.drawArray.length;++i)
+                    gl.drawArrays(this.primitiveType, this.drawArray[i].startVert, this.drawArray[i].count);    
+            }
         }
     }
+
+    var drawArray = [
+        {startVert:0, count:vertexCount}
+    ];
 
     var matWorld = new jMat4();
     var pos = CreateVec3(0.0, 0.0, 0.0);
@@ -102,7 +125,7 @@ var createStaticObject = function(gl, vertices, faces, vsCode, fsCode, attribPar
     var scale = CreateVec3(1.0, 1.0, 1.0);
     return {gl:gl, vbo:vbo, ebo:ebo, program:program, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
-        , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc};
+        , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray};
 }
 
 // Framebuffer
@@ -204,7 +227,7 @@ jWebGL.prototype.Init = function()
     updateCamera(gl, 0);
 
     // Origin Point Gizmo
-    CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0));
+    CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
 
     // Create Coordinate Guide lines
     CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
@@ -218,7 +241,13 @@ jWebGL.prototype.Init = function()
     arrowSegment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, CreateVec3(RayX.value, RayY.value, RayZ.value), Time.value
         , 2.0, 1.0, CreateVec4(1.0, 1.0, 1.0, 1.0), CreateVec4(1.0, 0.0, 0.0, 1.0));
 
-    CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 30.0), 10, 10, 1.0, OneVec4);
+    var capsule = CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 30.0), 20, 10, 1.0, CreateVec4(1.0, 0.0, 0.0, 1.0));
+    var cube = CreateCube(gl, StaticObjectArray, CreateVec3(30.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 1.0, 0.0, 1.0));
+    var quad = CreateQuad(gl, StaticObjectArray, OneVec3, OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 0.0, 1.0, 1.0));
+    var tri = CreateTriangle(gl, StaticObjectArray, CreateVec3(70.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.5, 0.1, 1.0, 1.0));
+    var sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(50.0, 0.0, 30.0), 15, OneVec3, CreateVec4(0.8, 0.1, 0.3, 1.0));
+    var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, CreateVec4(0.3, 0.3, 0.6, 1.0));
+    var cone = CreateCone(gl, StaticObjectArray, CreateVec3(80.0, 0.0, 30.0), 20, 10, OneVec3, CreateVec4(1.0, 1.0, 0.0, 1.0));
 
     var main = this;
 
@@ -235,6 +264,17 @@ jWebGL.prototype.Init = function()
             loopCount = 0;
             lastTime = currentTime;
         }
+
+        capsule.rot.z += 0.03;
+        cube.rot.x += 0.02;
+        
+        quad.rot.x = -0.65;
+        quad.rot.y += 0.04;
+
+        tri.rot.x = -0.6;
+        tri.rot.y += 0.03;
+
+        cone.rot.x += 0.02;
 
         processKeyEvents();
         main.Update();

@@ -1,49 +1,72 @@
-var createAttribParameter = function(name, count, type, normalized, stride, offset)
+var createAttribParameter = function(name, count, datas, bufferType, type, normalized, stride, offset)
 {
-    return { name:name, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
+    return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
-var CreateRectangle = function(gl, TargetObjectArray, pos, offset, size, scale, color)
+var GenerateNormal = function(vertices)
 {
-    var halfSize = size.Div(2.0);
+    var normals = [];
+    for(var i=0;i<vertices.length/3;++i)
+    {
+        var curIndex = i * 3;
+        var normal = CreateVec3(vertices[curIndex], vertices[curIndex+1], vertices[curIndex+2]).GetNormalize();
+        normals.push(normal.x); normals.push(normal.y); normals.push(normal.z);
+    }
+
+    return normals;
+}
+
+var GenerateColor = function(color, count)
+{
+    var colors = [];
+    for(var i=0;i<count;++i)
+    {
+        colors.push(color.x); colors.push(color.y); colors.push(color.z); colors.push(color.w);
+    }
+    return colors;
+}
+
+var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color)
+{
+    var halfSize = size.CloneVec3().Div(2.0);
+    var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),     color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),     color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),    color.x, color.y, color.z, color.w,
-
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z),   color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z),   color.x, color.y, color.z, color.w,
-
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),     color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z),   color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),    color.x, color.y, color.z, color.w,
-
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),     color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z),   color.x, color.y, color.z, color.w,
-
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),     color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),     color.x, color.y, color.z, color.w,
-
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),    color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z),   color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z),   color.x, color.y, color.z, color.w,
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
     ];
 
-    var elementCount = 7;
+    var elementCount = vertices.length / 3;
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
+    var colors = GenerateColor(color, elementCount);
+    var normals = GenerateNormal(vertices);
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -53,22 +76,32 @@ var CreateRectangle = function(gl, TargetObjectArray, pos, offset, size, scale, 
     return newStaticObject;
 }
 
-var CreateQuad = function(gl, TargetObjectArray, pos, offset, size, scale, color)
+var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, color)
 {
-    var halfSize = size.Div(2.0);
+    var halfSize = size.CloneVec3().Div(2.0);
+    var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),    offset.z,   color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),    offset.z,   color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),   offset.z,   color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),   offset.z,   color.x, color.y, color.z, color.w,
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),  0.0,
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),  0.0,
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y), 0.0,
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y), 0.0,
     ];
 
-    var elementCount = 7;
+    var elementCount = vertices.length / 3;
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
+    var colors = GenerateColor(color, elementCount);
+
+    var normals = [];
+    for(var i=0;i<elementCount;++i)
+    {
+        normals.push(0.0); normals.push(0.0); normals.push(1.0);
+    }
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -78,21 +111,31 @@ var CreateQuad = function(gl, TargetObjectArray, pos, offset, size, scale, color
     return newStaticObject;
 }
 
-var CreateTriangle = function(gl, TargetObjectArray, pos, offset, size, scale, color)
+var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, color)
 {
-    var halfSize = size.Div(2.0);
+    var halfSize = size.CloneVec3().Div(2.0);
+    var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),   offset.y + (halfSize.y),    offset.z,   color.x, color.y, color.z, color.w,
-        offset.x + (halfSize.x),    offset.y + (halfSize.y),    offset.z,   color.x, color.y, color.z, color.w,
-        offset.x + (-halfSize.x),   offset.y + (-halfSize.y),   offset.z,   color.x, color.y, color.z, color.w,
+        offset.x + (-halfSize.x),   offset.y + (halfSize.y),  0.0,
+        offset.x + (halfSize.x),    offset.y + (halfSize.y),  0.0,
+        offset.x + (-halfSize.x),   offset.y + (-halfSize.y), 0.0,
     ];
 
-    var elementCount = 7;
+    var elementCount = vertices.length / 3;
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
+    var colors = GenerateColor(color, elementCount);
+    
+    var normals = [];
+    for(var i=0;i<elementCount;++i)
+    {
+        normals.push(0.0); normals.push(0.0); normals.push(1.0);
+    }
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -102,11 +145,12 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, offset, size, scale, c
     return newStaticObject;
 }
 
-var CreateSphere = function(gl, TargetObjectArray, pos, offset, radius, scale, color)
+var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, color)
 {
     var vertices = [];
+    var offset = ZeroVec3;
 
-    vertices.push(offset.x); vertices.push(offset.y); vertices.push(offset.z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+    vertices.push(offset.x); vertices.push(offset.y); vertices.push(offset.z);
 
     for(var j=-9;j<=9;++j)
     {
@@ -115,12 +159,15 @@ var CreateSphere = function(gl, TargetObjectArray, pos, offset, radius, scale, c
             var x = offset.x + Math.cos(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
             var y = offset.y + Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
             var z = offset.z + Math.sin(DegreeToRadian(j * 10)) * radius;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
         }
     }
 
-    var faces = [];
+    var elementCount = vertices.length / 3;
+    var colors = GenerateColor(color, elementCount);
+    var normals = GenerateNormal(vertices);
 
+    var faces = [];
     var iCount = 0;
     for(var j=0;j<9*2;++j)
     {
@@ -131,11 +178,10 @@ var CreateSphere = function(gl, TargetObjectArray, pos, offset, radius, scale, c
         }
     }
 
-    var elementCount = 7;
-
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, faces, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLES);
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -145,11 +191,11 @@ var CreateSphere = function(gl, TargetObjectArray, pos, offset, radius, scale, c
     return newStaticObject;
 }
 
-var CreateTile = function(gl, TargetObjectArray, pos, offset, numOfCol, numOfRow, size, scale, color)
+var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, scale, color)
 {
     var vertices = [];
 
-    var halfSize = size / 2.0;
+    var offset = ZeroVec3;
 
     var startPos = CreateVec3(offset.x, offset.y, offset.z);
 
@@ -158,47 +204,51 @@ var CreateTile = function(gl, TargetObjectArray, pos, offset, numOfCol, numOfRow
         for(var j=0;j<numOfCol;++j)
         {
             var curOffset = startPos.CloneVec3()
-            curOffset.x += j * size;
-            curOffset.z += i * size;
+            curOffset.x += (j - numOfRow / 2.0) * size;
+            curOffset.z += (i - numOfCol / 2.0) * size;
 
             var x = curOffset.x;
             var y = curOffset.y;
             var z = curOffset.z;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
 
             x = curOffset.x;
             y = curOffset.y;
             z = curOffset.z + size;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
 
             x = curOffset.x + size;
             y = curOffset.y;
             z = curOffset.z + size;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
 
             x = curOffset.x;
             y = curOffset.y;
             z = curOffset.z;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
 
             x = curOffset.x + size;
             y = curOffset.y
             z = curOffset.z + size;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
 
             x = curOffset.x + size;
             y = curOffset.y;
             z = curOffset.z;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+            vertices.push(x); vertices.push(y); vertices.push(z);
 
          }
     }
 
-    var elementCount = 7;
+    var elementCount = vertices.length / 3;
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLES);
+    var colors = GenerateColor(color, elementCount);
+    var normals = GenerateNormal(vertices);
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -224,15 +274,16 @@ var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, color
     }
 
     var vertices = [
-        start.x,            start.y,            start.z,                color.x, color.y, color.z, color.w,
-        currentEnd.x,       currentEnd.y,       currentEnd.z,           color.x, color.y, color.z, color.w,
+        start.x,            start.y,            start.z,
+        currentEnd.x,       currentEnd.y,       currentEnd.z,
     ];
 
-    var elementCount = 7;
+    var elementCount = vertices.length / 3;
+    var colors = GenerateColor(color, elementCount);
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.DYNAMIC_DRAW, vertices.length / elementCount, gl.LINES);
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -266,39 +317,82 @@ var UpdateSegmentTime = function(segment, t)
     var end = segment.getCurrentEnd();
 
     var vertices = [
-        segment.start.x,          segment.start.y,          segment.start.z,         segment.color.x, segment.color.y, segment.color.z, segment.color.w,
-        end.x,                 end.y,                 end.z,                segment.color.x, segment.color.y, segment.color.z, segment.color.w,
+        segment.start.x,       segment.start.y,       segment.start.z,
+        end.x,                 end.y,                 end.z,
     ];
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, segment.vbo);
+    var colors = [
+        segment.color.x, segment.color.y, segment.color.z, segment.color.w,
+        segment.color.x, segment.color.y, segment.color.z, segment.color.w,
+    ];
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, segment.attribs[0].vbo);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+    
+    gl.bindBuffer(gl.ARRAY_BUFFER, segment.attribs[1].vbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 };
 
 var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, color)
 {
     var halfHeight = height/2.0;
-    var topVert = CreateVec3(0.0, halfHeight, 0.0);
+    var topVert = CreateVec3(0.0, height, 0.0);
+
     var vertices = [
-        topVert.x,    topVert.y,    topVert.z,        color.x, color.y, color.z, color.w,
+        topVert.x,    topVert.y,    topVert.z,
     ];
 
     for(var i=0;i<360;++i)
     {
         var rad = RadianToDegree(i);
-        vertices.push(Math.cos(rad)*radius);    vertices.push(-halfHeight);    vertices.push(Math.sin(rad)*radius);
-        vertices.push(color.x);     vertices.push(color.y);     vertices.push(color.z);     vertices.push(color.w);
+        vertices.push(Math.cos(rad)*radius);    vertices.push(0.0);    vertices.push(Math.sin(rad)*radius);
     }
 
-    var elementCount = 7;
+    var currentVertexCnt = vertices.length/3;
+    var drawArray = [ {startVert:0, count:currentVertexCnt} ];
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.DYNAMIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_FAN);
+    var secondStartVert = currentVertexCnt;
+
+    vertices.push(0.0); vertices.push(0.0); vertices.push(0.0);     // bottomVert
+    for(var i=0;i<360;++i)
+    {
+        var rad = RadianToDegree(i);
+        vertices.push(Math.cos(rad)*radius);    vertices.push(0.0);    vertices.push(Math.sin(rad)*radius);
+    }
+
+    var elementCount = vertices.length / 3;
+    drawArray.push({startVert:secondStartVert, count:(elementCount-secondStartVert)});
+
+    var colors = GenerateColor(color, elementCount);
+    //var normals = GenerateNormal(vertices);
+
+    var normals = [];
+    var firstDrawArray = drawArray[0];
+    var fisrtVec3 = CreateVec3(vertices[firstDrawArray.startVert], height, vertices[firstDrawArray.startVert+2]);
+    normals.push(0.0); normals.push(1.0); normals.push(0.0);
+    for(var i=firstDrawArray.startVert+1;i<firstDrawArray.count;++i)
+    {
+        var curIndex = i * 3;
+        var normal = CreateVec3(vertices[curIndex], vertices[curIndex+1], vertices[curIndex+2]).Add(fisrtVec3).GetNormalize();
+        normals.push(normal.x); normals.push(normal.y); normals.push(normal.z);
+    }
+
+    var secondDrawArray = drawArray[1];
+    for(var i=0;i<secondDrawArray.count;++i)
+    {
+        normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+    }
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_FAN);
     
+    newStaticObject.drawArray = drawArray;
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-    newStaticObject.scale = CreateVec3(scale, scale, scale);
+    newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     var coneStaticObject = {};
     coneStaticObject.__proto__ = newStaticObject;
     coneStaticObject.height = height;
@@ -312,7 +406,7 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, col
 var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneHeight, coneRadius, segmentColor, coneColor)
 {
     var segment = CreateSegment(gl, TargetObjectArray, ZeroVec3, start, end, time, segmentColor);
-    var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, 1.0, coneColor);
+    var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, OneVec3, coneColor);
 
     var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, cone:cone};
     newStaticObject.updateFunc = function()
@@ -332,9 +426,10 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
         console.log("capsule height must be more than or equal zero.");
     }
 
+    var halfHeight = height / 2;
     var vertices = [];
 
-    vertices.push(0.0); vertices.push(0.0); vertices.push(0.0); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+    vertices.push(0.0); vertices.push(0.0); vertices.push(0.0);
 
     var slice = 9;
     for(var j=-slice;j<=slice;++j)
@@ -347,15 +442,18 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
             var y = Math.sin(DegreeToRadian(j * 10)) * radius;
             var z = Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
             if (isUpperSphere)
-                y += height;
+                y += halfHeight;
             else
-                y -= height;
-            vertices.push(x); vertices.push(y); vertices.push(z); vertices.push(color.x); vertices.push(color.y); vertices.push(color.z); vertices.push(color.w);
+                y -= halfHeight;
+            vertices.push(x); vertices.push(y); vertices.push(z);
         }
     }
 
-    var faces = [];
+    var elementCount = vertices.length / 3;
+    var colors = GenerateColor(color, elementCount);
+    var normals = GenerateNormal(vertices);
 
+    var faces = [];
     var iCount = 0;
     for(var j=0;j<slice*2;++j)
     {
@@ -366,11 +464,10 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
         }
     }
 
-    var elementCount = 7;
-
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, faces, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.TRIANGLES);
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -385,33 +482,54 @@ var CreateGizmo = function(gl, TargetObjectArray, pos, rot, scale)
     var length = 5;
     var length2 = length*0.6;
     var vertices = [
-        0.0,            0.0,        0.0,            0, 0, 1, 1,
-        0.0,            0.0,        length,        0, 0, 1, 1,
-        0.0,            0.0,        length,        0, 0, 1, 1,
-        length2/2,      0.0,        length2,       0, 0, 1, 1,
-        0.0,            0.0,        length,        0, 0, 1, 1,
-        -length2/2,     0.0,        length2,       0, 0, 1, 1,
+        0.0,            0.0,        0.0,       
+        0.0,            0.0,        length,    
+        0.0,            0.0,        length,    
+        length2/2,      0.0,        length2,   
+        0.0,            0.0,        length,    
+        -length2/2,     0.0,        length2,   
 
-        0.0,            0.0,        0.0,            1, 0, 0, 1,
-        length,         0.0,        0.0,            1, 0, 0, 1,
-        length,         0.0,        0.0,            1, 0, 0, 1,
-        length2,        0.0,        length2/2,      1, 0, 0, 1,
-        length,         0.0,        0.0,            1, 0, 0, 1,
-        length2,        0.0,        -length2/2,     1, 0, 0, 1,
+        0.0,            0.0,        0.0,       
+        length,         0.0,        0.0,       
+        length,         0.0,        0.0,       
+        length2,        0.0,        length2/2, 
+        length,         0.0,        0.0,       
+        length2,        0.0,        -length2/2,
 
-        0.0,            0.0,        0.0,            0, 1, 0, 1,
-        0.0,            length,     0.0,            0, 1, 0, 1,
-        0.0,            length,     0.0,            0, 1, 0, 1,
-        length2/2,      length2,    0.0,            0, 1, 0, 1,
-        0.0,            length,     0.0,            0, 1, 0, 1,
-        -length2/2,     length2,    0.0,            0, 1, 0, 1,
+        0.0,            0.0,        0.0,       
+        0.0,            length,     0.0,       
+        0.0,            length,     0.0,       
+        length2/2,      length2,    0.0,       
+        0.0,            length,     0.0,       
+        -length2/2,     length2,    0.0,       
     ];       
 
-    var elementCount = 7;
+    var colors = [
+        0, 0, 1, 1,
+        0, 0, 1, 1,
+        0, 0, 1, 1,
+        0, 0, 1, 1,
+        0, 0, 1, 1,
+        0, 0, 1, 1,
+        1, 0, 0, 1,
+        1, 0, 0, 1,
+        1, 0, 0, 1,
+        1, 0, 0, 1,
+        1, 0, 0, 1,
+        1, 0, 0, 1,
+        0, 1, 0, 1,
+        0, 1, 0, 1,
+        0, 1, 0, 1,
+        0, 1, 0, 1,
+        0, 1, 0, 1,
+        0, 1, 0, 1,
+    ];
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.LINES);
+    var elementCount = vertices.length / 3;
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
 
     newStaticObject.pos = pos.CloneVec3();
     newStaticObject.rot = rot.CloneVec3();
@@ -428,6 +546,7 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
     var halfCount = count / 2.0;
 
     var vertices = [];
+    var colors = [];
 
     var x;
     var z;
@@ -438,19 +557,19 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
         {
             z = k * interval;
 
-            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);  vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.7);
-            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval); vertices.push(0.0); vertices.push(0.0); vertices.push(1.0); vertices.push(0.7);
+            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);    colors.push(0.0); colors.push(0.0); colors.push(1.0); colors.push(0.7);
+            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval);   colors.push(0.0); colors.push(0.0); colors.push(1.0); colors.push(0.7);
 
-            vertices.push(x + interval);    vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.7);
-            vertices.push(x + -interval);   vertices.push(0.0);         vertices.push(z + 0.0);     vertices.push(1.0); vertices.push(0.0); vertices.push(0.0); vertices.push(0.7);
+            vertices.push(x + interval);    vertices.push(0.0);         vertices.push(z + 0.0);         colors.push(1.0); colors.push(0.0); colors.push(0.0); colors.push(0.7);
+            vertices.push(x + -interval);   vertices.push(0.0);         vertices.push(z + 0.0);         colors.push(1.0); colors.push(0.0); colors.push(0.0); colors.push(0.7);
         }
     }
 
-    var elementCount = 7;
+    var elementCount = vertices.length / 3;
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.LINES);
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
     newStaticObject.updateFunc = function()
     {
         this.pos.x = Math.floor(camera.pos.x / 10) * 10;
@@ -469,15 +588,20 @@ var CreateCoordinateYObject = function(gl, TargetObjectArray)
 {
     var length = 500;
     var vertices = [
-        0.0,        length,       0.0,           0, 1, 0, 1,
-        0.0,        -length,      0.0,           0, 1, 0, 1,
+        0.0,        length,       0.0,
+        0.0,        -length,      0.0,
     ];
 
-    var elementCount = 7;
+    var colors = [
+        0, 1, 0, 1,
+        0, 1, 0, 1,
+    ];
 
-    var attrib0 = createAttribParameter('Pos', 3, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var attrib1 = createAttribParameter('Color', 4, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, Float32Array.BYTES_PER_ELEMENT * 3);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1], 0, gl.STATIC_DRAW, vertices.length / elementCount, gl.LINES);
+    var elementCount = vertices.length / 3;
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
 
     newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -497,8 +621,8 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
     ];
 
     var elementCount = 2;
-    var attrib0 = createAttribParameter('VertPos', 2, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * elementCount, 0);
-    var newStaticObject = createStaticObject(gl, vertices, null, 'shaders/tex_ui_vs.glsl', 'shaders/tex_ui_fs.glsl', [attrib0], 0, gl.DYNAMIC_DRAW, vertices.length / elementCount, gl.TRIANGLE_STRIP);
+    var attrib0 = createAttribParameter('VertPos', 2, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
+    var newStaticObject = createStaticObject(gl, null, 'shaders/tex_ui_vs.glsl', 'shaders/tex_ui_fs.glsl', [attrib0], 0, elementCount, gl.TRIANGLE_STRIP);
 
     var uiStaticObject = { UIInfo:CreateVec4(x, y, width, height) };
     uiStaticObject.__proto__ = newStaticObject;
