@@ -4,6 +4,7 @@ attribute vec3 Pos;
 attribute vec2 TexCoord;
 
 uniform mat4 MVP;
+
 varying vec2 TexCoord_;
 
 void main()

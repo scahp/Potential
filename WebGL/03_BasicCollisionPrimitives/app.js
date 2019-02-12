@@ -88,6 +88,16 @@ var createStaticObject = function(gl, vsCode, fsCode, attribParameters, faceInfo
                 attrib.offset);    
             gl.enableVertexAttribArray(attrib.loc);
         }
+
+        if (this.texture)
+        {
+            var tex_object = gl.getUniformLocation(this.program, 'tex_object');
+            if (tex_object)
+                gl.uniform1i(tex_object, 0);
+    
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        }
     }
 
     var drawFunc = function(camera)
@@ -243,11 +253,37 @@ jWebGL.prototype.Init = function()
 
     var capsule = CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 30.0), 20, 10, 1.0, CreateVec4(1.0, 0.0, 0.0, 1.0));
     var cube = CreateCube(gl, StaticObjectArray, CreateVec3(30.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 1.0, 0.0, 1.0));
-    var quad = CreateQuad(gl, StaticObjectArray, OneVec3, OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 0.0, 1.0, 1.0));
+    var quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 0.0, 1.0, 1.0));
     var tri = CreateTriangle(gl, StaticObjectArray, CreateVec3(70.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.5, 0.1, 1.0, 1.0));
     var sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(50.0, 0.0, 30.0), 15, OneVec3, CreateVec4(0.8, 0.1, 0.3, 1.0));
     var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, CreateVec4(0.3, 0.3, 0.6, 1.0));
     var cone = CreateCone(gl, StaticObjectArray, CreateVec3(80.0, 0.0, 30.0), 20, 10, OneVec3, CreateVec4(1.0, 1.0, 0.0, 1.0));
+    var billboardQuad = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 60.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(1.0, 0.0, 1.0, 1.0));
+    billboardQuad.camera = mainCamera;
+
+    // Create a texture.
+    var texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    // Fill the texture with a 1x1 blue pixel.
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                new Uint8Array([0, 0, 255, 255]));
+                
+    // Asynchronously load an image
+    var image = new Image();
+    image.src = "sun.png";
+    image.addEventListener('load', function() {
+        // Now that the image has loaded make copy it to the texture.
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
+        gl.generateMipmap(gl.TEXTURE_2D);
+    });
+
+    var sunOrigin = CreateVec3(0.0, 60.0, 60.0);
+    var quadTexure = CreateBillboardQuadTexture(gl, StaticObjectArray, sunOrigin, OneVec3, CreateVec3(20.0, 20.0, 20.0), texture);
+    quadTexure.camera = mainCamera;
+    var sunDir = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(CreateVec3(-15.0, -15.0, -15.0)), 1.0
+        , 3.0, 3.0, CreateVec4(1.0, 1.0, 1.0, 1.0), CreateVec4(1.0, 1.0, 0.1, 1.0));
+    sunDir.pos = sunOrigin.CloneVec3();
 
     var main = this;
 

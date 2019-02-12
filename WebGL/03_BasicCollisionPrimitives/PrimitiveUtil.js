@@ -411,9 +411,17 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
     var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, cone:cone};
     newStaticObject.updateFunc = function()
     {
-        this.cone.pos = this.segment.getCurrentEnd();
+        var pos = null;
+        if (this.pos)
+            pos = this.pos.CloneVec3();
+        else
+            pos = OneVec3.CloneVec3();
+            
+        this.segment.pos = this.pos;
+        this.cone.pos = this.pos.CloneVec3().Add(this.segment.getCurrentEnd());
         this.cone.rot = GetEulerAngleFromVec3(this.segment.getDirectionNormalized());
     };
+    newStaticObject.pos = OneVec3.CloneVec3();
     TargetObjectArray.push(newStaticObject);
     return newStaticObject;
 }
@@ -652,16 +660,6 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
             var size = [this.UIInfo.z, this.UIInfo.w];
             gl.uniform2fv(sizeLoc, size);
         }
-
-        if (this.texture)
-        {
-            var tex_object = gl.getUniformLocation(this.program, 'tex_object');
-            if (tex_object)
-                gl.uniform1i(tex_object, 0);
-    
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        }
     };
 
     newStaticObject.pos = CreateVec3(0, 0, 0.0);
@@ -670,4 +668,86 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
     if (TargetObjectArray)
         TargetObjectArray.push(uiStaticObject);
     return uiStaticObject;
+}
+
+var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, color)
+{
+    var quad = CreateQuad(gl, TargetObjectArray, pos, size, scale, color);
+    quad.camera = null;
+    quad.updateFunc = function()
+    {
+        if (this.camera)
+        {
+            var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
+            var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
+
+            var degreeOf90 = DegreeToRadian(90);        // Offset rotation for this billboard to face the camera.
+
+            this.rot.y = eularAngleOfCameraDir.y + degreeOf90;
+            this.rot.x = -(eularAngleOfCameraDir.z + degreeOf90);       // Because Quad is directing to Z+ Axis. X axis rotation is needed to lie this billboard on xz plane.
+        }
+        else
+        {
+            console.log('BillboardQuad is updated without camera');
+        }
+    }
+    return quad;
+}
+
+var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, texture)
+{
+    var halfSize = size.CloneVec3().Div(2.0);
+    var offset = ZeroVec3.CloneVec3();
+
+    var vertices = [
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),  0.0,
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),  0.0,
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y), 0.0,
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y), 0.0,
+    ];
+
+    var elementCount = vertices.length / 3;
+
+    var uvs = [
+        0.0, 1.0,
+        1.0, 1.0,
+        0.0, 0.0,
+        1.0, 0.0,
+    ];
+
+    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
+    var attrib1 = createAttribParameter('TexCoord', 2, uvs, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
+    var newStaticObject = createStaticObject(gl, 'shaders/tex_vs.glsl', 'shaders/tex_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.TRIANGLE_STRIP);
+    
+    newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
+    newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+    newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    newStaticObject.texture = texture;
+    if (TargetObjectArray)
+        TargetObjectArray.push(newStaticObject);
+    return newStaticObject;
+}
+
+var CreateBillboardQuadTexture = function(gl, TargetObjectArray, pos, size, scale, texture)
+{
+    var quad = CreateQuadTexture(gl, TargetObjectArray, pos, size, scale, texture);
+    quad.camera = null;
+    quad.updateFunc = function()
+    {
+        if (this.camera)
+        {
+            var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
+            var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
+
+            var degreeOf90 = DegreeToRadian(90);        // Offset rotation for this billboard to face the camera.
+
+            this.rot.y = eularAngleOfCameraDir.y + degreeOf90;
+            this.rot.x = -(eularAngleOfCameraDir.z + degreeOf90);       // Because Quad is directing to Z+ Axis. X axis rotation is needed to lie this billboard on xz plane.
+        }
+        else
+        {
+            console.log('BillboardQuad is updated without camera');
+        }
+    }
+    return quad;
 }
