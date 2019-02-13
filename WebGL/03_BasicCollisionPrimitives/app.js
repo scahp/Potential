@@ -6,9 +6,12 @@ var UIStaticObject = [];
 var arrowSegment = null;
 
 // StaticObject
-var createStaticObject = function(gl, vsCode, fsCode, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
+var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
 {
-    var program = CreateProgram(gl, vsCode, fsCode);
+    var shader = [];
+    GetShaderFromAttribDesc(shader, attribDesc);
+
+    var program = CreateProgram(gl, shader.vs, shader.fs);
 
     var attribs = [];
     for(var i=0;i<attribParameters.length;++i)
@@ -110,6 +113,38 @@ var createStaticObject = function(gl, vsCode, fsCode, attribParameters, faceInfo
         if (this.setCameraProperty)
             this.setCameraProperty(camera);
     
+        if (camera.ambient)
+        {
+            var ambientColorLoc = gl.getUniformLocation(this.program, 'AmbientColor');
+            gl.uniform3fv(ambientColorLoc, [camera.ambient.ambientColor.x, camera.ambient.ambientColor.y, camera.ambient.ambientColor.z]);
+
+            var AmbientLightIntensityLoc = gl.getUniformLocation(this.program, 'AmbientLightIntensity');
+            gl.uniform3fv(AmbientLightIntensityLoc, [camera.ambient.ambientIntensity.x, camera.ambient.ambientIntensity.y, camera.ambient.ambientIntensity.z]);
+        }
+
+        if (camera.lights)
+        {
+            for(var i=0;i<camera.lights.length;++i)
+            {
+                var light = camera.lights[i];
+
+                var lightDirectionLoc = gl.getUniformLocation(this.program, 'LightDirection');
+                gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
+
+                var diffuseLightIntensityLoc = gl.getUniformLocation(this.program, 'DiffuseLightIntensity');
+                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+
+                var specularLightIntensityLoc = gl.getUniformLocation(this.program, 'SpecularLightIntensity');
+                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+
+                var specularColorLoc = gl.getUniformLocation(this.program, 'SpecularColor');
+                gl.uniform3fv(specularColorLoc, [light.specularColor.x, light.specularColor.y, light.specularColor.z]);
+
+                var specularPowLoc = gl.getUniformLocation(this.program, 'SpecularPow');
+                gl.uniform1f(specularPowLoc, light.specularPow);
+            }
+        }
+
         if (this.ebo)
         {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo);
@@ -249,16 +284,17 @@ jWebGL.prototype.Init = function()
     var Time = document.getElementById("Time");
 
     arrowSegment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, CreateVec3(RayX.value, RayY.value, RayZ.value), Time.value
-        , 2.0, 1.0, CreateVec4(1.0, 1.0, 1.0, 1.0), CreateVec4(1.0, 0.0, 0.0, 1.0));
+        , 2.0, 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), false, false, false));
 
-    var capsule = CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 30.0), 20, 10, 1.0, CreateVec4(1.0, 0.0, 0.0, 1.0));
-    var cube = CreateCube(gl, StaticObjectArray, CreateVec3(30.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 1.0, 0.0, 1.0));
-    var quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.0, 0.0, 1.0, 1.0));
-    var tri = CreateTriangle(gl, StaticObjectArray, CreateVec3(70.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(0.5, 0.1, 1.0, 1.0));
-    var sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(50.0, 0.0, 30.0), 15, OneVec3, CreateVec4(0.8, 0.1, 0.3, 1.0));
-    var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, CreateVec4(0.3, 0.3, 0.6, 1.0));
-    var cone = CreateCone(gl, StaticObjectArray, CreateVec3(80.0, 0.0, 30.0), 20, 10, OneVec3, CreateVec4(1.0, 1.0, 0.0, 1.0));
-    var billboardQuad = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 60.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), CreateVec4(1.0, 0.0, 1.0, 1.0));
+    var capsule = CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 30.0), 20, 10, 1.0, GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false));
+    var cube = CreateCube(gl, StaticObjectArray, CreateVec3(30.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), true, false, false));
+    var quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
+    var tri = CreateTriangle(gl, StaticObjectArray, CreateVec3(70.0, 0.0, -30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false));
+    var sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(50.0, 0.0, 30.0), 15, OneVec3, GetAttribDesc(CreateVec4(0.8, 0.1, 0.3, 1.0), true, false, false));
+    var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false));
+    var cone = CreateCone(gl, StaticObjectArray, CreateVec3(80.0, 0.0, 30.0), 20, 10, OneVec3, GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false));
+    var billboardQuad = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 60.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+        , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false));
     billboardQuad.camera = mainCamera;
 
     // Create a texture.
@@ -278,12 +314,47 @@ jWebGL.prototype.Init = function()
         gl.generateMipmap(gl.TEXTURE_2D);
     });
 
-    var sunOrigin = CreateVec3(0.0, 60.0, 60.0);
-    var quadTexure = CreateBillboardQuadTexture(gl, StaticObjectArray, sunOrigin, OneVec3, CreateVec3(20.0, 20.0, 20.0), texture);
-    quadTexure.camera = mainCamera;
-    var sunDir = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(CreateVec3(-15.0, -15.0, -15.0)), 1.0
-        , 3.0, 3.0, CreateVec4(1.0, 1.0, 1.0, 1.0), CreateVec4(1.0, 1.0, 0.1, 1.0));
-    sunDir.pos = sunOrigin.CloneVec3();
+    var CreateAmbientLight = function(ambientColor, ambientIntensity)
+    {
+        return { ambientColor:ambientColor, ambientIntensity:ambientIntensity };
+    }
+
+    var CreateDirectionalLight = function(gl, direction, diffuseLightIntensity, specularLightIntensity, specularColor, specularPow, debugObjectDesc)
+    {
+        direction = direction.GetNormalize();
+
+        var DirectionalLight = {};
+        if (debugObjectDesc.debugObject)
+        {
+            var billboardObject = CreateBillboardQuadTexture(gl, StaticObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, texture);
+            billboardObject.camera = mainCamera;
+
+            var segment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
+                , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
+            segment.pos = debugObjectDesc.pos.CloneVec3();
+
+            var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
+            DirectionalLight.__proto__ = newStaticObject;
+        }
+
+        DirectionalLight.direction = direction.CloneVec3().GetNormalize();
+        DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
+        DirectionalLight.specularLightIntensity = specularLightIntensity;
+        DirectionalLight.specularColor = specularColor;
+        DirectionalLight.specularPow = specularPow;
+        return DirectionalLight;
+    }
+
+    var diffuseLightIntensity = CreateVec3(0.5, 0.5, 0.5);
+    var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
+    var specularColor = CreateVec3(0.9, 0.7, 0.8);
+    var specularPow = 64.0;
+
+    var dirLight = CreateDirectionalLight(gl, CreateVec3(-1.0, -1.0, -1.0), diffuseLightIntensity, specularLightIntensity, specularColor, specularPow
+        , {debugObject:true, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0});
+
+    mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.3, 0.3, 0.3));
+    mainCamera.lights.push(dirLight);
 
     var main = this;
 

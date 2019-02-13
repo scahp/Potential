@@ -109,7 +109,7 @@ var CreateVec4 = function(x, y, z, w)
     return newVec;
 }
 
-jVec3.prototype.CloneVec4 = function()
+jVec4.prototype.CloneVec4 = function()
 {
     return CreateVec4(this.x, this.y, this.z, this.w);
 }

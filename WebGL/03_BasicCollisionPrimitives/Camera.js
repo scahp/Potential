@@ -145,7 +145,7 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
 
     var newCamera = {matView:matView, matProjection:matProjection
         , matViewProjection:matMV, pos:pos, target:target, up:up
-        , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far,far};
+        , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far, lights:[]};
     Cameras.push(newCamera);
     return newCamera;
 }

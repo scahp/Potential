@@ -3,6 +3,65 @@ var createAttribParameter = function(name, count, datas, bufferType, type, norma
     return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
+var GetAttribDesc = function(color, normal, uvs, ui)
+{
+    return {color:color, normal:normal, uvs:uvs, ui:ui};
+}
+
+var GetShaderFromAttribDesc = function(outShader, attribDesc)
+{
+    if (attribDesc.color && attribDesc.normal && attribDesc.uvs)
+    {
+        return;
+    }
+
+    if (attribDesc.color && attribDesc.normal)
+    {
+        outShader.vs = 'shaders/vs.glsl';
+        outShader.fs = 'shaders/fs.glsl';
+        return;
+    }
+
+    if (attribDesc.normal && attribDesc.uvs)
+    {
+        alert('attribDesc.normal && attribDesc.uvs');
+        return;
+    }
+
+    if (attribDesc.color && attribDesc.uvs)
+    {
+        alert('attribDesc.color && attribDesc.uvs');
+        return;
+    }
+
+    if (attribDesc.color)
+    {
+        outShader.vs = 'shaders/color_only_vs.glsl';
+        outShader.fs = 'shaders/color_only_fs.glsl';
+        return;
+    }
+
+    if (attribDesc.normal)
+    {
+        alert('attribDesc.normal');
+        return;
+    }
+
+    if (attribDesc.uvs)
+    {
+        outShader.vs = 'shaders/tex_vs.glsl';
+        outShader.fs = 'shaders/tex_fs.glsl';
+        return;
+    }
+
+    if (attribDesc.ui)
+    {
+        outShader.vs = 'shaders/tex_ui_vs.glsl';
+        outShader.fs = 'shaders/tex_ui_fs.glsl';
+        return;
+    }
+}
+
 var GenerateNormal = function(vertices)
 {
     var normals = [];
@@ -26,7 +85,7 @@ var GenerateColor = function(color, count)
     return colors;
 }
 
-var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color)
+var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
     var halfSize = size.CloneVec3().Div(2.0);
     var offset = ZeroVec3.CloneVec3();
@@ -60,13 +119,16 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color)
 
     var elementCount = vertices.length / 3;
 
-    var colors = GenerateColor(color, elementCount);
-    var normals = GenerateNormal(vertices);
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_STRIP);
+    if (attribDesc.color)
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    if (attribDesc.normal)
+        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -76,7 +138,7 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color)
     return newStaticObject;
 }
 
-var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, color)
+var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
     var halfSize = size.CloneVec3().Div(2.0);
     var offset = ZeroVec3.CloneVec3();
@@ -90,18 +152,23 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, color)
 
     var elementCount = vertices.length / 3;
 
-    var colors = GenerateColor(color, elementCount);
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
-    var normals = [];
-    for(var i=0;i<elementCount;++i)
+    if (attribDesc.color)
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    if (attribDesc.normal)
     {
-        normals.push(0.0); normals.push(0.0); normals.push(1.0);
+        var normals = [];
+        for(var i=0;i<elementCount;++i)
+        {
+            normals.push(0.0); normals.push(0.0); normals.push(1.0);
+        }
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -111,7 +178,7 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, color)
     return newStaticObject;
 }
 
-var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, color)
+var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
     var halfSize = size.CloneVec3().Div(2.0);
     var offset = ZeroVec3.CloneVec3();
@@ -124,18 +191,23 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, color)
 
     var elementCount = vertices.length / 3;
 
-    var colors = GenerateColor(color, elementCount);
-    
-    var normals = [];
-    for(var i=0;i<elementCount;++i)
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+
+    if (attribDesc.color)
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    if (attribDesc.normal)
     {
-        normals.push(0.0); normals.push(0.0); normals.push(1.0);
+        var normals = [];
+        for(var i=0;i<elementCount;++i)
+        {
+            normals.push(0.0); normals.push(0.0); normals.push(1.0);
+        }
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -145,7 +217,7 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, color)
     return newStaticObject;
 }
 
-var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, color)
+var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, attribDesc)
 {
     var vertices = [];
     var offset = ZeroVec3;
@@ -164,8 +236,15 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, color)
     }
 
     var elementCount = vertices.length / 3;
-    var colors = GenerateColor(color, elementCount);
-    var normals = GenerateNormal(vertices);
+
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+
+    if (attribDesc.color)
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    if (attribDesc.normal)
+        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
     var faces = [];
     var iCount = 0;
@@ -178,10 +257,7 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, color)
         }
     }
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -191,7 +267,7 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, color)
     return newStaticObject;
 }
 
-var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, scale, color)
+var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, scale, attribDesc)
 {
     var vertices = [];
 
@@ -242,13 +318,16 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
 
     var elementCount = vertices.length / 3;
 
-    var colors = GenerateColor(color, elementCount);
-    var normals = GenerateNormal(vertices);
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLES);
+    if (attribDesc.color)
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    if (attribDesc.normal)
+        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -258,7 +337,7 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
     return newStaticObject;
 }
 
-var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, color)
+var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, attribDesc)
 {
     var currentEnd = null;
     if (time < 1.0)
@@ -279,11 +358,21 @@ var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, color
     ];
 
     var elementCount = vertices.length / 3;
-    var colors = GenerateColor(color, elementCount);
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+
+    var color = OneVec4.CloneVec4();
+    if (attribDesc.color)
+    {
+        color = attribDesc.color.CloneVec4();
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+    }
+
+    if (attribDesc.normal)
+        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.LINES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -334,7 +423,7 @@ var UpdateSegmentTime = function(segment, t)
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 };
 
-var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, color)
+var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
 {
     var halfHeight = height/2.0;
     var topVert = CreateVec3(0.0, height, 0.0);
@@ -364,30 +453,52 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, col
     var elementCount = vertices.length / 3;
     drawArray.push({startVert:secondStartVert, count:(elementCount-secondStartVert)});
 
-    var colors = GenerateColor(color, elementCount);
-    //var normals = GenerateNormal(vertices);
-
-    var normals = [];
-    var firstDrawArray = drawArray[0];
-    var fisrtVec3 = CreateVec3(vertices[firstDrawArray.startVert], height, vertices[firstDrawArray.startVert+2]);
-    normals.push(0.0); normals.push(1.0); normals.push(0.0);
-    for(var i=firstDrawArray.startVert+1;i<firstDrawArray.count;++i)
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    
+    var color = OneVec4.CloneVec4();
+    if (attribDesc.color)
     {
-        var curIndex = i * 3;
-        var normal = CreateVec3(vertices[curIndex], vertices[curIndex+1], vertices[curIndex+2]).Add(fisrtVec3).GetNormalize();
-        normals.push(normal.x); normals.push(normal.y); normals.push(normal.z);
+        color = attribDesc.color.CloneVec4();
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
     }
 
-    var secondDrawArray = drawArray[1];
-    for(var i=0;i<secondDrawArray.count;++i)
+    if (attribDesc.normal)
     {
-        normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+        var normals = [];
+        var firstDrawArray = drawArray[0];
+        var fisrtVec3 = CreateVec3(vertices[firstDrawArray.startVert], vertices[firstDrawArray.startVert+1], vertices[firstDrawArray.startVert+2]);
+
+        // https://stackoverflow.com/questions/51015286/how-can-i-calculate-the-normal-of-a-cone-face-in-opengl-4-5
+        // lenght of the flank of the cone
+        var flank_len = Math.sqrt(radius*radius + height*height); 
+
+        // unit vector along the flank of the cone
+        var cone_x = radius / flank_len; 
+        var cone_y = -height / flank_len;
+        
+        // Cone Top Normal
+        normals.push(0.0); normals.push(1.0); normals.push(0.0);
+        for(var i=0;i<360;++i)
+        {
+            var rad = RadianToDegree(i);
+            normals.push(-cone_y * Math.cos(rad));
+            normals.push( cone_x );
+            normals.push(-cone_y * Math.sin(rad));
+        }
+   
+        var secondDrawArray = drawArray[1];
+        for(var i=0;i<secondDrawArray.count;++i)
+        {
+            normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+        }
+
+        /////////////////////////////////////////////////////
+
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], null, 0, elementCount, gl.TRIANGLE_FAN);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_FAN);
     
     newStaticObject.drawArray = drawArray;
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
@@ -403,10 +514,10 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, col
     return coneStaticObject;
 }
 
-var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneHeight, coneRadius, segmentColor, coneColor)
+var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneHeight, coneRadius, segmentAttribDesc, coneAttribDesc)
 {
-    var segment = CreateSegment(gl, TargetObjectArray, ZeroVec3, start, end, time, segmentColor);
-    var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, OneVec3, coneColor);
+    var segment = CreateSegment(gl, TargetObjectArray, ZeroVec3, start, end, time, segmentAttribDesc);
+    var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, OneVec3, coneAttribDesc);
 
     var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, cone:cone};
     newStaticObject.updateFunc = function()
@@ -426,7 +537,7 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
     return newStaticObject;
 }
 
-var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, color)
+var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
 {
     if (height < 0)
     {
@@ -458,8 +569,15 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
     }
 
     var elementCount = vertices.length / 3;
-    var colors = GenerateColor(color, elementCount);
-    var normals = GenerateNormal(vertices);
+
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+
+    if (attribDesc.color)
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    if (attribDesc.normal)
+        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
     var faces = [];
     var iCount = 0;
@@ -472,10 +590,7 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
         }
     }
 
-    var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var attrib2 = createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/vs.glsl', 'shaders/fs.glsl', [attrib0, attrib1, attrib2], {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -537,7 +652,7 @@ var CreateGizmo = function(gl, TargetObjectArray, pos, rot, scale)
 
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, false, false), [attrib0, attrib1], null, 0, elementCount, gl.LINES);
 
     newStaticObject.pos = pos.CloneVec3();
     newStaticObject.rot = rot.CloneVec3();
@@ -577,7 +692,7 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
 
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, false, false), [attrib0, attrib1], null, 0, elementCount, gl.LINES);
     newStaticObject.updateFunc = function()
     {
         this.pos.x = Math.floor(camera.pos.x / 10) * 10;
@@ -609,7 +724,7 @@ var CreateCoordinateYObject = function(gl, TargetObjectArray)
 
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/color_only_vs.glsl', 'shaders/color_only_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.LINES);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, null, null, null), [attrib0, attrib1], null, 0, elementCount, gl.LINES);
 
     newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -630,7 +745,7 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
 
     var elementCount = 2;
     var attrib0 = createAttribParameter('VertPos', 2, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
-    var newStaticObject = createStaticObject(gl, null, 'shaders/tex_ui_vs.glsl', 'shaders/tex_ui_fs.glsl', [attrib0], 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, null, GetAttribDesc(null, null, null, true), [attrib0], 0, elementCount, gl.TRIANGLE_STRIP);
 
     var uiStaticObject = { UIInfo:CreateVec4(x, y, width, height) };
     uiStaticObject.__proto__ = newStaticObject;
@@ -670,9 +785,9 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
     return uiStaticObject;
 }
 
-var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, color)
+var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
-    var quad = CreateQuad(gl, TargetObjectArray, pos, size, scale, color);
+    var quad = CreateQuad(gl, TargetObjectArray, pos, size, scale, attribDesc);
     quad.camera = null;
     quad.updateFunc = function()
     {
@@ -717,7 +832,7 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
 
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('TexCoord', 2, uvs, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
-    var newStaticObject = createStaticObject(gl, 'shaders/tex_vs.glsl', 'shaders/tex_fs.glsl', [attrib0, attrib1], null, 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(false, false, true), [attrib0, attrib1], null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
