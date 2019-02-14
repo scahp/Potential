@@ -91,27 +91,50 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
+        // z +
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+
+        // z -
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+
+        // x +
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        
+        // x -
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+
+        // y +
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+
+        // y -
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
@@ -126,9 +149,54 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
         attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
 
     if (attribDesc.normal)
-        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    {
+        var normals = [
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+            0.0, 0.0, -1.0,
+
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+            -1.0, 0.0, 0.0,
+
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 1.0, 0.0,
+
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+            0.0, -1.0, 0.0,
+        ];
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    }
     
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -426,29 +494,31 @@ var UpdateSegmentTime = function(segment, t)
 var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
 {
     var halfHeight = height/2.0;
-    var topVert = CreateVec3(0.0, height, 0.0);
+    var topVert = CreateVec3(0.0, halfHeight, 0.0);
+    var bottomVert = CreateVec3(0.0, -halfHeight, 0.0);
 
-    var vertices = [
-        topVert.x,    topVert.y,    topVert.z,
-    ];
+    var vertices = [];
 
-    for(var i=0;i<360;++i)
+    for(var i=1;i<=360;++i)
     {
-        var rad = RadianToDegree(i);
-        vertices.push(Math.cos(rad)*radius);    vertices.push(0.0);    vertices.push(Math.sin(rad)*radius);
+        var rad = DegreeToRadian(i);
+        var prevRad = DegreeToRadian(i-1);
+
+        // Top
+        vertices.push(topVert.x);                   vertices.push(topVert.y);       vertices.push(topVert.z);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
+
+        // Bottom
+        vertices.push(bottomVert.x);                vertices.push(bottomVert.y);    vertices.push(bottomVert.z);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
     }
 
     var currentVertexCnt = vertices.length/3;
     var drawArray = [ {startVert:0, count:currentVertexCnt} ];
 
     var secondStartVert = currentVertexCnt;
-
-    vertices.push(0.0); vertices.push(0.0); vertices.push(0.0);     // bottomVert
-    for(var i=0;i<360;++i)
-    {
-        var rad = RadianToDegree(i);
-        vertices.push(Math.cos(rad)*radius);    vertices.push(0.0);    vertices.push(Math.sin(rad)*radius);
-    }
 
     var elementCount = vertices.length / 3;
     drawArray.push({startVert:secondStartVert, count:(elementCount-secondStartVert)});
@@ -466,8 +536,6 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, att
     if (attribDesc.normal)
     {
         var normals = [];
-        var firstDrawArray = drawArray[0];
-        var fisrtVec3 = CreateVec3(vertices[firstDrawArray.startVert], vertices[firstDrawArray.startVert+1], vertices[firstDrawArray.startVert+2]);
 
         // https://stackoverflow.com/questions/51015286/how-can-i-calculate-the-normal-of-a-cone-face-in-opengl-4-5
         // lenght of the flank of the cone
@@ -478,18 +546,21 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, att
         var cone_y = -height / flank_len;
         
         // Cone Top Normal
-        normals.push(0.0); normals.push(1.0); normals.push(0.0);
-        for(var i=0;i<360;++i)
+        for(var i=1;i<=360;++i)
         {
-            var rad = RadianToDegree(i);
-            normals.push(-cone_y * Math.cos(rad));
-            normals.push( cone_x );
-            normals.push(-cone_y * Math.sin(rad));
-        }
-   
-        var secondDrawArray = drawArray[1];
-        for(var i=0;i<secondDrawArray.count;++i)
-        {
+            var rad = DegreeToRadian(i);
+            var x = -cone_y * Math.cos(rad);
+            var y = cone_x;
+            var z = -cone_y * Math.sin(rad);
+
+            // Top
+            normals.push(x); normals.push(y); normals.push(z);
+            normals.push(x); normals.push(y); normals.push(z);
+            normals.push(x); normals.push(y); normals.push(z);
+
+            // Bottom
+            normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+            normals.push(0.0); normals.push(-1.0); normals.push(0.0);
             normals.push(0.0); normals.push(-1.0); normals.push(0.0);
         }
 
@@ -498,9 +569,117 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, att
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_FAN);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
-    newStaticObject.drawArray = drawArray;
+    newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
+    newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+    newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    var coneStaticObject = {};
+    coneStaticObject.__proto__ = newStaticObject;
+    coneStaticObject.height = height;
+    coneStaticObject.radius = radius;
+    coneStaticObject.color = color;
+    if (TargetObjectArray)
+        TargetObjectArray.push(coneStaticObject);
+    return coneStaticObject;
+}
+
+var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
+{
+    var halfHeight = height/2.0;
+    var topVert = CreateVec3(0.0, halfHeight, 0.0);
+    var bottomVert = CreateVec3(0.0, -halfHeight, 0.0);
+
+    var vertices = [];
+
+    for(var i=1;i<=360;++i)
+    {
+        var rad = DegreeToRadian(i);
+        var prevRad = DegreeToRadian(i-1);
+
+        // Top
+        vertices.push(topVert.x);                   vertices.push(topVert.y);       vertices.push(topVert.z);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(topVert.y);    vertices.push(Math.sin(prevRad)*radius);
+
+        // Mid
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(topVert.y);    vertices.push(Math.sin(prevRad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
+
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
+
+        // Bottom
+        vertices.push(bottomVert.x);                vertices.push(bottomVert.y);    vertices.push(bottomVert.z);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
+    }
+
+    var currentVertexCnt = vertices.length/3;
+    var drawArray = [ {startVert:0, count:currentVertexCnt} ];
+
+    var secondStartVert = currentVertexCnt;
+
+    var elementCount = vertices.length / 3;
+    drawArray.push({startVert:secondStartVert, count:(elementCount-secondStartVert)});
+
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    
+    var color = OneVec4.CloneVec4();
+    if (attribDesc.color)
+    {
+        color = attribDesc.color.CloneVec4();
+        attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+    }
+
+    if (attribDesc.normal)
+    {
+        var normals = [];
+
+        // https://stackoverflow.com/questions/51015286/how-can-i-calculate-the-normal-of-a-cone-face-in-opengl-4-5
+        // lenght of the flank of the cone
+        var flank_len = Math.sqrt(radius*radius + height*height); 
+
+        // unit vector along the flank of the cone
+        var cone_x = radius / flank_len; 
+        var cone_y = -height / flank_len;
+        
+        // Cone Top Normal
+        for(var i=1;i<=360;++i)
+        {
+            var rad = DegreeToRadian(i);
+            var prevRad = DegreeToRadian(i-1);
+
+            // Top
+            normals.push(0.0); normals.push(1.0); normals.push(0.0);
+            normals.push(0.0); normals.push(1.0); normals.push(0.0);
+            normals.push(0.0); normals.push(1.0); normals.push(0.0);
+
+            // Mid
+            normals.push(Math.cos(prevRad));    normals.push(0.0);    normals.push(Math.sin(prevRad));
+            normals.push(Math.cos(rad));        normals.push(0.0);    normals.push(Math.sin(rad));
+            normals.push(Math.cos(prevRad));    normals.push(0.0);    normals.push(Math.sin(prevRad));
+    
+            normals.push(Math.cos(prevRad));    normals.push(0.0);    normals.push(Math.sin(prevRad));
+            normals.push(Math.cos(rad));        normals.push(0.0);    normals.push(Math.sin(rad));
+            normals.push(Math.cos(rad));        normals.push(0.0);    normals.push(Math.sin(rad));
+
+            // Bottom
+            normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+            normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+            normals.push(0.0); normals.push(-1.0); normals.push(0.0);
+        }
+
+        /////////////////////////////////////////////////////
+
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    }
+
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
+    
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
@@ -547,24 +726,35 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
 
     var halfHeight = height / 2;
     var vertices = [];
+    var normals = [];
 
     vertices.push(0.0); vertices.push(0.0); vertices.push(0.0);
+    normals.push(0.0); normals.push(1.0); normals.push(0.0);
 
     var slice = 9;
     for(var j=-slice;j<=slice;++j)
     {
-        var isUpperSphere = (j >= 0);
+        var isUpperSphere = (j > 0);
+        var isLowerSphere = (j < 0);
 
         for(var i=0;i<=36;++i)
         {
             var x = Math.cos(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
             var y = Math.sin(DegreeToRadian(j * 10)) * radius;
             var z = Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
+            var yExt = 0.0;
             if (isUpperSphere)
-                y += halfHeight;
+                yExt = halfHeight;
+            if (isLowerSphere)
+                yExt = -halfHeight;
+            vertices.push(x); vertices.push(y+yExt); vertices.push(z);
+
+            var normal = null;
+            if (Math.abs(j) < 1)
+                normal = CreateVec3(x, 0.0, z).GetNormalize();
             else
-                y -= halfHeight;
-            vertices.push(x); vertices.push(y); vertices.push(z);
+                normal = CreateVec3(x, y, z).GetNormalize();
+            normals.push(normal.x); normals.push(normal.y); normals.push(normal.z);
         }
     }
 
@@ -577,7 +767,7 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
         attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
 
     if (attribDesc.normal)
-        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
     var faces = [];
     var iCount = 0;
@@ -865,4 +1055,35 @@ var CreateBillboardQuadTexture = function(gl, TargetObjectArray, pos, size, scal
         }
     }
     return quad;
+}
+
+var CreateAmbientLight = function(ambientColor, ambientIntensity)
+{
+    return { ambientColor:ambientColor, ambientIntensity:ambientIntensity };
+}
+
+var CreateDirectionalLight = function(gl, direction, diffuseLightIntensity, specularLightIntensity, specularColor, specularPow, debugObjectDesc)
+{
+    direction = direction.GetNormalize();
+
+    var DirectionalLight = {};
+    if (debugObjectDesc.debugObject)
+    {
+        var billboardObject = CreateBillboardQuadTexture(gl, StaticObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        billboardObject.camera = debugObjectDesc.targetCamera;
+
+        var segment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
+            , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
+        segment.pos = debugObjectDesc.pos.CloneVec3();
+
+        var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
+        DirectionalLight.__proto__ = newStaticObject;
+    }
+
+    DirectionalLight.direction = direction.CloneVec3().GetNormalize();
+    DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
+    DirectionalLight.specularLightIntensity = specularLightIntensity;
+    DirectionalLight.specularColor = specularColor;
+    DirectionalLight.specularPow = specularPow;
+    return DirectionalLight;
 }

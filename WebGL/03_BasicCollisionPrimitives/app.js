@@ -74,6 +74,9 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
 
         var eyeLoc = gl.getUniformLocation(this.program, 'Eye');
         gl.uniform3fv(eyeLoc, [camera.pos.x, camera.pos.y, camera.pos.z]);
+
+        var collidedLoc = gl.getUniformLocation(this.program, 'Collided');
+        gl.uniform1i(collidedLoc, this.collided);
     }
 
     var setRenderProperty = function()
@@ -170,7 +173,8 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
     var scale = CreateVec3(1.0, 1.0, 1.0);
     return {gl:gl, vbo:vbo, ebo:ebo, program:program, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
-        , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray};
+        , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
+        , collided:false};
 }
 
 // Framebuffer
@@ -293,6 +297,7 @@ jWebGL.prototype.Init = function()
     var sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(50.0, 0.0, 30.0), 15, OneVec3, GetAttribDesc(CreateVec4(0.8, 0.1, 0.3, 1.0), true, false, false));
     var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false));
     var cone = CreateCone(gl, StaticObjectArray, CreateVec3(80.0, 0.0, 30.0), 20, 10, OneVec3, GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false));
+    var cylinder = CreateCylinder(gl, StaticObjectArray, CreateVec3(50.0, 0.0, 60.0), 20, 10, OneVec3, GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
     var billboardQuad = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 60.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
         , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false));
     billboardQuad.camera = mainCamera;
@@ -314,44 +319,13 @@ jWebGL.prototype.Init = function()
         gl.generateMipmap(gl.TEXTURE_2D);
     });
 
-    var CreateAmbientLight = function(ambientColor, ambientIntensity)
-    {
-        return { ambientColor:ambientColor, ambientIntensity:ambientIntensity };
-    }
-
-    var CreateDirectionalLight = function(gl, direction, diffuseLightIntensity, specularLightIntensity, specularColor, specularPow, debugObjectDesc)
-    {
-        direction = direction.GetNormalize();
-
-        var DirectionalLight = {};
-        if (debugObjectDesc.debugObject)
-        {
-            var billboardObject = CreateBillboardQuadTexture(gl, StaticObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, texture);
-            billboardObject.camera = mainCamera;
-
-            var segment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
-                , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
-            segment.pos = debugObjectDesc.pos.CloneVec3();
-
-            var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
-            DirectionalLight.__proto__ = newStaticObject;
-        }
-
-        DirectionalLight.direction = direction.CloneVec3().GetNormalize();
-        DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
-        DirectionalLight.specularLightIntensity = specularLightIntensity;
-        DirectionalLight.specularColor = specularColor;
-        DirectionalLight.specularPow = specularPow;
-        return DirectionalLight;
-    }
-
     var diffuseLightIntensity = CreateVec3(0.5, 0.5, 0.5);
     var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
     var specularColor = CreateVec3(0.9, 0.7, 0.8);
     var specularPow = 64.0;
 
     var dirLight = CreateDirectionalLight(gl, CreateVec3(-1.0, -1.0, -1.0), diffuseLightIntensity, specularLightIntensity, specularColor, specularPow
-        , {debugObject:true, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0});
+        , {debugObject:true, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.3, 0.3, 0.3));
     mainCamera.lights.push(dirLight);
@@ -373,7 +347,7 @@ jWebGL.prototype.Init = function()
         }
 
         capsule.rot.z += 0.03;
-        cube.rot.x += 0.02;
+        cube.rot.z += 0.02;
         
         quad.rot.x = -0.65;
         quad.rot.y += 0.04;
@@ -382,6 +356,7 @@ jWebGL.prototype.Init = function()
         tri.rot.y += 0.03;
 
         cone.rot.x += 0.02;
+        cylinder.rot.x += 0.015;
 
         processKeyEvents();
         main.Update();
