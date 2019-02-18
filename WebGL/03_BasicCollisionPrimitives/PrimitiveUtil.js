@@ -993,10 +993,8 @@ var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, attr
             var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
             var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
 
-            var degreeOf90 = DegreeToRadian(90);        // Offset rotation for this billboard to face the camera.
-
             this.rot.y = eularAngleOfCameraDir.y;
-            this.rot.z = eularAngleOfCameraDir.z - degreeOf90;
+            this.rot.z = eularAngleOfCameraDir.z;
         }
         else
         {
@@ -1051,10 +1049,8 @@ var CreateBillboardQuadTexture = function(gl, TargetObjectArray, pos, size, scal
             var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
             var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
 
-            var degreeOf90 = DegreeToRadian(90);                     // Offset rotation for this billboard to face the camera.
-
             this.rot.y = eularAngleOfCameraDir.y;
-            this.rot.z = eularAngleOfCameraDir.z - degreeOf90;
+            this.rot.z = eularAngleOfCameraDir.z;
         }
         else
         {
