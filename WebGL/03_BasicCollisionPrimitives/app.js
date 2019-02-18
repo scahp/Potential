@@ -349,10 +349,10 @@ jWebGL.prototype.Init = function()
         capsule.rot.z += 0.03;
         cube.rot.z += 0.02;
         
-        quad.rot.x = -0.65;
+        quad.rot.x = -0.9;
         quad.rot.y += 0.04;
 
-        tri.rot.x = -0.6;
+        tri.rot.x = -0.9;
         tri.rot.y += 0.03;
 
         cone.rot.x += 0.02;

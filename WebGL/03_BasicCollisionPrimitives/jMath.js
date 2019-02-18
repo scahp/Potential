@@ -505,6 +505,6 @@ var GetEulerAngleFromVec3 = function(direction)
 {
     return CreateVec3(0.0
         , Math.atan2(-direction.z, direction.x)     // The z is pointing reverse in right hand coordinate.
-        , Math.asin(direction.y) - DegreeToRadian(90)   // Supposed default direction is (0, 1, 0), so adjust it to be (1, 0, 0).
+        , Math.asin(direction.y)
     );
 }

@@ -212,10 +212,10 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),  0.0,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),  0.0,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y), 0.0,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y), 0.0,
+        offset.x + (-halfSize.x),   0.0,   offset.y + (halfSize.y), 
+        offset.x + (halfSize.x),    0.0,   offset.y + (halfSize.y), 
+        offset.x + (-halfSize.x),   0.0,   offset.y + (-halfSize.y),
+        offset.x + (halfSize.x),    0.0,   offset.y + (-halfSize.y),
     ];
 
     var elementCount = vertices.length / 3;
@@ -231,7 +231,7 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
         var normals = [];
         for(var i=0;i<elementCount;++i)
         {
-            normals.push(0.0); normals.push(0.0); normals.push(1.0);
+            normals.push(0.0); normals.push(1.0); normals.push(0.0);
         }
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
@@ -252,9 +252,9 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
     var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),   offset.y + (halfSize.y),  0.0,
-        offset.x + (halfSize.x),    offset.y + (halfSize.y),  0.0,
-        offset.x + (-halfSize.x),   offset.y + (-halfSize.y), 0.0,
+        offset.x + (-halfSize.x),   0.0,   offset.y + (halfSize.y), 
+        offset.x + (halfSize.x),    0.0,   offset.y + (halfSize.y), 
+        offset.x + (-halfSize.x),   0.0,   offset.y + (-halfSize.y),
     ];
 
     var elementCount = vertices.length / 3;
@@ -270,7 +270,7 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
         var normals = [];
         for(var i=0;i<elementCount;++i)
         {
-            normals.push(0.0); normals.push(0.0); normals.push(1.0);
+            normals.push(0.0); normals.push(1.0); normals.push(0.0);
         }
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
@@ -393,7 +393,14 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
         attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
 
     if (attribDesc.normal)
-        attribs.push(createAttribParameter('Normal', 3, GenerateNormal(vertices), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    {
+        var normals = [];
+        for(var i=0;i<vertices.length;++i)
+        {
+            normals.push(0.0); normals.push(1.0); normals.push(0.0);
+        }
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    }
 
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
@@ -988,8 +995,8 @@ var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, attr
 
             var degreeOf90 = DegreeToRadian(90);        // Offset rotation for this billboard to face the camera.
 
-            this.rot.y = eularAngleOfCameraDir.y + degreeOf90;
-            this.rot.x = -(eularAngleOfCameraDir.z + degreeOf90);       // Because Quad is directing to Z+ Axis. X axis rotation is needed to lie this billboard on xz plane.
+            this.rot.y = eularAngleOfCameraDir.y;
+            this.rot.z = eularAngleOfCameraDir.z - degreeOf90;
         }
         else
         {
@@ -1005,10 +1012,10 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
     var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),  0.0,
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),  0.0,
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y), 0.0,
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y), 0.0,
+        offset.x + (-halfSize.x),  0.0,  offset.y + (halfSize.y),  
+        offset.x + (halfSize.x),   0.0,  offset.y + (halfSize.y),  
+        offset.x + (-halfSize.x),  0.0,  offset.y + (-halfSize.y), 
+        offset.x + (halfSize.x),   0.0,  offset.y + (-halfSize.y), 
     ];
 
     var elementCount = vertices.length / 3;
@@ -1044,10 +1051,10 @@ var CreateBillboardQuadTexture = function(gl, TargetObjectArray, pos, size, scal
             var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
             var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
 
-            var degreeOf90 = DegreeToRadian(90);        // Offset rotation for this billboard to face the camera.
+            var degreeOf90 = DegreeToRadian(90);                     // Offset rotation for this billboard to face the camera.
 
-            this.rot.y = eularAngleOfCameraDir.y + degreeOf90;
-            this.rot.x = -(eularAngleOfCameraDir.z + degreeOf90);       // Because Quad is directing to Z+ Axis. X axis rotation is needed to lie this billboard on xz plane.
+            this.rot.y = eularAngleOfCameraDir.y;
+            this.rot.z = eularAngleOfCameraDir.z - degreeOf90;
         }
         else
         {
