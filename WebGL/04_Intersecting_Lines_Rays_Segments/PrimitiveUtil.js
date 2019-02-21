@@ -241,6 +241,16 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    newStaticObject.plane = null;
+    newStaticObject.setPlane = function(plane)
+    {
+        if (!plane)
+            return;
+        
+        this.plane = plane.ClonePlane();
+        this.rot = GetEulerAngleFromVec3(plane.n);
+        this.pos = plane.n.CloneVec3().Mul(plane.d);
+    };
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
     return newStaticObject;

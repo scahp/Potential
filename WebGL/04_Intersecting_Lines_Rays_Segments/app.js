@@ -5,14 +5,14 @@ var TransparentStaticObjectArray = [];
 var UIStaticObject = [];
 var arrowSegment = null;
 var sphere = null;
-var plane = null;
 var quad = null;
+var quadRot = CreateVec3(0.0, 0.0, 0.0);
 
 var UpdateCollision = function()
 {
-    if (arrowSegment && plane)
+    if (arrowSegment && quad)
     {
-        var result = IntersectSegmentPlane(arrowSegment.segment.start.CloneVec3(), arrowSegment.segment.getCurrentEnd(), plane);
+        var result = IntersectSegmentPlane(arrowSegment.segment.start.CloneVec3(), arrowSegment.segment.getCurrentEnd(), quad.plane);
         if (result && sphere)
         {
             sphere.pos = result.point.CloneVec3();
@@ -312,8 +312,12 @@ jWebGL.prototype.Init = function()
     quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
     //quad.rot.x = DegreeToRadian(-90);
 
-    plane = CreatePlane(0.0, 1.0, 0.0, 0.0);
+    var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
+    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, 0.0));
+
     sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false));
+
+    UpdateCollision();
 
     // Create a texture.
     var texture = gl.createTexture();

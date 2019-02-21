@@ -55,13 +55,12 @@ var OnSliderChangeTime = function(e)
 var OnSliderChangePlaneA = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (plane)
+    if (quad && quad.plane)
     {
-        quad.rot.x = e.target.valueAsNumber;
-        var result = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quad.rot.x, quad.rot.y, quad.rot.z));
-        plane.n = result.GetNormalize();
+        quadRot.x = e.target.valueAsNumber;
+        quad.plane.n = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quadRot.x, quadRot.y, quadRot.z)).GetNormalize();
 
-        quad.pos = plane.n.CloneVec3().Mul(plane.d);
+        quad.setPlane(quad.plane);
 
         UpdateCollision();
     }
@@ -70,13 +69,12 @@ var OnSliderChangePlaneA = function(e)
 var OnSliderChangePlaneB = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (plane)
+    if (quad && quad.plane)
     {
-        quad.rot.y = e.target.valueAsNumber;
-        var result = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quad.rot.x, quad.rot.y, quad.rot.z));
-        plane.n = result.GetNormalize();
-
-        quad.pos = plane.n.CloneVec3().Mul(plane.d);
+        quadRot.y = e.target.valueAsNumber;
+        quad.plane.n = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quadRot.x, quadRot.y, quadRot.z)).GetNormalize();
+        
+        quad.setPlane(quad.plane);
 
         UpdateCollision();
     }
@@ -85,13 +83,12 @@ var OnSliderChangePlaneB = function(e)
 var OnSliderChangePlaneC = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (plane)
+    if (quad && quad.plane)
     {
-        quad.rot.z = e.target.valueAsNumber;
-        var result = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quad.rot.x, quad.rot.y, quad.rot.z));
-        plane.n = result.GetNormalize();
-
-        quad.pos = plane.n.CloneVec3().Mul(plane.d);
+        quadRot.z = e.target.valueAsNumber;
+        quad.plane.n = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quadRot.x, quadRot.y, quadRot.z)).GetNormalize();
+        
+        quad.setPlane(quad.plane);
 
         UpdateCollision();
     }
@@ -101,8 +98,8 @@ var OnSliderChangePlaneD = function(e)
 {
     console.log(e.target.valueAsNumber);   
 
-    plane.d = e.target.valueAsNumber;
-    quad.pos = plane.n.CloneVec3().Mul(plane.d);
+    quad.plane.d = e.target.valueAsNumber;
+    quad.setPlane(quad.plane);
 
     UpdateCollision();
 }

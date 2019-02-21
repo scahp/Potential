@@ -447,7 +447,7 @@ var CreatePlane = function(a, b, c, d)
 
 jPlane.prototype.ClonePlane = function()
 {
-    return CreatePlane(this.a, this.b, this.c, this.d);
+    return CreatePlane(this.n.x, this.n.y, this.n.z, this.d);
 }
 
 
