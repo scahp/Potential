@@ -1,3 +1,5 @@
+#include "common.glsl"
+
 precision mediump float;
 
 attribute vec3 Pos;
@@ -15,7 +17,7 @@ varying vec3 Normal_;
 void main()
 {
     Color_ = Color;
-    Normal_ = (M * vec4(Normal, 0.0)).xyz;
-    Pos_ = (M * vec4(Pos, 1.0)).xyz;
+    Normal_ = TransformNormal(M, Normal);
+    Pos_ = TransformPos(M, Pos);
     gl_Position = MVP * vec4(Pos, 1.0);
 }

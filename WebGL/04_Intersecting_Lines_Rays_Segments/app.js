@@ -142,10 +142,10 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
     
         if (camera.ambient)
         {
-            var ambientColorLoc = gl.getUniformLocation(this.program, 'AmbientColor');
+            var ambientColorLoc = gl.getUniformLocation(this.program, 'AmbientLight.Color');
             gl.uniform3fv(ambientColorLoc, [camera.ambient.ambientColor.x, camera.ambient.ambientColor.y, camera.ambient.ambientColor.z]);
 
-            var AmbientLightIntensityLoc = gl.getUniformLocation(this.program, 'AmbientLightIntensity');
+            var AmbientLightIntensityLoc = gl.getUniformLocation(this.program, 'AmbientLight.Intensity');
             gl.uniform3fv(AmbientLightIntensityLoc, [camera.ambient.ambientIntensity.x, camera.ambient.ambientIntensity.y, camera.ambient.ambientIntensity.z]);
         }
 
@@ -158,16 +158,19 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
                 var lightDirectionLoc = gl.getUniformLocation(this.program, 'LightDirection');
                 gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
 
-                var diffuseLightIntensityLoc = gl.getUniformLocation(this.program, 'DiffuseLightIntensity');
+                var diffuseColorLoc = gl.getUniformLocation(this.program, 'DirectionalLight.DiffuseColor');
+                gl.uniform3fv(diffuseColorLoc, [light.diffuseColor.x, light.diffuseColor.y, light.diffuseColor.z]);
+
+                var diffuseLightIntensityLoc = gl.getUniformLocation(this.program, 'DirectionalLight.DiffuseLightIntensity');
                 gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
 
-                var specularLightIntensityLoc = gl.getUniformLocation(this.program, 'SpecularLightIntensity');
+                var specularLightIntensityLoc = gl.getUniformLocation(this.program, 'DirectionalLight.SpecularLightIntensity');
                 gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
 
-                var specularColorLoc = gl.getUniformLocation(this.program, 'SpecularColor');
+                var specularColorLoc = gl.getUniformLocation(this.program, 'DirectionalLight.SpecularColor');
                 gl.uniform3fv(specularColorLoc, [light.specularColor.x, light.specularColor.y, light.specularColor.z]);
 
-                var specularPowLoc = gl.getUniformLocation(this.program, 'SpecularPow');
+                var specularPowLoc = gl.getUniformLocation(this.program, 'DirectionalLight.SpecularPow');
                 gl.uniform1f(specularPowLoc, light.specularPow);
             }
         }
@@ -336,12 +339,13 @@ jWebGL.prototype.Init = function()
         gl.generateMipmap(gl.TEXTURE_2D);
     });
 
+    var diffuseColor = CreateVec3(1.0, 1.0, 1.0);
     var diffuseLightIntensity = CreateVec3(1.0, 1.0, 1.0);
     var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
     var specularColor = CreateVec3(0.9, 0.7, 0.8);
     var specularPow = 64.0;
 
-    var dirLight = CreateDirectionalLight(gl, CreateVec3(-1.0, -1.0, -1.0), diffuseLightIntensity, specularLightIntensity, specularColor, specularPow
+    var dirLight = CreateDirectionalLight(gl, CreateVec3(-1.0, -1.0, -1.0), diffuseColor, diffuseLightIntensity, specularLightIntensity, specularColor, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.3, 0.3, 0.3));

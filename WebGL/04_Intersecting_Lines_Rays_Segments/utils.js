@@ -56,19 +56,30 @@ function LoadTextResource(url, asynchronous, callback)
     xmlHttp.send();
 }
 
+var commonCode = null;
 function CreateProgram(gl, vsFilename, fgFilename)
 {
     var vsCode;
     var fsCode;
 
+    if (!commonCode)
+    {
+        LoadTextResource("shaders/common.glsl", false, function(result)
+        {
+            commonCode = result;
+        });
+    }
+
     LoadTextResource(vsFilename, false, function(result)
     {
         vsCode = result;
+        vsCode = vsCode.replace('#include "common.glsl"', commonCode);
     });
 
     LoadTextResource(fgFilename, false, function(result)
     {
         fsCode = result;
+        fsCode = fsCode.replace('#include "common.glsl"', commonCode);
     });
 
     if (!vsCode || !fsCode)
