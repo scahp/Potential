@@ -1075,7 +1075,7 @@ var CreateAmbientLight = function(ambientColor, ambientIntensity)
     return { ambientColor:ambientColor, ambientIntensity:ambientIntensity };
 }
 
-var CreateDirectionalLight = function(gl, direction, diffuseColor, diffuseLightIntensity, specularLightIntensity, specularColor, specularPow, debugObjectDesc)
+var CreateDirectionalLight = function(gl, direction, lightColor, diffuseLightIntensity, specularLightIntensity, specularPow, debugObjectDesc)
 {
     direction = direction.GetNormalize();
 
@@ -1094,10 +1094,9 @@ var CreateDirectionalLight = function(gl, direction, diffuseColor, diffuseLightI
     }
 
     DirectionalLight.direction = direction.CloneVec3().GetNormalize();
-    DirectionalLight.diffuseColor = diffuseColor;
+    DirectionalLight.lightColor = lightColor;
     DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
     DirectionalLight.specularLightIntensity = specularLightIntensity;
-    DirectionalLight.specularColor = specularColor;
     DirectionalLight.specularPow = specularPow;
     return DirectionalLight;
 }

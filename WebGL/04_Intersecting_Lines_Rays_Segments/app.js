@@ -158,17 +158,14 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
                 var lightDirectionLoc = gl.getUniformLocation(this.program, 'LightDirection');
                 gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
 
-                var diffuseColorLoc = gl.getUniformLocation(this.program, 'DirectionalLight.DiffuseColor');
-                gl.uniform3fv(diffuseColorLoc, [light.diffuseColor.x, light.diffuseColor.y, light.diffuseColor.z]);
+                var lightColorLoc = gl.getUniformLocation(this.program, 'DirectionalLight.Color');
+                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
 
                 var diffuseLightIntensityLoc = gl.getUniformLocation(this.program, 'DirectionalLight.DiffuseLightIntensity');
                 gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
 
                 var specularLightIntensityLoc = gl.getUniformLocation(this.program, 'DirectionalLight.SpecularLightIntensity');
                 gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
-
-                var specularColorLoc = gl.getUniformLocation(this.program, 'DirectionalLight.SpecularColor');
-                gl.uniform3fv(specularColorLoc, [light.specularColor.x, light.specularColor.y, light.specularColor.z]);
 
                 var specularPowLoc = gl.getUniformLocation(this.program, 'DirectionalLight.SpecularPow');
                 gl.uniform1f(specularPowLoc, light.specularPow);
@@ -298,7 +295,7 @@ jWebGL.prototype.Init = function()
     }
 
     // Create Cameras
-    var mainCamera = CreateCamera(gl, CreateVec3(100.0, 80.0, 70.0), CreateVec3(0.0, 0.0, 0.0), DegreeToRadian(45), 1.0, 500.0, false);
+    var mainCamera = CreateCamera(gl, CreateVec3(90, 30, 30), CreateVec3(0.0, 30.0, 20.0), DegreeToRadian(45), 1.0, 500.0, false);
     CreateCamera(gl, CreateVec3(0, 50, 0), CreateVec3(0.0, 50.0, -1.0), DegreeToRadian(40), 5.0, 200.0, false);
     updateCamera(gl, 0);
 
@@ -318,7 +315,7 @@ jWebGL.prototype.Init = function()
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, 0.0));
 
-    sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false));
+    sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), true, false, false));
 
     UpdateCollision();
 
@@ -339,13 +336,12 @@ jWebGL.prototype.Init = function()
         gl.generateMipmap(gl.TEXTURE_2D);
     });
 
-    var diffuseColor = CreateVec3(1.0, 1.0, 1.0);
+    var lightColor = CreateVec3(1.0, 1.0, 1.0);
     var diffuseLightIntensity = CreateVec3(1.0, 1.0, 1.0);
     var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
-    var specularColor = CreateVec3(0.9, 0.7, 0.8);
     var specularPow = 64.0;
 
-    var dirLight = CreateDirectionalLight(gl, CreateVec3(-1.0, -1.0, -1.0), diffuseColor, diffuseLightIntensity, specularLightIntensity, specularColor, specularPow
+    var dirLight = CreateDirectionalLight(gl, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.3, 0.3, 0.3));

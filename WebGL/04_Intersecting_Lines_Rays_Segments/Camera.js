@@ -120,11 +120,13 @@ var updateCamera = function(gl, cameraIndex)
 
 var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStaticObject)
 {
-    var t1 = pos.CloneVec3().Sub(target);
+    var t1 = pos.CloneVec3().Sub(target).GetNormalize();
     var t2_right = new jVec3();
     CrossProduct3(t2_right, CreateVec3(0.0, 1.0, 0.0), t1);
+    t2_right = t2_right.GetNormalize();
     var t3_up = new jVec3();
     CrossProduct3(t3_up, t1, t2_right);
+    t3_up = t3_up.GetNormalize()
 
     var up = t3_up.CloneVec3().Add(pos);
     var matView = CreateViewMatrix(pos, target, up);
