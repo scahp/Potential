@@ -1,14 +1,15 @@
 <h4>WebGL Default Template</h4>
-<ul>
+<ol>
   <li><a href="https://scahp.github.io/WebGL/01_BasicQuad/index.html">Basic Quad</a></li>
   <li><a href="https://scahp.github.io/WebGL/02_FrameBuffer/index.html">FrameBuffer</a></li>
   <li><a href="https://scahp.github.io/WebGL/03_BasicCollisionPrimitives/index.html">BasicCollisionPrimitives</a></li>
-</ul>
+  <li><a href="https://scahp.github.io/WebGL/05_PunctualLights/index.html">PunctualLights</a></li>  
+</ol>
 
 <h4>Realtime collision detection book's example</h4>
-<ul>
+<ol>
   <li><a href="https://scahp.github.io/WebGL/04_Intersecting_Lines_Rays_Segments/index.html">Intersecting_Lines_Rays_Segments</a></li>
-</ul>
+</ol>
 
 <br>
 <br>
