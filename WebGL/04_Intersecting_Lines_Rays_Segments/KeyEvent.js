@@ -52,7 +52,7 @@ var OnSliderChangeTime = function(e)
     }
 }
 
-var OnSliderChangePlaneA = function(e)
+var OnSliderChangePlaneRotationX = function(e)
 {
     console.log(e.target.valueAsNumber);
     if (quad && quad.plane)
@@ -66,7 +66,7 @@ var OnSliderChangePlaneA = function(e)
     }
 }
 
-var OnSliderChangePlaneB = function(e)
+var OnSliderChangePlaneRotationY = function(e)
 {
     console.log(e.target.valueAsNumber);
     if (quad && quad.plane)
@@ -80,7 +80,7 @@ var OnSliderChangePlaneB = function(e)
     }
 }
 
-var OnSliderChangePlaneC = function(e)
+var OnSliderChangePlaneRotationZ = function(e)
 {
     console.log(e.target.valueAsNumber);
     if (quad && quad.plane)

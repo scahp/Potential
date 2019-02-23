@@ -313,7 +313,7 @@ jWebGL.prototype.Init = function()
     //quad.rot.x = DegreeToRadian(-90);
 
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
-    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, 0.0));
+    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, document.getElementById("PlaneD").valueAsNumber));
 
     sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), true, false, false));
 

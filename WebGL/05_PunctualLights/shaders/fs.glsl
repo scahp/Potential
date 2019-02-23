@@ -1,6 +1,6 @@
 #include "common.glsl"
 
-precision mediump float;
+precision highp float;
 
 uniform vec3 Eye;
 
