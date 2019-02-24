@@ -40,68 +40,11 @@ var OnMouseButtonDown = function(e)
     Clicks[0] = 1;
 }
 
-var OnSliderChangeTime = function(e)
+var OnSliderChangePointLightX = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (arrowSegment.segment)
-    {
-        var t = e.target.valueAsNumber;
-        UpdateSegmentTime(arrowSegment.segment, t);
-        
-        UpdateCollision();
-    }
-}
-
-var OnSliderChangePlaneRotationX = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (quad && quad.plane)
-    {
-        quadRot.x = e.target.valueAsNumber;
-        quad.plane.n = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quadRot.x, quadRot.y, quadRot.z)).GetNormalize();
-
-        quad.setPlane(quad.plane);
-
-        UpdateCollision();
-    }
-}
-
-var OnSliderChangePlaneRotationY = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (quad && quad.plane)
-    {
-        quadRot.y = e.target.valueAsNumber;
-        quad.plane.n = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quadRot.x, quadRot.y, quadRot.z)).GetNormalize();
-        
-        quad.setPlane(quad.plane);
-
-        UpdateCollision();
-    }
-}
-
-var OnSliderChangePlaneRotationZ = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (quad && quad.plane)
-    {
-        quadRot.z = e.target.valueAsNumber;
-        quad.plane.n = CreateVec3(0.0, 1.0, 0.0).Transform(CreateRotMat4(quadRot.x, quadRot.y, quadRot.z)).GetNormalize();
-        
-        quad.setPlane(quad.plane);
-
-        UpdateCollision();
-    }
-}
-
-var OnSliderChangePlaneD = function(e)
-{
-    console.log(e.target.valueAsNumber);   
-
-    quad.plane.d = e.target.valueAsNumber;
-    quad.setPlane(quad.plane);
-
-    UpdateCollision();
+    if (pointLight)
+        pointLight.pos.x = e.target.valueAsNumber;
 }
 
 var OnSliderChangePointLightY = function(e)
@@ -109,4 +52,74 @@ var OnSliderChangePointLightY = function(e)
     console.log(e.target.valueAsNumber);
     if (pointLight)
         pointLight.pos.y = e.target.valueAsNumber;
+}
+
+var OnSliderChangePointLightZ = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (pointLight)
+        pointLight.pos.z = e.target.valueAsNumber;
+}
+
+var OnSliderChangePointLightRadius = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (pointLight)
+        pointLight.maxDistance = e.target.valueAsNumber;
+}
+
+var OnSliderChangeSpotLightX = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (spotLight)
+        spotLight.pos.x = e.target.valueAsNumber;
+}
+
+var OnSliderChangeSpotLightY = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (spotLight)
+        spotLight.pos.y = e.target.valueAsNumber;
+}
+
+var OnSliderChangeSpotLightZ = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (spotLight)
+        spotLight.pos.z = e.target.valueAsNumber;
+}
+
+var OnSliderChangeSpotLightUmbraAngle = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (spotLight)
+    {
+        spotLight.umbraRadian = e.target.valueAsNumber;
+        if (spotLight.penumbraRadian > spotLight.umbraRadian)
+        {
+            spotLight.penumbraRadian = spotLight.umbraRadian;
+            document.getElementById('SpotLightPenumbraAngle').value = spotLight.penumbraRadian;
+        }
+    }
+}
+
+var OnSliderChangeSpotLightPenumbraAngle = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (spotLight)
+    {
+        spotLight.penumbraRadian = e.target.valueAsNumber;
+        if (spotLight.penumbraRadian > spotLight.umbraRadian)
+        {
+            spotLight.umbraRadian = spotLight.penumbraRadian;
+            document.getElementById('SpotLightUmbraAngle').value = spotLight.umbraRadian;
+        }
+    }
+}
+
+var OnSliderChangeSpotLightDistance = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (spotLight)
+        spotLight.maxDistance = e.target.valueAsNumber;
 }

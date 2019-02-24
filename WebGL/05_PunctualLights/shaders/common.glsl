@@ -38,12 +38,6 @@ struct jSpotLight
     float UmbraRadian;
 };
 
-struct jMaterialColor
-{
-    vec3 Diffuse;
-    vec3 Specular;
-};
-
 vec3 TransformPos(mat4 m, vec3 v)
 {
     return (m * vec4(v, 1.0)).xyz;
@@ -68,7 +62,8 @@ float DistanceAttenuation(float distance, float maxDistance)
 
 float DiretionalFalloff(float lightRadian, float penumbraRadian, float umbraRadian)
 {
-    return clamp((cos(lightRadian) - cos(umbraRadian)) / (cos(penumbraRadian) - cos(umbraRadian)), 0.0, 1.0);
+    float t = clamp((cos(lightRadian) - cos(umbraRadian)) / (cos(penumbraRadian) - cos(umbraRadian)), 0.0, 1.0);
+    return t * t;
 }
 
 vec3 GetAmbientLight(jAmbientLight light)
@@ -76,52 +71,52 @@ vec3 GetAmbientLight(jAmbientLight light)
     return light.Color * light.Intensity;
 }
 
-vec3 GetDirectionalLightDiffuse(jDirectionalLight light, jMaterialColor materialColor, vec3 normal)
+vec3 GetDirectionalLightDiffuse(jDirectionalLight light, vec3 normal)
 {
-    return light.Color * max(dot(-light.LightDirection, normal), 0.0) * light.DiffuseLightIntensity * materialColor.Diffuse;
+    return light.Color * max(dot(-light.LightDirection, normal), 0.0) * light.DiffuseLightIntensity;
 }
 
-vec3 GetDirectionalLightSpecular(jDirectionalLight light, jMaterialColor materialColor, vec3 reflectLightDir, vec3 viewDir)
+vec3 GetDirectionalLightSpecular(jDirectionalLight light, vec3 reflectLightDir, vec3 viewDir)
 {
-    return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity * materialColor.Specular;
+    return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity;
 }
 
-vec3 GetDirectionalLight(jDirectionalLight light, jMaterialColor materialColor, vec3 normal, vec3 reflectLightDir, vec3 viewDir)
+vec3 GetDirectionalLight(jDirectionalLight light, vec3 normal, vec3 reflectLightDir, vec3 viewDir)
 {
-    return (GetDirectionalLightDiffuse(light, materialColor, normal) + GetDirectionalLightSpecular(light, materialColor, reflectLightDir, viewDir));
+    return (GetDirectionalLightDiffuse(light, normal) + GetDirectionalLightSpecular(light, reflectLightDir, viewDir));
 }
 
-vec3 GetPointLightDiffuse(jPointLight light, jMaterialColor materialColor, vec3 normal, vec3 lightDir)
+vec3 GetPointLightDiffuse(jPointLight light, vec3 normal, vec3 lightDir)
 {
-    return light.Color * max(dot(lightDir, normal), 0.0) * light.DiffuseLightIntensity * materialColor.Diffuse;
+    return light.Color * max(dot(lightDir, normal), 0.0) * light.DiffuseLightIntensity;
 }
 
-vec3 GetPointLightSpecular(jPointLight light, jMaterialColor materialColor, vec3 reflectLightDir, vec3 viewDir)
+vec3 GetPointLightSpecular(jPointLight light, vec3 reflectLightDir, vec3 viewDir)
 {
-    return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity * materialColor.Specular;
+    return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity;
 }
 
-vec3 GetPointLight(jPointLight light, jMaterialColor materialColor, vec3 normal, vec3 lightDir, vec3 reflectLightDir, vec3 viewDir, float distance)
+vec3 GetPointLight(jPointLight light, vec3 normal, vec3 lightDir, vec3 reflectLightDir, vec3 viewDir, float distance)
 {
-    return (GetPointLightDiffuse(light, materialColor, normal, lightDir) + GetPointLightSpecular(light, materialColor, reflectLightDir, viewDir)) * DistanceAttenuation(distance, light.MaxDistance);
+    return (GetPointLightDiffuse(light, normal, lightDir) + GetPointLightSpecular(light, reflectLightDir, viewDir)) * DistanceAttenuation(distance, light.MaxDistance);
 }
 
-vec3 GetSpotLightDiffuse(jSpotLight light, jMaterialColor materialColor, vec3 normal, vec3 lightDir)
+vec3 GetSpotLightDiffuse(jSpotLight light, vec3 normal, vec3 lightDir)
 {
-    return light.Color * max(dot(lightDir, normal), 0.0) * light.DiffuseLightIntensity * materialColor.Diffuse;
+    return light.Color * max(dot(lightDir, normal), 0.0) * light.DiffuseLightIntensity;
 }
 
-vec3 GetSpotLightSpecular(jSpotLight light, jMaterialColor materialColor, vec3 reflectLightDir, vec3 viewDir)
+vec3 GetSpotLightSpecular(jSpotLight light, vec3 reflectLightDir, vec3 viewDir)
 {
-    return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity * materialColor.Specular;
+    return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity;
 }
 
-vec3 GetSpotLight(jSpotLight light, jMaterialColor materialColor, vec3 normal, vec3 lightDir, vec3 reflectLightDir, vec3 viewDir, float distance)
+vec3 GetSpotLight(jSpotLight light, vec3 normal, vec3 lightDir, vec3 reflectLightDir, vec3 viewDir, float distance)
 {
     float lightRadian = acos(dot(lightDir, light.Direction));
 
-    return (GetSpotLightDiffuse(light, materialColor, normal, lightDir)
-     + GetSpotLightSpecular(light, materialColor, reflectLightDir, viewDir))
+    return (GetSpotLightDiffuse(light, normal, lightDir)
+     + GetSpotLightSpecular(light, reflectLightDir, viewDir))
       * DistanceAttenuation(distance, light.MaxDistance)
       * DiretionalFalloff(lightRadian, light.PenumbraRadian, light.UmbraRadian);
 }

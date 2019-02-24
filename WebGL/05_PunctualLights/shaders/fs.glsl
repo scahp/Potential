@@ -20,31 +20,28 @@ void main()
     vec3 normal = normalize(Normal_);
     vec3 viewDir = normalize(Eye - Pos_);
 
-    jMaterialColor materialColor;
-
-    materialColor.Diffuse = Color_.xyz;
-    if (Collided > 0)
-        materialColor.Diffuse = vec3(1.0, 1.0, 1.0);
-    materialColor.Specular = vec3(1.0, 1.0, 1.0);
+    vec3 diffuse = Color_.xyz;
+    if (Collided != 0)
+        diffuse = vec3(1.0, 1.0, 1.0);
 
     vec3 lightDir = normalize(-DirectionalLight.LightDirection);
     vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
 
     vec3 finalColor = vec3(0.0, 0.0, 0.0);
     finalColor += GetAmbientLight(AmbientLight);
-    finalColor += GetDirectionalLight(DirectionalLight, materialColor, normal, reflectLightDir, viewDir);
+    finalColor += GetDirectionalLight(DirectionalLight, normal, reflectLightDir, viewDir);
 
     vec3 pointLightDir = PointLight.LightPos - Pos_;
     float pointLightDistance = length(pointLightDir);
     pointLightDir = normalize(pointLightDir);
     vec3 pointLightReflectionLightDir = 2.0 * max(dot(pointLightDir, normal), 0.0) * normal - pointLightDir;
-    finalColor += GetPointLight(PointLight, materialColor, normal, pointLightDir, pointLightReflectionLightDir, viewDir, pointLightDistance);
+    finalColor += GetPointLight(PointLight, normal, pointLightDir, pointLightReflectionLightDir, viewDir, pointLightDistance);
 
     vec3 spotLightDir = SpotLight.LightPos - Pos_;
     float spotLightDistance = length(spotLightDir);
     spotLightDir = normalize(spotLightDir);
     vec3 spotLightReflectionLightDir = 2.0 * max(dot(spotLightDir, normal), 0.0) * normal - spotLightDir;
-    finalColor += GetSpotLight(SpotLight, materialColor, normal, spotLightDir, spotLightReflectionLightDir, viewDir, spotLightDistance);
+    finalColor += GetSpotLight(SpotLight, normal, spotLightDir, spotLightReflectionLightDir, viewDir, spotLightDistance);
 
-    gl_FragColor = vec4(finalColor, Color_.w);
+    gl_FragColor = vec4(finalColor * diffuse, Color_.w);
 }

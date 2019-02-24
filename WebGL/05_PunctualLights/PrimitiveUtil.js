@@ -3,9 +3,9 @@ var createAttribParameter = function(name, count, datas, bufferType, type, norma
     return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
-var GetAttribDesc = function(color, normal, uvs, ui)
+var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false)
 {
-    return {color:color, normal:normal, uvs:uvs, ui:ui};
+    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe};
 }
 
 var GetShaderFromAttribDesc = function(outShader, attribDesc)
@@ -295,20 +295,22 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
     return newStaticObject;
 }
 
-var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, attribDesc)
+var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, attribDesc)
 {
     var vertices = [];
     var offset = ZeroVec3;
 
     vertices.push(offset.x); vertices.push(offset.y); vertices.push(offset.z);
 
-    for(var j=-9;j<=9;++j)
+    var stepRadian = DegreeToRadian(360.0 / slice);
+    var halfSlice = slice / 2;
+    for(var j=-halfSlice;j<=halfSlice;++j)
     {
-        for(var i=0;i<=36;++i)
+        for(var i=0;i<=slice;++i)
         {
-            var x = offset.x + Math.cos(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
-            var y = offset.y + Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
-            var z = offset.z + Math.sin(DegreeToRadian(j * 10)) * radius;
+            var x = offset.x + Math.cos(stepRadian * i) * radius * Math.cos(stepRadian * j);
+            var y = offset.z + Math.sin(stepRadian * j) * radius;
+            var z = offset.y + Math.sin(stepRadian * i) * radius * Math.cos(stepRadian * j);
             vertices.push(x); vertices.push(y); vertices.push(z);
         }
     }
@@ -326,16 +328,17 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, attribDes
 
     var faces = [];
     var iCount = 0;
-    for(var j=0;j<9*2;++j)
+    var toNextSlice = slice + 1;
+    for(var j=0;j<halfSlice*2;++j)
     {
-        for(var i=0;i<=36;++i, iCount += 1)
+        for(var i=0;i<=slice;++i, iCount += 1)
         {
-            faces.push(iCount); faces.push(iCount + 37); faces.push(iCount + 1);
-            faces.push(iCount + 1); faces.push(iCount + 37); faces.push(iCount + 37 + 1);
+            faces.push(iCount); faces.push(iCount + toNextSlice); faces.push(iCount + 1);
+            faces.push(iCount + 1); faces.push(iCount + toNextSlice); faces.push(iCount + toNextSlice + 1);
         }
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, (attribDesc.wireframe ? gl.LINES : gl.TRIANGLES));
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -508,18 +511,18 @@ var UpdateSegmentTime = function(segment, t)
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
 };
 
-var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
+var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, scale, attribDesc)
 {
     var halfHeight = height/2.0;
     var topVert = CreateVec3(0.0, halfHeight, 0.0);
     var bottomVert = CreateVec3(0.0, -halfHeight, 0.0);
 
     var vertices = [];
-
+    var stepRadian = DegreeToRadian(360.0 / slice);
     for(var i=1;i<=360;++i)
     {
-        var rad = DegreeToRadian(i);
-        var prevRad = DegreeToRadian(i-1);
+        var rad = i * stepRadian;
+        var prevRad = rad - stepRadian;
 
         // Top
         vertices.push(topVert.x);                   vertices.push(topVert.y);       vertices.push(topVert.z);
@@ -586,7 +589,7 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, att
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, (attribDesc.wireframe ? gl.LINES : gl.TRIANGLES));
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -713,7 +716,7 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, scale,
 var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneHeight, coneRadius, segmentAttribDesc, coneAttribDesc)
 {
     var segment = CreateSegment(gl, TargetObjectArray, ZeroVec3, start, end, time, segmentAttribDesc);
-    var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, OneVec3, coneAttribDesc);
+    var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, 100, OneVec3, coneAttribDesc);
 
     var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, cone:cone};
     newStaticObject.updateFunc = function()
@@ -1114,9 +1117,14 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
         var updateFunc = function()
         {
             billboardObject.pos = PointLight.pos;
+            sphere.pos = PointLight.pos;
+            sphere.scale.x = PointLight.maxDistance;
+            sphere.scale.y = PointLight.maxDistance;
+            sphere.scale.z = PointLight.maxDistance;
         }
 
-        var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject};
+        var sphere = CreateSphere(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
+        var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = billboardObject;
         TargetObjectArray.push(newStaticObject);
     }
@@ -1128,6 +1136,7 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
     PointLight.diffuseLightIntensity = diffuseLightIntensity;
     PointLight.specularLightIntensity = specularLightIntensity;
     PointLight.specularPow = specularPow;
+
     return PointLight;
 }
 
@@ -1142,9 +1151,28 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
         var updateFunc = function()
         {
             billboardObject.pos = SpotLight.pos;
+
+            var dirctionToRot = GetEulerAngleFromVec3(SpotLight.lightDirection);
+            var spotLightPos = SpotLight.pos.CloneVec3().Add(SpotLight.lightDirection.CloneVec3().Neg().Mul(umbraCone.scale.y / 2.0));
+
+            var umbraRadius = Math.tan(SpotLight.umbraRadian) * SpotLight.maxDistance;
+            umbraCone.scale.x = umbraRadius;
+            umbraCone.scale.z = umbraRadius;
+            umbraCone.scale.y = SpotLight.maxDistance;
+            umbraCone.pos = spotLightPos
+            umbraCone.rot = dirctionToRot;
+
+            var penumbraRadius = Math.tan(SpotLight.penumbraRadian) * SpotLight.maxDistance;
+            penumbraCone.scale.x = penumbraRadius;
+            penumbraCone.scale.z = penumbraRadius;
+            penumbraCone.scale.y = SpotLight.maxDistance;
+            penumbraCone.pos = spotLightPos
+            penumbraCone.rot = dirctionToRot;
         }
 
-        var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject};
+        var umbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
+        var penumbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
+        var newStaticObject = {updateFunc:updateFunc, czdrawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
         SpotLight.__proto__ = billboardObject;
         TargetObjectArray.push(newStaticObject);
     }
@@ -1159,5 +1187,6 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
     SpotLight.diffuseLightIntensity = diffuseLightIntensity;
     SpotLight.specularLightIntensity = specularLightIntensity;
     SpotLight.specularPow = specularPow;
+
     return SpotLight;
 }

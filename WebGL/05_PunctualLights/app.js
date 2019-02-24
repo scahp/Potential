@@ -3,29 +3,10 @@ var Clicks = [];
 var StaticObjectArray = [];
 var TransparentStaticObjectArray = [];
 var UIStaticObject = [];
-var arrowSegment = null;
-var sphere = null;
 var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
 var pointLight = null;
-
-var UpdateCollision = function()
-{
-    if (arrowSegment && quad)
-    {
-        var result = IntersectSegmentPlane(arrowSegment.segment.start.CloneVec3(), arrowSegment.segment.getCurrentEnd(), quad.plane);
-        if (result && sphere)
-        {
-            sphere.pos = result.point.CloneVec3();
-            sphere.hide = false;
-        }
-        else
-        {
-            sphere.pos = CreateVec3(0.0, 0.0, 0.0);
-            sphere.hide = true;
-        }
-    }
-}
+var spotLight = null;
 
 // StaticObject
 var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
@@ -348,7 +329,7 @@ jWebGL.prototype.Init = function()
     }
 
     // Create Cameras
-    var mainCamera = CreateCamera(gl, CreateVec3(90, 30, 30), CreateVec3(0.0, 30.0, 20.0), DegreeToRadian(45), 1.0, 500.0, false);
+    var mainCamera = CreateCamera(gl, CreateVec3(42, 100, 62), CreateVec3(-29.0, 36.0, -3.0), DegreeToRadian(45), 1.0, 500.0, false);
     CreateCamera(gl, CreateVec3(0, 50, 0), CreateVec3(0.0, 50.0, -1.0), DegreeToRadian(40), 5.0, 200.0, false);
     updateCamera(gl, 0);
 
@@ -356,21 +337,14 @@ jWebGL.prototype.Init = function()
     CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
 
     // Create Coordinate Guide lines
-    // CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
-    // CreateCoordinateYObject(gl, StaticObjectArray);
-
-    arrowSegment = CreateArrowSegment(gl, StaticObjectArray, CreateVec3(50.0, 50.0, -10.0), CreateVec3(0.0, -30.0, 50.0), Time.value
-        , 2.0, 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), false, false, false));
+    CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
+    CreateCoordinateYObject(gl, StaticObjectArray);
 
     quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false));
     //quad.rot.x = DegreeToRadian(-90);
 
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, 0.0));
-
-    sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), true, false, false));
-
-    UpdateCollision();
 
     // Create a texture.
     var texture = gl.createTexture();
@@ -431,11 +405,20 @@ jWebGL.prototype.Init = function()
     var dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
-    pointLight = CreatePointLight(gl, StaticObjectArray, CreateVec3(10.0, 40.0, -50.0), CreateVec3(1.0, 0.0, 0.0), 50.0, diffuseLightIntensity, specularLightIntensity, 256
+    //var t = document.getElementById('PointLightX');
+    const pointLightPos = CreateVec3(document.getElementById('PointLightX').valueAsNumber, document.getElementById('PointLightY').valueAsNumber, document.getElementById('PointLightZ').valueAsNumber);
+    const pointLightRadius = document.getElementById('PointLightRadius').valueAsNumber;
+
+    pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
-    var spotLight = CreateSpotLight(gl, StaticObjectArray, CreateVec3(0.0, 40.0, 0.0), CreateVec3(1.0, 0.0, 0.0).GetNormalize()
-        , CreateVec3(0.0, 1.0, 0.0), 50.0, DegreeToRadian(15), DegreeToRadian(40), diffuseLightIntensity, specularLightIntensity, 256
+    const spotLightPos = CreateVec3(document.getElementById('SpotLightX').valueAsNumber, document.getElementById('SpotLightY').valueAsNumber, document.getElementById('SpotLightZ').valueAsNumber);
+    const umbraRadian = document.getElementById('SpotLightUmbraAngle').valueAsNumber;
+    const penumbraRadian = document.getElementById('SpotLightPenumbraAngle').valueAsNumber;
+    const spotMaxDistance = document.getElementById('SpotLightDistance').valueAsNumber;
+
+    spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
+        , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
     CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
