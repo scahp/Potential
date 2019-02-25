@@ -37,24 +37,44 @@
         </div>
         <div id="overlay2">
             <div>
+                <input type="radio" name="IntersectingType" value="SegmentAgainstPlane" checked="checked" onclick="OnChangedIntersectingType(this)"> SegmentAgainstPlane<br>
+                <input type="radio" name="IntersectingType" value="SegmentAgainstSphere" onclick="OnChangedIntersectingType(this)"> SegmentAgainstSphere<br>
+            </div>
+            <div>
                 <label>Time</label>
                 <input type="range" min="0" max="1" step="0.01" value="0.5" class="slider" id="Time" oninput="OnSliderChangeTime(event)">
             </div>
-            <div>
-                <label>PlaneRotationX</label>
-                <input type="range" min="0.0" max="6.28" step="0.001" value="0.0" class="slider" id="PlaneRotationX" oninput="OnSliderChangePlaneRotationX(event)">
+            <div id="div-SegmentAgainstPlane">
+                <div>
+                    <label>PlaneRotationX</label>
+                    <input type="range" min="0.0" max="6.28" step="0.001" value="0.0" class="slider" id="PlaneRotationX" oninput="OnSliderChangePlaneRotationX(event)">
+                </div>
+                <div>
+                    <label>PlaneRotationY</label>
+                    <input type="range" min="0.0" max="6.28" step="0.001" value="0.0" class="slider" id="PlaneRotationY" oninput="OnSliderChangePlaneRotationY(event)">
+                </div>
+                <div>
+                    <label>PlaneRotationZ</label>
+                    <input type="range" min="0.0" max="6.28" step="0.001" value="0.0" class="slider" id="PlaneRotationZ" oninput="OnSliderChangePlaneRotationZ(event)">
+                </div>
+                <div>
+                    <label>PlaneD</label>
+                    <input type="range" min="-50.0" max="50.0" step="0.001" value="-0.5" class="slider" id="PlaneD" oninput="OnSliderChangePlaneD(event)">
+                </div>
             </div>
-            <div>
-                <label>PlaneRotationY</label>
-                <input type="range" min="0.0" max="6.28" step="0.001" value="0.0" class="slider" id="PlaneRotationy" oninput="OnSliderChangePlaneRotationY(event)">
-            </div>
-            <div>
-                <label>PlaneRotationZ</label>
-                <input type="range" min="0.0" max="6.28" step="0.001" value="0.0" class="slider" id="PlaneRotationZ" oninput="OnSliderChangePlaneRotationZ(event)">
-            </div>
-            <div>
-                <label>PlaneD</label>
-                <input type="range" min="-50.0" max="50.0" step="0.001" value="-0.5" class="slider" id="PlaneD" oninput="OnSliderChangePlaneD(event)">
+            <div id="div-SegmentAgainstSphere">
+                <div>
+                    <label>SpherePosX</label>
+                    <input type="range" min="-100.0" max="100.0" step="0.001" value="20.0" class="slider" id="SpherePosX" oninput="OnSliderChangeSpherePosX(event)">
+                </div>
+                <div>
+                    <label>SpherePosY</label>
+                    <input type="range" min="-100.0" max="100.0" step="0.001" value="20.0" class="slider" id="SpherePosY" oninput="OnSliderChangeSpherePosY(event)">
+                </div>
+                <div>
+                    <label>SpherePosZ</label>
+                    <input type="range" min="-100.0" max="100" step="0.001" value="50.0" class="slider" id="SpherePosZ" oninput="OnSliderChangeSpherePosZ(event)">
+                </div>
             </div>
         </div>
     </div>

@@ -295,7 +295,7 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
     return newStaticObject;
 }
 
-var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, attribDesc)
+var CreateSphere = function(gl, TargetObjectArray, pos, radius, attribDesc)
 {
     var vertices = [];
     var offset = ZeroVec3;
@@ -306,9 +306,9 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, attribDes
     {
         for(var i=0;i<=36;++i)
         {
-            var x = offset.x + Math.cos(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
-            var y = offset.y + Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
-            var z = offset.z + Math.sin(DegreeToRadian(j * 10)) * radius;
+            var x = offset.x + Math.cos(DegreeToRadian(i * 10)) * Math.cos(DegreeToRadian(j * 10));
+            var y = offset.y + Math.sin(DegreeToRadian(i * 10)) * Math.cos(DegreeToRadian(j * 10));
+            var z = offset.z + Math.sin(DegreeToRadian(j * 10));
             vertices.push(x); vertices.push(y); vertices.push(z);
         }
     }
@@ -339,7 +339,7 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, scale, attribDes
     
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
-    newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    newStaticObject.scale = CreateVec3(radius, radius, radius);
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
     return newStaticObject;

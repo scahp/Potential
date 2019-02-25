@@ -4,27 +4,11 @@ var StaticObjectArray = [];
 var TransparentStaticObjectArray = [];
 var UIStaticObject = [];
 var arrowSegment = null;
-var sphere = null;
+var intersectionPoint = null;
 var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
-
-var UpdateCollision = function()
-{
-    if (arrowSegment && quad)
-    {
-        var result = IntersectSegmentPlane(arrowSegment.segment.start.CloneVec3(), arrowSegment.segment.getCurrentEnd(), quad.plane);
-        if (result && sphere)
-        {
-            sphere.pos = result.point.CloneVec3();
-            sphere.hide = false;
-        }
-        else
-        {
-            sphere.pos = CreateVec3(0.0, 0.0, 0.0);
-            sphere.hide = true;
-        }
-    }
-}
+var updateIntersection = null;
+var sphere = null
 
 // StaticObject
 var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
@@ -198,7 +182,112 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
     return {gl:gl, vbo:vbo, ebo:ebo, program:program, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
         , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
-        , collided:false, hide:false};
+        , collided:false, hide:false, onRemoved:null};
+}
+
+var RemoveStaticObject = function(staticObject)
+{
+    for(var i=0;i<StaticObjectArray.length;++i)
+    {
+        if (StaticObjectArray[i] == staticObject)
+        {
+            var removingObject = StaticObjectArray[i];
+            StaticObjectArray.splice(i, 1);
+            if (removingObject.onRemoved)
+                removingObject.onRemoved();
+            break;
+        }
+    }
+}
+
+var CreateSegmentAgainstPlanePrimitives = function(gl)
+{
+    quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
+    var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
+    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, document.getElementById("PlaneD").valueAsNumber));
+    updateIntersection = function()
+    {
+        if (arrowSegment && quad)
+        {
+            var result = IntersectSegmentPlane(arrowSegment.segment.start.CloneVec3(), arrowSegment.segment.getCurrentEnd(), quad.plane);
+            if (result && intersectionPoint)
+            {
+                intersectionPoint.pos = result.point.CloneVec3();
+                intersectionPoint.hide = false;
+                quad.collided = true;
+            }
+            else
+            {
+                intersectionPoint.pos = CreateVec3(0.0, 0.0, 0.0);
+                intersectionPoint.hide = true;
+                quad.collided = false;
+            }
+        }
+    };
+}
+
+var CreateSegmentAgainstSpherePrimitives = function(gl)
+{
+    var x = document.getElementById("SpherePosX").valueAsNumber;
+    var y = document.getElementById("SpherePosY").valueAsNumber;
+    var z = document.getElementById("SpherePosZ").valueAsNumber;
+    sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(x, y, z), 30.0, GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
+    updateIntersection = function()
+    {
+        if (arrowSegment && sphere)
+        {
+             var a = arrowSegment.segment.start.CloneVec3();
+             var b = arrowSegment.segment.getCurrentEnd();
+
+             // Test for ray
+            // var dir = b.CloneVec3().Sub(a).GetNormalize();
+            // var result = IntersectRaySphere(a, dir, sphere);
+            // sphere.collided = TestRaySphere(a, dir, sphere);        // if we don't need to have intersection point, you will use it.
+
+            // Test for segment
+            var result = IntersectSegmentSphere(a, b, sphere);
+            //sphere.collided = TestSegmentSphere(a, b, sphere);        // if we don't need to have intersection point, you will use it.
+            if (result && intersectionPoint)
+            {
+                intersectionPoint.pos = result.point.CloneVec3();
+                intersectionPoint.hide = false;
+                sphere.collided = true;
+            }
+            else
+            {
+                intersectionPoint.pos = CreateVec3(0.0, 0.0, 0.0);
+                intersectionPoint.hide = true;
+                sphere.collided = false;
+            }
+        }
+    };
+}
+
+var SwitchExampleType = function(type)
+{
+    RemoveStaticObject(quad);
+    RemoveStaticObject(sphere);
+    quad = null;
+    sphere = null;
+
+    var div_segmentAgainstPlane = document.getElementById('div-SegmentAgainstPlane');
+    var div_segmentAgainstSphere = document.getElementById('div-SegmentAgainstSphere');    
+    if (type == "SegmentAgainstPlane")
+    {
+        CreateSegmentAgainstPlanePrimitives(jWebGL.gl);
+
+        div_segmentAgainstPlane.style.display = 'block';
+        div_segmentAgainstSphere.style.display = 'none';
+    }
+    else if (type == "SegmentAgainstSphere")
+    {
+        CreateSegmentAgainstSpherePrimitives(jWebGL.gl);
+        div_segmentAgainstPlane.style.display = 'none';
+        div_segmentAgainstSphere.style.display = 'block';
+    }
+
+    if (updateIntersection)
+        updateIntersection();
 }
 
 // Framebuffer
@@ -309,15 +398,9 @@ jWebGL.prototype.Init = function()
     arrowSegment = CreateArrowSegment(gl, StaticObjectArray, CreateVec3(50.0, 50.0, -10.0), CreateVec3(0.0, -30.0, 50.0), Time.value
         , 2.0, 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), false, false, false));
 
-    quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
-    //quad.rot.x = DegreeToRadian(-90);
+    intersectionPoint = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), true, false, false));
 
-    var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
-    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, document.getElementById("PlaneD").valueAsNumber));
-
-    sphere = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0), 2.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), true, false, false));
-
-    UpdateCollision();
+    SwitchExampleType("SegmentAgainstPlane");
 
     // Create a texture.
     var texture = gl.createTexture();

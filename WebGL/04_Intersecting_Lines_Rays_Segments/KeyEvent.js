@@ -48,7 +48,8 @@ var OnSliderChangeTime = function(e)
         var t = e.target.valueAsNumber;
         UpdateSegmentTime(arrowSegment.segment, t);
         
-        UpdateCollision();
+        if (updateIntersection)
+            updateIntersection();
     }
 }
 
@@ -62,7 +63,8 @@ var OnSliderChangePlaneRotationX = function(e)
 
         quad.setPlane(quad.plane);
 
-        UpdateCollision();
+        if (updateIntersection)
+            updateIntersection();
     }
 }
 
@@ -76,7 +78,8 @@ var OnSliderChangePlaneRotationY = function(e)
         
         quad.setPlane(quad.plane);
 
-        UpdateCollision();
+        if (updateIntersection)
+            updateIntersection();
     }
 }
 
@@ -90,7 +93,8 @@ var OnSliderChangePlaneRotationZ = function(e)
         
         quad.setPlane(quad.plane);
 
-        UpdateCollision();
+        if (updateIntersection)
+            updateIntersection();
     }
 }
 
@@ -101,5 +105,45 @@ var OnSliderChangePlaneD = function(e)
     quad.plane.d = e.target.valueAsNumber;
     quad.setPlane(quad.plane);
 
-    UpdateCollision();
+    if (updateIntersection)
+        updateIntersection();
+}
+
+var OnChangedIntersectingType = function(e)
+{
+    console.log(e.value);
+    SwitchExampleType(e.value);
+}
+
+var OnSliderChangeSpherePosX = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (sphere)
+    {
+        sphere.pos.x = e.target.valueAsNumber;
+        if (updateIntersection)
+            updateIntersection();
+    }
+}
+
+var OnSliderChangeSpherePosY = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (sphere)
+    {
+        sphere.pos.y = e.target.valueAsNumber;
+        if (updateIntersection)
+            updateIntersection();
+    }
+}
+
+var OnSliderChangeSpherePosZ = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (sphere)
+    {
+        sphere.pos.z = e.target.valueAsNumber;
+        if (updateIntersection)
+            updateIntersection();
+    }
 }
