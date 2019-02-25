@@ -338,13 +338,13 @@ jWebGL.prototype.Init = function()
 
     // Create Coordinate Guide lines
     CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
-    CreateCoordinateYObject(gl, StaticObjectArray);
+    //CreateCoordinateYObject(gl, StaticObjectArray);
 
     quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false));
     //quad.rot.x = DegreeToRadian(-90);
 
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
-    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, 0.0));
+    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
 
     // Create a texture.
     var texture = gl.createTexture();
