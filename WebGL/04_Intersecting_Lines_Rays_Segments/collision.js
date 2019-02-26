@@ -28,10 +28,16 @@ var IntersectRaySphere = function(p, d, sphere)
         return null;
 
     var discr = b * b - c;
-    if (discr < 0.0)
-        return null;
-
-    t = -b - Math.sqrt(discr);
+    if (IsNearlyZero(discr))
+    {
+        t = -b;
+    }
+    else
+    {
+        if (discr < 0.0)
+            return null;
+        t = -b - Math.sqrt(discr);
+    }
 
     if (t < 0.0)
         t = 0.0;
@@ -53,21 +59,21 @@ var TestRaySphere = function(p, d, sphere)
         return null;
 
     var discr = b * b - c;
-    if (discr < 0.0)
+    if ((discr < 0.0) && !IsNearlyZero(discr))
         return null;
 
     return true;
 }
 
-var IntersectSegmentSphere = function(a, b, sphere)
+var IntersectSegmentSphere = function(pa, pb, sphere)
 {
     const radius = sphere.scale.x;
-    const p = a;
-    const ba = b.CloneVec3().Sub(a);
+    const p = pa;
+    const ba = pb.CloneVec3().Sub(pa);
     const baLen = ba.GetLength();
     if (baLen <= 0.0)
         return null;
-    const d = ba.Div(baLen);
+    const d = ba.CloneVec3().Div(baLen);
 
     var m = p.CloneVec3().Sub(sphere.pos);
     
@@ -78,10 +84,16 @@ var IntersectSegmentSphere = function(a, b, sphere)
         return null;
 
     var discr = b * b - c;
-    if (discr < 0.0)
-        return null;
-
-    t = -b - Math.sqrt(discr);
+    if (IsNearlyZero(discr))
+    {
+        t = -b;
+    }
+    else
+    {
+        if (discr < 0.0)
+            return null;
+        t = -b - Math.sqrt(discr);
+    }
 
     if (t > baLen)
         return null;
@@ -93,15 +105,15 @@ var IntersectSegmentSphere = function(a, b, sphere)
     return { point:q, t:t };
 }
 
-var TestSegmentSphere = function(a, b, sphere)
+var TestSegmentSphere = function(pa, pb, sphere)
 {
     const radius = sphere.scale.x;
-    const p = a;
-    const ba = b.CloneVec3().Sub(a);
+    const p = pa;
+    const ba = pb.CloneVec3().Sub(pa);
     const baLen = ba.GetLength();
     if (baLen <= 0.0)
         return null;
-    const d = ba.Div(baLen);
+    const d = ba.CloneVec3().Div(baLen);
 
     var m = p.CloneVec3().Sub(sphere.pos);
     
@@ -112,10 +124,16 @@ var TestSegmentSphere = function(a, b, sphere)
         return null;
 
     var discr = b * b - c;
-    if (discr < 0.0)
-        return null;
-
-    t = -b - Math.sqrt(discr);
+    if (IsNearlyZero(discr))
+    {
+        t = -b;
+    }
+    else
+    {
+        if (discr < 0.0)
+            return null;
+        t = -b - Math.sqrt(discr);
+    }
 
     if (t > baLen)
         return null;

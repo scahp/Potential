@@ -240,9 +240,9 @@ var CreateSegmentAgainstSpherePrimitives = function(gl)
              var b = arrowSegment.segment.getCurrentEnd();
 
              // Test for ray
-            // var dir = b.CloneVec3().Sub(a).GetNormalize();
-            // var result = IntersectRaySphere(a, dir, sphere);
-            // sphere.collided = TestRaySphere(a, dir, sphere);        // if we don't need to have intersection point, you will use it.
+             //var dir = b.CloneVec3().Sub(a).GetNormalize();
+             //var result = IntersectRaySphere(a, dir, sphere);
+             //sphere.collided = TestRaySphere(a, dir, sphere);        // if we don't need to have intersection point, you will use it.
 
             // Test for segment
             var result = IntersectSegmentSphere(a, b, sphere);
@@ -384,7 +384,7 @@ jWebGL.prototype.Init = function()
     }
 
     // Create Cameras
-    var mainCamera = CreateCamera(gl, CreateVec3(90, 30, 30), CreateVec3(0.0, 30.0, 20.0), DegreeToRadian(45), 1.0, 500.0, false);
+    var mainCamera = CreateCamera(gl, CreateVec3(90, 30, 10), CreateVec3(0.0, 30.0, 20.0), DegreeToRadian(45), 1.0, 500.0, false);
     CreateCamera(gl, CreateVec3(0, 50, 0), CreateVec3(0.0, 50.0, -1.0), DegreeToRadian(40), 5.0, 200.0, false);
     updateCamera(gl, 0);
 
