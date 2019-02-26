@@ -728,7 +728,7 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
         this.cone.pos = this.pos.CloneVec3().Add(this.segment.getCurrentEnd());
         this.cone.rot = GetEulerAngleFromVec3(this.segment.getDirectionNormalized());
     };
-    newStaticObject.pos = OneVec3.CloneVec3();
+    newStaticObject.pos = ZeroVec3.CloneVec3();
     TargetObjectArray.push(newStaticObject);
     return newStaticObject;
 }
