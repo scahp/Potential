@@ -56,11 +56,11 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var matPos = CreatePosMat4(this.pos.x, this.pos.y, this.pos.z);
         var matRot = CreateRotMat4(this.rot.x, this.rot.y, this.rot.z);
         var matScale = CreateScaleMat4(this.scale.x, this.scale.y, this.scale.z);
-        this.matWorld = CloneMat4(matPos).Mul(matRot).Mul(matScale);
+        this.matWorld = matPos.Clone().Mul(matRot).Mul(matScale);
 
-        var matMVP = CloneMat4(camera.matViewProjection).Mul(this.matWorld);
-        var matMV = CloneMat4(camera.matView).Mul(this.matWorld);
-        var matM = CloneMat4(this.matWorld);
+        var matMVP = camera.matViewProjection.Clone().Mul(this.matWorld);
+        var matMV = camera.matView.Clone().Mul(this.matWorld);
+        var matM = this.matWorld.Clone();
 
         matMVP.Transpose();
         var mvpArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
@@ -209,10 +209,10 @@ var CreateSegmentAgainstPlanePrimitives = function(gl)
     {
         if (arrowSegment && quad)
         {
-            var result = IntersectSegmentPlane(arrowSegment.segment.start.CloneVec3(), arrowSegment.segment.getCurrentEnd(), quad.plane);
+            var result = IntersectSegmentPlane(arrowSegment.segment.start.Clone(), arrowSegment.segment.getCurrentEnd(), quad.plane);
             if (result && intersectionPoint)
             {
-                intersectionPoint.pos = result.point.CloneVec3();
+                intersectionPoint.pos = result.point.Clone();
                 intersectionPoint.hide = false;
                 quad.collided = true;
             }
@@ -236,11 +236,11 @@ var CreateSegmentAgainstSpherePrimitives = function(gl)
     {
         if (arrowSegment && sphere)
         {
-             var a = arrowSegment.segment.start.CloneVec3();
+             var a = arrowSegment.segment.start.Clone();
              var b = arrowSegment.segment.getCurrentEnd();
 
              // Test for ray
-             //var dir = b.CloneVec3().Sub(a).GetNormalize();
+             //var dir = b.Clone().Sub(a).GetNormalize();
              //var result = IntersectRaySphere(a, dir, sphere);
              //sphere.collided = TestRaySphere(a, dir, sphere);        // if we don't need to have intersection point, you will use it.
 
@@ -249,7 +249,7 @@ var CreateSegmentAgainstSpherePrimitives = function(gl)
             //sphere.collided = TestSegmentSphere(a, b, sphere);        // if we don't need to have intersection point, you will use it.
             if (result && intersectionPoint)
             {
-                intersectionPoint.pos = result.point.CloneVec3();
+                intersectionPoint.pos = result.point.Clone();
                 intersectionPoint.hide = false;
                 sphere.collided = true;
             }

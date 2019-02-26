@@ -33,7 +33,7 @@ var rotateFowardAxis = function(cameraIndex, radian)
     var matRotate = CreateRotationAxisMat4(forwardVector, radian);
     var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
     
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
+    var mat = matPosB.Clone().Mul(matRotate).Mul(matPosA);
     camera.target.Transform(mat);
     camera.up.Transform(mat);
     camera.pos.Transform(mat);
@@ -48,7 +48,7 @@ var rotateDefaultUpAxis = function(cameraIndex, radian)
     var matRotate = CreateRotationAxisMat4(upVector, radian);
     var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
 
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
+    var mat = matPosB.Clone().Mul(matRotate).Mul(matPosA);
     camera.target.Transform(mat);
     camera.up.Transform(mat);
     camera.pos.Transform(mat);
@@ -63,7 +63,7 @@ var rotateUpAxis = function(cameraIndex, radian)
     var matRotate = CreateRotationAxisMat4(upVector, radian);
     var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
 
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
+    var mat = matPosB.Clone().Mul(matRotate).Mul(matPosA);
     camera.target.Transform(mat);
     camera.up.Transform(mat);
     camera.pos.Transform(mat);
@@ -78,7 +78,7 @@ var rotateRightAxis = function(cameraIndex, radian)
     var matRotate = CreateRotationAxisMat4(rightVector, radian);
     var matPosB = CreatePosMat4(camera.pos.x, camera.pos.y, camera.pos.z);
 
-    var mat = CloneMat4(matPosB).Mul(matRotate).Mul(matPosA);
+    var mat = matPosB.Clone().Mul(matRotate).Mul(matPosA);
     camera.target.Transform(mat);
     camera.up.Transform(mat);
     camera.pos.Transform(mat);
@@ -115,12 +115,12 @@ var updateCamera = function(gl, cameraIndex)
     var camera = Cameras[cameraIndex];
     camera.matView = CreateViewMatrix(camera.pos, camera.target, camera.up);
     camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
-    camera.matViewProjection = CloneMat4(camera.matProjection).Mul(camera.matView);
+    camera.matViewProjection = camera.matProjection.Clone().Mul(camera.matView);
 }
 
 var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStaticObject)
 {
-    var t1 = pos.CloneVec3().Sub(target).GetNormalize();
+    var t1 = pos.Clone().Sub(target).GetNormalize();
     var t2_right = new jVec3();
     CrossProduct3(t2_right, CreateVec3(0.0, 1.0, 0.0), t1);
     t2_right = t2_right.GetNormalize();
@@ -128,11 +128,11 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
     CrossProduct3(t3_up, t1, t2_right);
     t3_up = t3_up.GetNormalize()
 
-    var up = t3_up.CloneVec3().Add(pos);
+    var up = t3_up.Clone().Add(pos);
     var matView = CreateViewMatrix(pos, target, up);
     var matProjection = CreatePerspectiveMatrix(gl.canvas.width
         , gl.canvas.height, fovRad, far, near);
-    var matMV = CloneMat4(matProjection).Mul(matView);
+    var matMV = matProjection.Clone().Mul(matView);
     
     var debugStaticObject = [];
     var debugStaticObject2 = [];
@@ -163,15 +163,15 @@ var updateCameraFrustum = function(gl, cameraIndex)
     var near = camera.near;
     var far = camera.far;
 
-    var targetVec = camera.target.CloneVec3().Sub(camera.pos).GetNormalize();
+    var targetVec = camera.target.Clone().Sub(camera.pos).GetNormalize();
     var length = Math.tan(camera.fovRad) * far;
     var rightVec = getRightVector(cameraIndex).Mul(length);
     var upVec = getUpVector(cameraIndex).Mul(length);
 
-    var rightUp = targetVec.CloneVec3().Mul(far).Add(rightVec).Add(upVec).GetNormalize();
-    var leftUp = targetVec.CloneVec3().Mul(far).Sub(rightVec).Add(upVec).GetNormalize();
-    var rightDown = targetVec.CloneVec3().Mul(far).Add(rightVec).Sub(upVec).GetNormalize();
-    var leftDown = targetVec.CloneVec3().Mul(far).Sub(rightVec).Sub(upVec).GetNormalize();
+    var rightUp = targetVec.Clone().Mul(far).Add(rightVec).Add(upVec).GetNormalize();
+    var leftUp = targetVec.Clone().Mul(far).Sub(rightVec).Add(upVec).GetNormalize();
+    var rightDown = targetVec.Clone().Mul(far).Add(rightVec).Sub(upVec).GetNormalize();
+    var leftDown = targetVec.Clone().Mul(far).Sub(rightVec).Sub(upVec).GetNormalize();
 
     var updateSegment = function(segment, start, end, color)
     {
@@ -185,16 +185,16 @@ var updateCameraFrustum = function(gl, cameraIndex)
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
-    var origin = camera.pos.CloneVec3();
-    var far_lt = origin.CloneVec3().Add(leftUp.CloneVec3().Mul(far));
-    var far_rt = origin.CloneVec3().Add(rightUp.CloneVec3().Mul(far));
-    var far_lb = origin.CloneVec3().Add(leftDown.CloneVec3().Mul(far));
-    var far_rb = origin.CloneVec3().Add(rightDown.CloneVec3().Mul(far));
+    var origin = camera.pos.Clone();
+    var far_lt = origin.Clone().Add(leftUp.Clone().Mul(far));
+    var far_rt = origin.Clone().Add(rightUp.Clone().Mul(far));
+    var far_lb = origin.Clone().Add(leftDown.Clone().Mul(far));
+    var far_rb = origin.Clone().Add(rightDown.Clone().Mul(far));
 
-    var near_lt = origin.CloneVec3().Add(leftUp.CloneVec3().Mul(near));
-    var near_rt = origin.CloneVec3().Add(rightUp.CloneVec3().Mul(near));
-    var near_lb = origin.CloneVec3().Add(leftDown.CloneVec3().Mul(near));
-    var near_rb = origin.CloneVec3().Add(rightDown.CloneVec3().Mul(near));
+    var near_lt = origin.Clone().Add(leftUp.Clone().Mul(near));
+    var near_rt = origin.Clone().Add(rightUp.Clone().Mul(near));
+    var near_lb = origin.Clone().Add(leftDown.Clone().Mul(near));
+    var near_rb = origin.Clone().Add(rightDown.Clone().Mul(near));
 
     updateSegment(debgObj[0], origin, far_rt, CreateVec4(1.0, 1.0, 1.0, 1.0));
     updateSegment(debgObj[1], origin, far_lt, CreateVec4(1.0, 1.0, 1.0, 1.0));

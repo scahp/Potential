@@ -87,8 +87,8 @@ var GenerateColor = function(color, count)
 
 var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
-    var halfSize = size.CloneVec3().Div(2.0);
-    var offset = ZeroVec3.CloneVec3();
+    var halfSize = size.Clone().Div(2.0);
+    var offset = ZeroVec3.Clone();
 
     var vertices = [
         // z +
@@ -208,8 +208,8 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 
 var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
-    var halfSize = size.CloneVec3().Div(2.0);
-    var offset = ZeroVec3.CloneVec3();
+    var halfSize = size.Clone().Div(2.0);
+    var offset = ZeroVec3.Clone();
 
     var vertices = [
         offset.x + (-halfSize.x),   0.0,   offset.y + (halfSize.y), 
@@ -247,9 +247,9 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
         if (!plane)
             return;
         
-        this.plane = plane.ClonePlane();
+        this.plane = plane.Clone();
         this.rot = GetEulerAngleFromVec3(plane.n);
-        this.pos = plane.n.CloneVec3().Mul(plane.d);
+        this.pos = plane.n.Clone().Mul(plane.d);
     };
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
@@ -258,8 +258,8 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 
 var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
-    var halfSize = size.CloneVec3().Div(2.0);
-    var offset = ZeroVec3.CloneVec3();
+    var halfSize = size.Clone().Div(2.0);
+    var offset = ZeroVec3.Clone();
 
     var vertices = [
         offset.x + (-halfSize.x),   0.0,   offset.y + (halfSize.y), 
@@ -357,7 +357,7 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
     {
         for(var j=0;j<numOfCol;++j)
         {
-            var curOffset = startPos.CloneVec3()
+            var curOffset = startPos.Clone()
             curOffset.x += (j - numOfRow / 2.0) * size;
             curOffset.z += (i - numOfCol / 2.0) * size;
 
@@ -428,13 +428,13 @@ var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, attri
     if (time < 1.0)
     {
         var t = Clamp(time, 0.0, 1.0);
-        currentEnd = end.CloneVec3().Sub(start);
+        currentEnd = end.Clone().Sub(start);
         var length = currentEnd.GetLength();
         currentEnd = currentEnd.GetNormalize().Mul(t * length).Add(start);
     }
     else
     {
-        currentEnd = end.CloneVec3();
+        currentEnd = end.Clone();
     }
 
     var vertices = [
@@ -447,10 +447,10 @@ var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, attri
     var attribs = [];
     attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
 
-    var color = OneVec4.CloneVec4();
+    var color = OneVec4.Clone();
     if (attribDesc.color)
     {
-        color = attribDesc.color.CloneVec4();
+        color = attribDesc.color.Clone();
         attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
     }
 
@@ -464,19 +464,19 @@ var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, attri
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
     var segmentStaticObject = {};
     segmentStaticObject.__proto__ = newStaticObject;
-    segmentStaticObject.start = start.CloneVec3();
-    segmentStaticObject.end = end.CloneVec3();
+    segmentStaticObject.start = start.Clone();
+    segmentStaticObject.end = end.Clone();
     segmentStaticObject.color = color;
     segmentStaticObject.time = time;
     segmentStaticObject.getCurrentEnd = function()
     {
         var t = Clamp(this.time, 0.0, 1.0);
-        var end = this.end.CloneVec3().Sub(this.start);
+        var end = this.end.Clone().Sub(this.start);
         return end.GetNormalize().Mul(t * end.GetLength()).Add(this.start);
     };
     segmentStaticObject.getDirectionNormalized = function()
     {
-        return this.end.CloneVec3().Sub(this.start).GetNormalize();
+        return this.end.Clone().Sub(this.start).GetNormalize();
     };
     if (TargetObjectArray)
         TargetObjectArray.push(segmentStaticObject);
@@ -543,10 +543,10 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, scale, att
     var attribs = [];
     attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     
-    var color = OneVec4.CloneVec4();
+    var color = OneVec4.Clone();
     if (attribDesc.color)
     {
-        color = attribDesc.color.CloneVec4();
+        color = attribDesc.color.Clone();
         attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
     }
 
@@ -645,10 +645,10 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, scale,
     var attribs = [];
     attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     
-    var color = OneVec4.CloneVec4();
+    var color = OneVec4.Clone();
     if (attribDesc.color)
     {
-        color = attribDesc.color.CloneVec4();
+        color = attribDesc.color.Clone();
         attribs.push(createAttribParameter('Color', 4, GenerateColor(attribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
     }
 
@@ -720,15 +720,15 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
     {
         var pos = null;
         if (this.pos)
-            pos = this.pos.CloneVec3();
+            pos = this.pos.Clone();
         else
-            pos = OneVec3.CloneVec3();
+            pos = OneVec3.Clone();
             
         this.segment.pos = this.pos;
-        this.cone.pos = this.pos.CloneVec3().Add(this.segment.getCurrentEnd());
+        this.cone.pos = this.pos.Clone().Add(this.segment.getCurrentEnd());
         this.cone.rot = GetEulerAngleFromVec3(this.segment.getDirectionNormalized());
     };
-    newStaticObject.pos = ZeroVec3.CloneVec3();
+    newStaticObject.pos = ZeroVec3.Clone();
     TargetObjectArray.push(newStaticObject);
     return newStaticObject;
 }
@@ -861,9 +861,9 @@ var CreateGizmo = function(gl, TargetObjectArray, pos, rot, scale)
     var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
     var newStaticObject = createStaticObject(gl, GetAttribDesc(true, false, false), [attrib0, attrib1], null, 0, elementCount, gl.LINES);
 
-    newStaticObject.pos = pos.CloneVec3();
-    newStaticObject.rot = rot.CloneVec3();
-    newStaticObject.scale = scale.CloneVec3();
+    newStaticObject.pos = pos.Clone();
+    newStaticObject.rot = rot.Clone();
+    newStaticObject.scale = scale.Clone();
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
     return newStaticObject;
@@ -1000,7 +1000,7 @@ var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, attr
     {
         if (this.camera)
         {
-            var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
+            var normalizedCameraDir = this.camera.pos.Clone().Sub(this.pos).GetNormalize();
             var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
 
             this.rot.y = eularAngleOfCameraDir.y;
@@ -1016,8 +1016,8 @@ var CreateBillboardQuad = function(gl, TargetObjectArray, pos, size, scale, attr
 
 var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, texture)
 {
-    var halfSize = size.CloneVec3().Div(2.0);
-    var offset = ZeroVec3.CloneVec3();
+    var halfSize = size.Clone().Div(2.0);
+    var offset = ZeroVec3.Clone();
 
     var vertices = [
         offset.x + (-halfSize.x),  0.0,  offset.y + (halfSize.y),  
@@ -1056,7 +1056,7 @@ var CreateBillboardQuadTexture = function(gl, TargetObjectArray, pos, size, scal
     {
         if (this.camera)
         {
-            var normalizedCameraDir = this.camera.pos.CloneVec3().Sub(this.pos).GetNormalize();
+            var normalizedCameraDir = this.camera.pos.Clone().Sub(this.pos).GetNormalize();
             var eularAngleOfCameraDir = GetEulerAngleFromVec3(normalizedCameraDir);
 
             this.rot.y = eularAngleOfCameraDir.y;
@@ -1082,18 +1082,18 @@ var CreateDirectionalLight = function(gl, direction, lightColor, diffuseLightInt
     var DirectionalLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, StaticObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, StaticObjectArray, debugObjectDesc.pos.Clone(), OneVec3.Clone(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
-        var segment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
+        var segment = CreateArrowSegment(gl, StaticObjectArray, ZeroVec3, ZeroVec3.Clone().Add(direction.Clone().Mul(debugObjectDesc.length)), 1.0
             , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
-        segment.pos = debugObjectDesc.pos.CloneVec3();
+        segment.pos = debugObjectDesc.pos.Clone();
 
         var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
         DirectionalLight.__proto__ = newStaticObject;
     }
 
-    DirectionalLight.direction = direction.CloneVec3().GetNormalize();
+    DirectionalLight.direction = direction.Clone().GetNormalize();
     DirectionalLight.lightColor = lightColor;
     DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
     DirectionalLight.specularLightIntensity = specularLightIntensity;

@@ -16,7 +16,7 @@ var CreateVec3 = function(x, y, z)
     return newVec;
 }
 
-jVec3.prototype.CloneVec3 = function()
+jVec3.prototype.Clone = function()
 {
     return CreateVec3(this.x, this.y, this.z);
 }
@@ -109,7 +109,7 @@ var CreateVec4 = function(x, y, z, w)
     return newVec;
 }
 
-jVec4.prototype.CloneVec4 = function()
+jVec4.prototype.Clone = function()
 {
     return CreateVec4(this.x, this.y, this.z, this.w);
 }
@@ -291,13 +291,13 @@ var CreateScaleMat4 = function(x, y, z)
     return newMat;
 }
 
-var CloneMat4 = function(mat)
+jMat4.prototype.Clone = function()
 {
     var newMat = new jMat4();
     for(var i=0;i<4;++i)
     {
         for(var j=0;j<4;++j)
-            newMat.m[i][j] = mat.m[i][j];
+            newMat.m[i][j] = this.m[i][j];
     }
     return newMat;
 }
@@ -314,7 +314,7 @@ var CreateMat4 = function(pos, rot, scale)
 
 jMat4.prototype.Mul = function(b)
 {
-    var cloneThis = CloneMat4(this);
+    var cloneThis = this.Clone();
 
     this.m[0][0] = cloneThis.m[0][0] * b.m[0][0] + cloneThis.m[0][1] * b.m[1][0] + cloneThis.m[0][2] * b.m[2][0] + cloneThis.m[0][3] * b.m[3][0];
     this.m[0][1] = cloneThis.m[0][0] * b.m[0][1] + cloneThis.m[0][1] * b.m[1][1] + cloneThis.m[0][2] * b.m[2][1] + cloneThis.m[0][3] * b.m[3][1];
@@ -341,7 +341,7 @@ jMat4.prototype.Mul = function(b)
 
 jMat4.prototype.GetMul = function(b)
 {
-    return CloneMat4(this).Mul(b);
+    return this.Clone().Mul(b);
 }
 
 jMat4.prototype.Add = function(b)
@@ -445,7 +445,7 @@ var CreatePlane = function(a, b, c, d)
     return newPlane;
 }
 
-jPlane.prototype.ClonePlane = function()
+jPlane.prototype.Clone = function()
 {
     return CreatePlane(this.n.x, this.n.y, this.n.z, this.d);
 }
@@ -483,7 +483,7 @@ var CreateViewMatrix = function(eye, target, up)
     InvRot.m[2][2] = -zAxis.z;
 
     // var InvPos = CreatePosMat4(-eye.x, -eye.y, -eye.z);
-    // var viewMat = CloneMat4(InvRot);
+    // var viewMat = InvRot.Clone();
     // viewMat.Mul(InvPos);
     // return viewMat;
 
