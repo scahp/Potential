@@ -1,0 +1,90 @@
+<html>
+
+<head>
+    <title>05_PunctualLights</title>
+    <style>
+        .container {
+            position: relative;
+        }
+        #overlay {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-family: monospace;
+            padding: 1em;
+        }
+        #overlay2 {
+            position: absolute;
+            left: 10px;
+            top: 100px;
+        }
+        #webgl-surface {
+            margin: 0;
+            padding: 0;
+            position: absolute;
+        }
+    </style>
+</head>
+
+<body onload="Init()" onkeydown="OnKeyDown(event)" onkeyup="OnKeyUp(event)">
+    <div class="container">
+        <canvas id="webgl-surface" width = 300 height = 300 onmousemove="OnMouseMove(event)" 
+            onmousedown="OnMouseButtonDown(event)" onmouseup="OnMouseButtonUp(event)"></canvas>
+        <div id="overlay">
+            <div>FPS: <span id="FPS"></span></div>
+        </div>
+        <div id="overlay2">
+            <div>
+                <label>PointLightX</label>
+                <input type="range" min="-100.0" max="100.0" step="0.001" value="-10.0" class="slider" id="PointLightX" oninput="OnSliderChangePointLightX(event)">
+            </div>
+            <div>
+                <label>PointLightY</label>
+                <input type="range" min="-100.0" max="100.0" step="0.001" value="40.0" class="slider" id="PointLightY" oninput="OnSliderChangePointLightY(event)">
+            </div>
+            <div>
+                <label>PointLightZ</label>
+                <input type="range" min="-100.0" max="100.0" step="0.001" value="-50.0" class="slider" id="PointLightZ" oninput="OnSliderChangePointLightZ(event)">
+            </div>
+            <div>
+                <label>PointLightRadius</label>
+                <input type="range" min="10.0" max="200.0" step="0.001" value="50.0" class="slider" id="PointLightRadius" oninput="OnSliderChangePointLightRadius(event)">
+            </div>
+            <div>
+                <label>SpotLightX</label>
+                <input type="range" min="-100.0" max="100.0" step="0.001" value="0.0" class="slider" id="SpotLightX" oninput="OnSliderChangeSpotLightX(event)">
+            </div>
+            <div>
+                <label>SpotLightY</label>
+                <input type="range" min="-100.0" max="50.0" step="0.001" value="40.0" class="slider" id="SpotLightY" oninput="OnSliderChangeSpotLightY(event)">
+            </div>
+            <div>
+                <label>SpotLightZ</label>
+                <input type="range" min="-100.0" max="100.0" step="0.001" value="5.0" class="slider" id="SpotLightZ" oninput="OnSliderChangeSpotLightZ(event)">
+            </div>
+            <div>
+                <label>SpotLightUmbraAngle</label>
+                <input type="range" min="0" max="1.5" step="0.001" value="0.6" class="slider" id="SpotLightUmbraAngle" oninput="OnSliderChangeSpotLightUmbraAngle(event)">
+            </div>
+            <div>
+                <label>SpotLightPenumbraAngle</label>
+                <input type="range" min="0" max="1.5" step="0.001" value="0.5" class="slider" id="SpotLightPenumbraAngle" oninput="OnSliderChangeSpotLightPenumbraAngle(event)">
+            </div>
+            <div>
+                <label>SpotLightDistance</label>
+                <input type="range" min="10.0" max="200.0" step="0.001" value="132.0" class="slider" id="SpotLightDistance" oninput="OnSliderChangeSpotLightDistance(event)">
+            </div>
+        </div>
+    </div>
+    <script src="utils.js"></script>
+    <script src="jMath.js"></script>
+    <script src="PrimitiveUtil.js"></script>
+    <script src="KeyEvent.js"></script>
+    <script src="Camera.js"></script>
+    <script src="collision.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
