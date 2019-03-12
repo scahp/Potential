@@ -132,18 +132,18 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         {
             return edges[makeEdgeKey(v0Index, v1Index)];
         }
-        var addEdge = function(v0Index, v1Index)
+        var addEdge = function(v0Index, v1Index, triangleIndex)
         {
             var result = findEdge(v0Index, v1Index);
             if (!result)
-                result = edges[makeEdgeKey(v0Index, v1Index)] = {v0Index:v0Index, v1Index:v1Index};
+                result = edges[makeEdgeKey(v0Index, v1Index)] = {v0Index:v0Index, v1Index:v1Index, triangleIndex:triangleIndex};
             return result;
         }
 
-        addEdge(v1Index, v0Index);
-        addEdge(v2Index, v1Index);
-        addEdge(v0Index, v2Index);
-
+        addEdge(v1Index, v0Index, triangleIndex);
+        addEdge(v2Index, v1Index, triangleIndex);
+        addEdge(v0Index, v2Index, triangleIndex);
+        
         var edgeKey0 = makeEdgeKey(v1Index, v0Index);
         var edgeKey1 = makeEdgeKey(v2Index, v1Index);
         var edgeKey2 = makeEdgeKey(v0Index, v2Index);
@@ -309,8 +309,11 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
 
     shadowVolume.updateFunc = function(direction)
     {
-        // 에지 검출
         this.edges = [];
+        this.edgeVerts = [];
+        this.quadVerts = [];
+
+        // 에지 검출
         var UpdateEdge = function(edges, edgeKey)
         {
             if (edges[edgeKey])
@@ -319,6 +322,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
                 edges[edgeKey] = edgeKey;
         }
 
+        const extrudeLength = 200.0;
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
@@ -331,10 +335,24 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
                 UpdateEdge(this.edges, triangle.edgeKey0);
                 UpdateEdge(this.edges, triangle.edgeKey1);
                 UpdateEdge(this.edges, triangle.edgeKey2);
+
+                // back cap
+                var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
+                this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
+                this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
+            }
+            else
+            {
+                // front cap
+                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
+                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
+                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
             }
         }
 
-        this.edgeVerts = [];
         for(var key in this.edges)
         {
             const edge = adjacencyInfo.edges[this.edges[key]];
@@ -351,16 +369,32 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
         /////////////////////////////////////////
 
         // 생성된 Edge로 Quad 생성
-        this.quadVerts = [];
-        const extrudeLength = 100.0;
         for(var key in this.edges)
         {
             const edge = adjacencyInfo.edges[this.edges[key]];
-            const v0 = adjacencyInfo.transformedVerts[edge.v0Index];
-            const v1 = adjacencyInfo.transformedVerts[edge.v1Index];
-            const v2 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-            const v3 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+            var v0 = adjacencyInfo.transformedVerts[edge.v0Index];
+            var v1 = adjacencyInfo.transformedVerts[edge.v1Index];
+            var v2 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+            var v3 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+            
+            var result = ZeroVec3.CloneVec3();
+            CrossProduct3(result, v1.CloneVec3().Sub(v0), v2.CloneVec3().Sub(v0));
 
+            // quad should face to triangle normal
+            if (GetDotProduct3(result, adjacencyInfo.triangles[edge.triangleIndex].normal) <= 0.0)
+            {
+                {
+                    var temp = v0;
+                    v0 = v1;
+                    v1 = temp;
+                }
+
+                {
+                    var temp = v2;
+                    v2 = v3;
+                    v3 = temp;
+                }
+            }
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
             this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
@@ -385,9 +419,14 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
         }            
     };
 
+    const createEdgeObj = false;
+    const createQuadObj = true;
+
     shadowVolume.createShadowVolumeObject = function(direction)
     {
         const gl = jWebGL.gl;
+
+        if (createEdgeObj)
         {
             var edgeAttrib = [];
             var edgeAttribDesc = GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), false, false, false, false)
@@ -400,6 +439,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
             this.debugObject.edge = edgeObj;
         }
         
+        if (createQuadObj)
         {
             var quadAttrib = [];
             var quadAttribDesc = GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 0.3), false, false, false, false)
@@ -417,6 +457,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
     {
         const gl = jWebGL.gl;
         
+        if (createEdgeObj)
         {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.edge.attribs[0].vbo);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.edgeVerts), gl.DYNAMIC_DRAW);
@@ -425,6 +466,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
         }
 
+        if (createQuadObj)
         {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.quad.attribs[0].vbo);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW);
@@ -445,48 +487,48 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     var vertices = [
         // z +
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
 
         // z -
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
 
         // x +
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         
         // x -
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
 
         // y +
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
+        offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
 
         // y -
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
         offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
@@ -726,7 +768,10 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, at
     if (attribDesc.shadowVolume)
     {
         newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, faces, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
+
+        var objectArray = [];
+        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, objectArray);
+        newStaticObject.shadowVolume.objectArray = objectArray;
 
         newStaticObject.updateFunc = function()
         {

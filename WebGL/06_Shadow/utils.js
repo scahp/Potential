@@ -125,3 +125,4 @@ function CreateProgram(gl, vsFilename, fgFilename)
 
     return program;
 }
+

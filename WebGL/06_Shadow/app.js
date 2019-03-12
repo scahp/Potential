@@ -7,6 +7,8 @@ var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
 var pointLight = null;
 var spotLight = null;
+var stencilQuad = null;
+var tempSphere = null;
 
 // StaticObject
 var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
@@ -278,7 +280,7 @@ var Init = function()
     console.log('init function start');
 
     var canvas = document.getElementById('webgl-surface');
-    var gl = canvas.getContext('webgl');
+    var gl = canvas.getContext('webgl', {stencil:true});
     if (!gl)
     {
         console.log('webgl not supported');
@@ -315,8 +317,14 @@ jWebGL.prototype.Init = function()
     gl.enable(gl.DEPTH_TEST);
     //gl.enable(gl.BLEND);
     //gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    //gl.enable(gl.BLEND);
     gl.disable(gl.BLEND);
     gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    //gl.cullFace(gl.FRONT);
+
+    gl.disable(gl.CULL_FACE);
 
     var matPos = CreatePosMat4(10.0, 20.0, 30.0);
     var matRot = CreateRotMat4(DegreeToRadian(10), DegreeToRadian(20), DegreeToRadian(30));
@@ -338,7 +346,7 @@ jWebGL.prototype.Init = function()
     }
 
     // Create Cameras
-    var mainCamera = CreateCamera(gl, CreateVec3(42, 100, 62), CreateVec3(-29.0, 36.0, -3.0), DegreeToRadian(45), 1.0, 500.0, false);
+    var mainCamera = CreateCamera(gl, CreateVec3(85, 119, -102), CreateVec3(24.0, 39.0, -44.0), DegreeToRadian(45), 1.0, 500.0, false);
     CreateCamera(gl, CreateVec3(0, 50, 0), CreateVec3(0.0, 50.0, -1.0), DegreeToRadian(40), 5.0, 200.0, false);
     updateCamera(gl, 0);
 
@@ -354,6 +362,13 @@ jWebGL.prototype.Init = function()
 
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
+
+    stencilQuad = CreateQuad(gl, null, ZeroVec3, OneVec3, CreateVec3(150, 150, 150), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false));
+    stencilQuad.updateFunc = function()
+    {
+        //this.rot.x += 0.05;
+        //this.rot.y += 0.02;
+    }
 
     // Create a texture.
     var texture = gl.createTexture();
@@ -433,7 +448,12 @@ jWebGL.prototype.Init = function()
     CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
     CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
 
-    var tempSphere = CreateSphere(gl, StaticObjectArray, CreateVec3(65.0, 35.0, 10.0), 30, 20, OneVec3, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, true));
+    const spherePosX = document.getElementById('SpherePosX').valueAsNumber;
+    const spherePosY = document.getElementById('SpherePosY').valueAsNumber;
+    const spherePosZ = document.getElementById('SpherePosZ').valueAsNumber;
+    const sphereRadius = document.getElementById('SphereRadius').valueAsNumber;
+    tempSphere = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
+    , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, true));
     //CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.0, 0.0, 0.0));
@@ -501,20 +521,99 @@ jWebGL.prototype.Render = function(cameraIndex)
     var gl = this.gl;
     var camera = Cameras[cameraIndex];
 
-    gl.clearColor(0.5, 0.5, 0.5, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    for(var i = 0;i<StaticObjectArray.length;++i)
+    var drawStaticObjecs = function()
     {
-        if (StaticObjectArray[i].drawFunc)
-            StaticObjectArray[i].drawFunc(camera);
+        for(var i = 0;i<StaticObjectArray.length;++i)
+        {
+            if (StaticObjectArray[i].drawFunc)
+                StaticObjectArray[i].drawFunc(camera);
+        }
+    
+        for(var i = 0;i<TransparentStaticObjectArray.length;++i)
+        {
+            if (TransparentStaticObjectArray[i].drawFunc)
+                TransparentStaticObjectArray[i].drawFunc(camera);
+        }
     }
 
-    for(var i = 0;i<TransparentStaticObjectArray.length;++i)
+    //////////////////////////////////////////////////////////////////
+    // 1. 뎁스 버퍼에 오브젝트 그려줌
+    gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+
+    //gl.clearColor(0.5, 0.5, 0.5, 1);
+    gl.clearColor(0.0, 0.0, 0.0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+    gl.disable(gl.STENCIL_TEST);
+
+    gl.depthMask(true);
+    gl.colorMask(false, false, false, false);
+
+    drawStaticObjecs();
+
+    //////////////////////////////////////////////////////////////////
+    // 2. 스텐실 볼륨 렌더링
+    gl.clear(gl.STENCIL_BUFFER_BIT);
+    gl.enable(gl.STENCIL_TEST);
+    //gl.stencilOp(gl.KEEP, gl.INCR, gl.KEEP);
+    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
+    gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
+    // gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
+    // gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
+    //gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.DECR_WRAP);
+    //gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.INCR_WRAP);
+
+    gl.stencilFunc(gl.ALWAYS, 0, 0xff);
+    gl.depthMask(false);
+    gl.colorMask(false, false, false, false);
+
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(0.0, 100.0);
+
+    for(var i=0;i<tempSphere.shadowVolume.objectArray.length;++i)
     {
-        if (TransparentStaticObjectArray[i].drawFunc)
-            TransparentStaticObjectArray[i].drawFunc(camera);
+        var obj = tempSphere.shadowVolume.objectArray[i];
+        if (obj)
+        {
+            if (obj.updateFunc)
+                obj.updateFunc();
+
+            if (obj.drawFunc)
+                obj.drawFunc(camera);
+        }
     }
+
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+
+    //////////////////////////////////////////////////////////////////
+    // 3. 최종 라이팅 렌더링
+    gl.stencilFunc(gl.EQUAL, 0, 0xff);
+    //gl.stencilMask(0x00);
+    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.KEEP);
+    gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.KEEP);
+
+	gl.depthMask(true);
+    gl.colorMask(true, true, true, true);
+    //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    drawStaticObjecs();
+
+    // for(var i=0;i<tempSphere.shadowVolume.objectArray.length;++i)
+    // {
+    //     var obj = tempSphere.shadowVolume.objectArray[i];
+    //     if (obj)
+    //     {
+    //         if (obj.updateFunc)
+    //             obj.updateFunc();
+
+    //         if (obj.drawFunc)
+    //             obj.drawFunc(camera);
+    //     }
+    // }
+
+
 }
 
 jWebGL.prototype.OnResizeWindow = function()
