@@ -323,8 +323,7 @@ jWebGL.prototype.Init = function()
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
     //gl.cullFace(gl.FRONT);
-
-    gl.disable(gl.CULL_FACE);
+    gl.frontFace(gl.CCW);
 
     var matPos = CreatePosMat4(10.0, 20.0, 30.0);
     var matRot = CreateRotMat4(DegreeToRadian(10), DegreeToRadian(20), DegreeToRadian(30));
@@ -445,15 +444,26 @@ jWebGL.prototype.Init = function()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
-    CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
-    CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
+    CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+
+    //var capsule = CreateCapsule(gl, StaticObjectArray, CreateVec3(0.0, 30.0, 30.0), 20, 10, 20, 1.0, GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
+    //var quad = CreateQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    // var tri = CreateTriangle(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 30.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
+    // var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false, false, true));
+
+    //var cone = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3, GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
+    var cylinder = CreateCylinder(gl, StaticObjectArray, CreateVec3(60.0, 60.0, -60.0), 20, 10, 20, OneVec3, GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    // var billboardQuad = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 60.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+    //     , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false));
 
     const spherePosX = document.getElementById('SpherePosX').valueAsNumber;
     const spherePosY = document.getElementById('SpherePosY').valueAsNumber;
     const spherePosZ = document.getElementById('SpherePosZ').valueAsNumber;
     const sphereRadius = document.getElementById('SphereRadius').valueAsNumber;
     tempSphere = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
-    , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, true));
+                            , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
+                            , GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, true));
     //CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.0, 0.0, 0.0));
@@ -539,7 +549,7 @@ jWebGL.prototype.Render = function(cameraIndex)
     //////////////////////////////////////////////////////////////////
     // 1. 뎁스 버퍼에 오브젝트 그려줌
     gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
-
+    gl.enable(gl.CULL_FACE);
     //gl.clearColor(0.5, 0.5, 0.5, 1);
     gl.clearColor(0.0, 0.0, 0.0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
@@ -570,16 +580,27 @@ jWebGL.prototype.Render = function(cameraIndex)
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(0.0, 100.0);
 
-    for(var i=0;i<tempSphere.shadowVolume.objectArray.length;++i)
-    {
-        var obj = tempSphere.shadowVolume.objectArray[i];
-        if (obj)
-        {
-            if (obj.updateFunc)
-                obj.updateFunc();
+    gl.disable(gl.CULL_FACE);
 
-            if (obj.drawFunc)
-                obj.drawFunc(camera);
+    for(var i = 0;i<StaticObjectArray.length;++i)
+    {
+        var obj = StaticObjectArray[i];
+        if (!obj.shadowVolume)
+            continue;
+
+        const shadowVolume = obj.shadowVolume;
+
+        for(var k=0;k<shadowVolume.objectArray.length;++k)
+        {
+            var obj = shadowVolume.objectArray[k];
+            if (obj)
+            {
+                if (obj.updateFunc)
+                    obj.updateFunc();
+    
+                if (obj.drawFunc)
+                    obj.drawFunc(camera);
+            }
         }
     }
 
@@ -595,6 +616,7 @@ jWebGL.prototype.Render = function(cameraIndex)
 	gl.depthMask(true);
     gl.colorMask(true, true, true, true);
     //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    gl.enable(gl.CULL_FACE);
 
     gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.DEPTH_BUFFER_BIT);

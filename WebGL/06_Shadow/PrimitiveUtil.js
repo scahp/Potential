@@ -479,6 +479,20 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
     return shadowVolume;
 }
 
+var CreateShadowVolume = function(ownerObject, vertices, faces, targetObjectArray)
+{
+    ownerObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, faces, true, targetObjectArray);
+
+    var objectArray = [];
+    ownerObject.shadowVolume = GenerateShadowVolumeInfo(ownerObject.adjacencyInfo, true, objectArray);
+    ownerObject.shadowVolume.objectArray = objectArray;
+
+    ownerObject.updateFunc = function()
+    {
+        this.adjacencyInfo.updateFunc(this);
+    }
+}
+
 var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
 {
     var halfSize = size.CloneVec3().Div(2.0);
@@ -487,35 +501,35 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     var vertices = [
         // z +
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
 
         // z -
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
 
         // x +
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
         
         // x -
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (halfSize.z),   
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
 
         // y +
         offset.x + (-halfSize.x),  offset.y + (halfSize.y),     offset.z + (-halfSize.z),  
@@ -526,12 +540,12 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
         offset.x + (halfSize.x),   offset.y + (halfSize.y),     offset.z + (halfSize.z),   
 
         // y -
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (halfSize.z),  
-        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
-        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z  + (-halfSize.z), 
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (halfSize.z),  
+        offset.x + (-halfSize.x),  offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
+        offset.x + (halfSize.x),   offset.y + (-halfSize.y),    offset.z + (-halfSize.z), 
     ];
 
     var elementCount = vertices.length / 3;
@@ -593,15 +607,7 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray)
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -617,10 +623,12 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),   0.0,   offset.y + (halfSize.y), 
-        offset.x + (halfSize.x),    0.0,   offset.y + (halfSize.y), 
-        offset.x + (-halfSize.x),   0.0,   offset.y + (-halfSize.y),
-        offset.x + (halfSize.x),    0.0,   offset.y + (-halfSize.y),
+        offset.x + (halfSize.x),    0.0,   offset.z + (-halfSize.z),
+        offset.x + (-halfSize.x),   0.0,   offset.z + (-halfSize.z),
+        offset.x + (halfSize.x),    0.0,   offset.z + (halfSize.z), 
+        offset.x + (halfSize.x),    0.0,   offset.z + (halfSize.z), 
+        offset.x + (-halfSize.x),   0.0,   offset.z + (-halfSize.z),
+        offset.x + (-halfSize.x),   0.0,   offset.z + (halfSize.z), 
     ];
 
     var elementCount = vertices.length / 3;
@@ -641,18 +649,10 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -678,9 +678,9 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
     var offset = ZeroVec3.CloneVec3();
 
     var vertices = [
-        offset.x + (-halfSize.x),   0.0,   offset.y + (halfSize.y), 
-        offset.x + (halfSize.x),    0.0,   offset.y + (halfSize.y), 
-        offset.x + (-halfSize.x),   0.0,   offset.y + (-halfSize.y),
+        offset.x + (halfSize.x),    0.0,   offset.z + (-halfSize.z),
+        offset.x + (-halfSize.x),   0.0,   offset.z + (-halfSize.z),
+        offset.x + (halfSize.x),    0.0,   offset.z + (halfSize.z), 
     ];
 
     var elementCount = vertices.length / 3;
@@ -704,15 +704,7 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -727,9 +719,12 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, at
     var vertices = [];
     var offset = ZeroVec3;
 
+    if (slice % 2)
+        ++slice;
+
     var stepRadian = DegreeToRadian(360.0 / slice);
-    var halfSlice = slice / 2;
-    for(var j=0;j<=halfSlice*2;++j)
+    var halfSlice = parseInt(slice / 2);
+    for(var j=0;j<=halfSlice;++j)
     {
         for(var i=0;i<=slice;++i)
         {
@@ -766,18 +761,7 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, at
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, (attribDesc.wireframe ? gl.LINES : gl.TRIANGLES));
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, faces, true, TargetObjectArray);
-
-        var objectArray = [];
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, objectArray);
-        newStaticObject.shadowVolume.objectArray = objectArray;
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, faces, TargetObjectArray);
 
     // 잘 그려진다면, 스텐실 버퍼에 operation 연산을 사용해서 volume을 그리고, 스텐실 버퍼 값을 이용해 물체를 그린다.
 
@@ -860,15 +844,7 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -970,9 +946,12 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
     var topVert = CreateVec3(0.0, halfHeight, 0.0);
     var bottomVert = CreateVec3(0.0, -halfHeight, 0.0);
 
+    if (slice % 2)
+        ++slice;
+
     var vertices = [];
     var stepRadian = DegreeToRadian(360.0 / slice);
-    for(var i=1;i<=360;++i)
+    for(var i=1;i<=slice;++i)
     {
         var rad = i * stepRadian;
         var prevRad = rad - stepRadian;
@@ -984,8 +963,8 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
 
         // Bottom
         vertices.push(bottomVert.x);                vertices.push(bottomVert.y);    vertices.push(bottomVert.z);
-        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
         vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
     }
 
     var currentVertexCnt = vertices.length/3;
@@ -1045,15 +1024,7 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, (attribDesc.wireframe ? gl.LINES : gl.TRIANGLES));
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -1068,18 +1039,23 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
     return coneStaticObject;
 }
 
-var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
+var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice, scale, attribDesc)
 {
     var halfHeight = height/2.0;
     var topVert = CreateVec3(0.0, halfHeight, 0.0);
     var bottomVert = CreateVec3(0.0, -halfHeight, 0.0);
 
+    if (slice % 2)
+        ++slice;
+
     var vertices = [];
 
-    for(var i=1;i<=360;++i)
+    var stepRadian = DegreeToRadian(360.0 / slice);
+    var halfSlice = parseInt(slice / 2);
+    for(var i=0;i<slice;++i)
     {
-        var rad = DegreeToRadian(i);
-        var prevRad = DegreeToRadian(i-1);
+        var rad = i * stepRadian;
+        var prevRad = rad - stepRadian;
 
         // Top
         vertices.push(topVert.x);                   vertices.push(topVert.y);       vertices.push(topVert.z);
@@ -1132,10 +1108,10 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, scale,
         var cone_y = -height / flank_len;
         
         // Cone Top Normal
-        for(var i=1;i<=360;++i)
+        for(var i=1;i<slice;++i)
         {
-            var rad = DegreeToRadian(i);
-            var prevRad = DegreeToRadian(i-1);
+            var rad = i * stepRadian;
+            var prevRad = rad - stepRadian;
 
             // Top
             normals.push(0.0); normals.push(1.0); normals.push(0.0);
@@ -1165,15 +1141,7 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, scale,
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -1211,7 +1179,7 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
     return newStaticObject;
 }
 
-var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, attribDesc)
+var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, slice, scale, attribDesc)
 {
     if (height < 0)
     {
@@ -1223,25 +1191,26 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
     var vertices = [];
     var normals = [];
 
-    vertices.push(0.0); vertices.push(0.0); vertices.push(0.0);
-    normals.push(0.0); normals.push(1.0); normals.push(0.0);
+    if (slice % 2)
+        ++slice;
 
-    var slice = 9;
-    for(var j=-slice;j<=slice;++j)
+    var stepRadian = DegreeToRadian(360.0 / slice);
+    var halfSlice = parseInt(slice / 2);
+    for(var j=0;j<=halfSlice;++j)
     {
-        var isUpperSphere = (j > 0);
-        var isLowerSphere = (j < 0);
+        var isUpperSphere = (j > parseInt(halfSlice / 2));
+        var isLowerSphere = (j < parseInt(halfSlice / 2));
 
-        for(var i=0;i<=36;++i)
+        for(var i=0;i<=slice;++i)
         {
-            var x = Math.cos(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
-            var y = Math.sin(DegreeToRadian(j * 10)) * radius;
-            var z = Math.sin(DegreeToRadian(i * 10)) * radius * Math.cos(DegreeToRadian(j * 10));
+            var x = Math.cos(stepRadian * i) * radius * Math.sin(stepRadian * j);
+            var y = Math.cos(stepRadian * j) * radius;
+            var z = Math.sin(stepRadian * i) * radius * Math.sin(stepRadian * j);
             var yExt = 0.0;
             if (isUpperSphere)
-                yExt = halfHeight;
-            if (isLowerSphere)
                 yExt = -halfHeight;
+            if (isLowerSphere)
+               yExt = halfHeight;
             vertices.push(x); vertices.push(y+yExt); vertices.push(z);
 
             var normal = null;
@@ -1266,27 +1235,20 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, scale, 
 
     var faces = [];
     var iCount = 0;
-    for(var j=0;j<slice*2;++j)
+    var toNextSlice = slice+1;
+    for(var j=0;j<halfSlice;++j)
     {
-        for(var i=0;i<=36;++i, iCount += 1)
+        for(var i=0;i<=slice;++i, iCount += 1)
         {
-            faces.push(iCount); faces.push(iCount + 37); faces.push(iCount + 1);
-            faces.push(iCount + 1); faces.push(iCount + 37); faces.push(iCount + 37 + 1);
+            faces.push(iCount); faces.push(iCount + 1); faces.push(iCount + toNextSlice);
+            faces.push(iCount + toNextSlice); faces.push(iCount + 1); faces.push(iCount + toNextSlice + 1);
         }
     }
 
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.TRIANGLES);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, faces, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, faces, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
@@ -1531,15 +1493,7 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
     var newStaticObject = createStaticObject(gl, attribDesc, [attrib0, attrib1], null, 0, elementCount, gl.TRIANGLE_STRIP);
     
     if (attribDesc.shadowVolume)
-    {
-        newStaticObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, null, true, TargetObjectArray);
-        newStaticObject.shadowVolume = GenerateShadowVolumeInfo(newStaticObject.adjacencyInfo, true, TargetObjectArray);
-
-        newStaticObject.updateFunc = function()
-        {
-            this.adjacencyInfo.updateFunc(this);
-        }
-    }
+        CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);

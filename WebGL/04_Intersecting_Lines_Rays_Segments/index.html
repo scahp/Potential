@@ -39,6 +39,7 @@
             <div>
                 <input type="radio" name="IntersectingType" value="SegmentAgainstPlane" checked="checked" onclick="OnChangedIntersectingType(this)"> SegmentAgainstPlane<br>
                 <input type="radio" name="IntersectingType" value="SegmentAgainstSphere" onclick="OnChangedIntersectingType(this)"> SegmentAgainstSphere<br>
+                <input type="radio" name="IntersectingType" value="SegmentAgainstBox" onclick="OnChangedIntersectingType(this)"> SegmentAgainstBox<br>
             </div>
             <div>
                 <label>Time</label>
@@ -74,6 +75,20 @@
                 <div>
                     <label>SpherePosZ</label>
                     <input type="range" min="-100.0" max="100" step="0.001" value="50.0" class="slider" id="SpherePosZ" oninput="OnSliderChangeSpherePosZ(event)">
+                </div>
+            </div>
+            <div id="div-SegmentAgainstBox">
+                <div>
+                    <label>BoxPosX</label>
+                    <input type="range" min="-100.0" max="100.0" step="0.001" value="20.0" class="slider" id="BoxPosX" oninput="OnSliderChangeBoxPosX(event)">
+                </div>
+                <div>
+                    <label>BoxPosY</label>
+                    <input type="range" min="-100.0" max="100.0" step="0.001" value="20.0" class="slider" id="BoxPosY" oninput="OnSliderChangeBoxPosY(event)">
+                </div>
+                <div>
+                    <label>BoxPosZ</label>
+                    <input type="range" min="-100.0" max="100" step="0.001" value="50.0" class="slider" id="BoxPosZ" oninput="OnSliderChangeBoxPosZ(event)">
                 </div>
             </div>
         </div>

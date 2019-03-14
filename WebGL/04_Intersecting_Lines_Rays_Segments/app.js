@@ -9,6 +9,7 @@ var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
 var updateIntersection = null;
 var sphere = null
+var box = null;
 
 // StaticObject
 var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
@@ -263,27 +264,78 @@ var CreateSegmentAgainstSpherePrimitives = function(gl)
     };
 }
 
+var CreateSegmentAgainstBoxPrimitives = function(gl)
+{
+    var x = document.getElementById("BoxPosX").valueAsNumber;
+    var y = document.getElementById("BoxPosY").valueAsNumber;
+    var z = document.getElementById("BoxPosZ").valueAsNumber;
+    const centerPos = CreateVec3(x, y, z);
+    const radius = OneVec3.Clone().Mul(15);
+    box = CreateCube(gl, StaticObjectArray, centerPos, OneVec3, CreateVec3(30.0, 30.0, 30.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false));
+    box.setAABB(CreateAABB(centerPos.Clone().Sub(radius), centerPos.Clone().Add(radius)));
+    updateIntersection = function()
+    {
+        if (arrowSegment && box)
+        {
+             var a = arrowSegment.segment.start.Clone();
+             var b = arrowSegment.segment.getCurrentEnd();
+
+            // // Test for ray
+            // var dir = b.Clone().Sub(a).GetNormalize();
+            // var result = IntersectRayBox(a, dir, box);
+
+            // Test for segment
+            var result = IntersectSegmentBox(a, b, box);
+
+            if (result && intersectionPoint)
+            {
+                intersectionPoint.pos = result.point.Clone();
+                intersectionPoint.hide = false;
+                box.collided = true;
+            }
+            else
+            {
+                intersectionPoint.pos = CreateVec3(0.0, 0.0, 0.0);
+                intersectionPoint.hide = true;
+                box.collided = false;
+            }
+        }
+    };
+}
+
 var SwitchExampleType = function(type)
 {
     RemoveStaticObject(quad);
     RemoveStaticObject(sphere);
+    RemoveStaticObject(box);
     quad = null;
     sphere = null;
+    box = null;
 
     var div_segmentAgainstPlane = document.getElementById('div-SegmentAgainstPlane');
-    var div_segmentAgainstSphere = document.getElementById('div-SegmentAgainstSphere');    
+    var div_segmentAgainstSphere = document.getElementById('div-SegmentAgainstSphere');
+    var div_segmentAgainstBox = document.getElementById('div-SegmentAgainstBox');
     if (type == "SegmentAgainstPlane")
     {
         CreateSegmentAgainstPlanePrimitives(jWebGL.gl);
 
         div_segmentAgainstPlane.style.display = 'block';
         div_segmentAgainstSphere.style.display = 'none';
+        div_segmentAgainstBox.style.display = 'none';
     }
     else if (type == "SegmentAgainstSphere")
     {
         CreateSegmentAgainstSpherePrimitives(jWebGL.gl);
         div_segmentAgainstPlane.style.display = 'none';
         div_segmentAgainstSphere.style.display = 'block';
+        div_segmentAgainstBox.style.display = 'none';
+    }
+    else if (type == "SegmentAgainstBox")
+    {
+        CreateSegmentAgainstBoxPrimitives(jWebGL.gl);
+        div_segmentAgainstPlane.style.display = 'none';
+        div_segmentAgainstSphere.style.display = 'none';
+        div_segmentAgainstBox.style.display = 'block';
     }
 
     if (updateIntersection)

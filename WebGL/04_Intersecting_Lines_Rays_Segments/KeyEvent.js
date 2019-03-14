@@ -147,3 +147,48 @@ var OnSliderChangeSpherePosZ = function(e)
             updateIntersection();
     }
 }
+
+var OnSliderChangeBoxPosX = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (box)
+    {
+        box.pos.x = e.target.valueAsNumber;
+
+        const radius = OneVec3.Clone().Mul(15);
+        box.setAABB(CreateAABB(box.pos.Clone().Sub(radius), box.pos.Clone().Add(radius)));
+
+        if (updateIntersection)
+            updateIntersection();
+    }
+}
+
+var OnSliderChangeBoxPosY = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (box)
+    {
+        box.pos.y = e.target.valueAsNumber;
+
+        const radius = OneVec3.Clone().Mul(15);
+        box.setAABB(CreateAABB(box.pos.Clone().Sub(radius), box.pos.Clone().Add(radius)));
+
+        if (updateIntersection)
+            updateIntersection();
+    }
+}
+
+var OnSliderChangeBoxPosZ = function(e)
+{
+    console.log(e.target.valueAsNumber);
+    if (box)
+    {
+        box.pos.z = e.target.valueAsNumber;
+
+        const radius = OneVec3.Clone().Mul(15);
+        box.setAABB(CreateAABB(box.pos.Clone().Sub(radius), box.pos.Clone().Add(radius)));
+
+        if (updateIntersection)
+            updateIntersection();
+    }
+}

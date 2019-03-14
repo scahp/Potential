@@ -201,6 +201,17 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    newStaticObject.aabb = null;
+    newStaticObject.setAABB = function(aabb)
+    {
+        if (!aabb)
+            return;
+        
+        this.aabb = aabb.Clone();
+        this.rot = ZeroVec3.Clone();
+        var centerPos = this.aabb.min.Clone().Add(this.aabb.max).Div(2);
+        this.pos = centerPos;
+    };
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
     return newStaticObject;

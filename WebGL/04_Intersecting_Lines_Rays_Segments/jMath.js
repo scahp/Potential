@@ -450,6 +450,26 @@ jPlane.prototype.Clone = function()
     return CreatePlane(this.n.x, this.n.y, this.n.z, this.d);
 }
 
+////////////////////////////////////////////////
+// jAABB
+var jAABB = function()
+{
+    this.min = CreateVec3(0.0, 0.0, 0.0);
+    this.max = CreateVec3(0.0, 0.0, 0.0);
+}
+
+var CreateAABB = function(min, max)
+{
+    var newAABB = new jAABB();
+    newAABB.min = min.Clone();
+    newAABB.max = max.Clone();
+    return newAABB;
+}
+
+jAABB.prototype.Clone = function()
+{
+    return CreateAABB(this.min, this.max);
+}
 
 ///////////////////////////////////////////////////
 // Math Util
