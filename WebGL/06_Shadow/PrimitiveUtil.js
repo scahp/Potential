@@ -157,7 +157,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
 
     if (faces)
     {
-        const numOfTriangle = faces.length / 3;
+        const numOfTriangle = (faces.length / 3);
         for(var i=0;i<numOfTriangle;++i)
         {
             const index = i * 3;
@@ -170,7 +170,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
     }
     else
     {
-        const numOfTriangle = vertices.length / 3;
+        const numOfTriangle = vertices.length / 9;     // x, y, z component is stored seperately
         for (var i=0;i<numOfTriangle;++i)
         {
             const index = i * 3;
@@ -203,7 +203,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         for(var key in this.triangles)
         {
             var triangle = this.triangles[key];
-            var transformedNormal = triangle.normal.CloneVec3().Transform(matWorld, true);
+            var transformedNormal = triangle.normal.CloneVec3().Transform(matWorld, true).GetNormalize();
             var transformedCenterPos = triangle.centerPos.CloneVec3().Transform(matWorld);
 
             triangle.transformedNormal = transformedNormal;
@@ -322,6 +322,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
                 edges[edgeKey] = edgeKey;
         }
 
+        var hasBackCap = false;
         const extrudeLength = 200.0;
         for(var key in adjacencyInfo.triangles)
         {
@@ -336,6 +337,13 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
                 UpdateEdge(this.edges, triangle.edgeKey1);
                 UpdateEdge(this.edges, triangle.edgeKey2);
 
+                // front cap
+                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
+                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
+                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+            }
+            else
+            {
                 // back cap
                 var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
@@ -343,13 +351,19 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
                 this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
                 this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
                 this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
+                hasBackCap = true;
             }
-            else
+        }
+        if (!hasBackCap)
+        {
+            const cnt = this.quadVerts.length / 3;
+            const extrudeDirection = direction.CloneVec3().Mul(extrudeLength);
+            for(var i=0;i<cnt;++i)
             {
-                // front cap
-                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
-                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
-                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+                const index = i * 3;
+                this.quadVerts.push(this.quadVerts[index] + extrudeDirection.x);
+                this.quadVerts.push(this.quadVerts[index + 1] + extrudeDirection.y);
+                this.quadVerts.push(this.quadVerts[index + 2] + extrudeDirection.z);
             }
         }
 
@@ -381,7 +395,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
             CrossProduct3(result, v1.CloneVec3().Sub(v0), v2.CloneVec3().Sub(v0));
 
             // quad should face to triangle normal
-            if (GetDotProduct3(result, adjacencyInfo.triangles[edge.triangleIndex].normal) <= 0.0)
+            if (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].normal) < 0.0)
             {
                 {
                     var temp = v0;
@@ -967,13 +981,7 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
         vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
     }
 
-    var currentVertexCnt = vertices.length/3;
-    var drawArray = [ {startVert:0, count:currentVertexCnt} ];
-
-    var secondStartVert = currentVertexCnt;
-
     var elementCount = vertices.length / 3;
-    drawArray.push({startVert:secondStartVert, count:(elementCount-secondStartVert)});
 
     var attribs = [];
     attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
@@ -1059,31 +1067,25 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
 
         // Top
         vertices.push(topVert.x);                   vertices.push(topVert.y);       vertices.push(topVert.z);
-        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);    vertices.push(Math.sin(rad)*radius);
-        vertices.push(Math.cos(prevRad)*radius);    vertices.push(topVert.y);    vertices.push(Math.sin(prevRad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);       vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(topVert.y);       vertices.push(Math.sin(prevRad)*radius);
 
         // Mid
-        vertices.push(Math.cos(prevRad)*radius);    vertices.push(topVert.y);    vertices.push(Math.sin(prevRad)*radius);
-        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(prevRad)*radius);    vertices.push(topVert.y);       vertices.push(Math.sin(prevRad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);       vertices.push(Math.sin(rad)*radius);
         vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
 
         vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
-        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);    vertices.push(Math.sin(rad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(topVert.y);       vertices.push(Math.sin(rad)*radius);
         vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
 
         // Bottom
         vertices.push(bottomVert.x);                vertices.push(bottomVert.y);    vertices.push(bottomVert.z);
-        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
         vertices.push(Math.cos(prevRad)*radius);    vertices.push(bottomVert.y);    vertices.push(Math.sin(prevRad)*radius);
+        vertices.push(Math.cos(rad)*radius);        vertices.push(bottomVert.y);    vertices.push(Math.sin(rad)*radius);
     }
 
-    var currentVertexCnt = vertices.length/3;
-    var drawArray = [ {startVert:0, count:currentVertexCnt} ];
-
-    var secondStartVert = currentVertexCnt;
-
     var elementCount = vertices.length / 3;
-    drawArray.push({startVert:secondStartVert, count:(elementCount-secondStartVert)});
 
     var attribs = [];
     attribs.push(createAttribParameter('Pos', 3, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
@@ -1108,7 +1110,7 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
         var cone_y = -height / flank_len;
         
         // Cone Top Normal
-        for(var i=1;i<slice;++i)
+        for(var i=0;i<slice;++i)
         {
             var rad = i * stepRadian;
             var prevRad = rad - stepRadian;
@@ -1138,7 +1140,7 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, (attribDesc.wireframe ? gl.LINES : gl.TRIANGLES));
     
     if (attribDesc.shadowVolume)
         CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
@@ -1146,14 +1148,14 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
-    var coneStaticObject = {};
-    coneStaticObject.__proto__ = newStaticObject;
-    coneStaticObject.height = height;
-    coneStaticObject.radius = radius;
-    coneStaticObject.color = color;
+    var cylinderStaticObject = {};
+    cylinderStaticObject.__proto__ = newStaticObject;
+    cylinderStaticObject.height = height;
+    cylinderStaticObject.radius = radius;
+    cylinderStaticObject.color = color;
     if (TargetObjectArray)
-        TargetObjectArray.push(coneStaticObject);
-    return coneStaticObject;
+        TargetObjectArray.push(cylinderStaticObject);
+    return cylinderStaticObject;
 }
 
 var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneHeight, coneRadius, segmentAttribDesc, coneAttribDesc)

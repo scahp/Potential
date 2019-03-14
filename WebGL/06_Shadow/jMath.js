@@ -34,6 +34,10 @@ jVec3.prototype.Transform = function(matrix, noTranslate = false)
     {
         this.x = x / w; this.y = y / w; this.z = z / w;
     }
+    else
+    {
+        this.x = x; this.y = y; this.z = z;
+    }
     return this;
 }
 
