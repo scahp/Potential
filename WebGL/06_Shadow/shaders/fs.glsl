@@ -28,7 +28,6 @@ void main()
     vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
 
     vec3 finalColor = vec3(0.0, 0.0, 0.0);
-    finalColor += GetAmbientLight(AmbientLight);
     finalColor += GetDirectionalLight(DirectionalLight, normal, reflectLightDir, viewDir);
 
     vec3 pointLightDir = PointLight.LightPos - Pos_;

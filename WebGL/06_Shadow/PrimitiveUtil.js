@@ -3,9 +3,9 @@ var createAttribParameter = function(name, count, datas, bufferType, type, norma
     return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
-var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false)
+var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false, ambientOnly = false)
 {
-    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume};
+    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume, ambientOnly:ambientOnly};
 }
 
 var GetShaderFromAttribDesc = function(outShader, attribDesc)
@@ -19,6 +19,8 @@ var GetShaderFromAttribDesc = function(outShader, attribDesc)
     {
         outShader.vs = 'shaders/vs.glsl';
         outShader.fs = 'shaders/fs.glsl';
+        if (attribDesc.ambientOnly)
+            outShader.fs = outShader.fs.replace(".glsl", "_ambientonly.glsl");
         return;
     }
 
@@ -237,7 +239,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         var elementCount = this.result.length / 3;
         attribEdges.push(createAttribParameter('Pos', 3, this.result, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
         attribEdges.push(createAttribParameter('Color', 4, GenerateColor(attribEdgesDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-        var obj = createStaticObject(gl, attribEdgesDesc, attribEdges, null, 0, elementCount, gl.LINES);
+        var obj = createStaticObject(gl, attribEdgesDesc, attribEdges, null, 0, elementCount, gl.LINES, false, true);
         obj.pos = pos.CloneVec3();
         obj.rot = rot.CloneVec3();
         obj.scale = scale.CloneVec3();
@@ -253,13 +255,12 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
     {
         const gl = jWebGL.gl;
 
-        // 한번 만들고 업데이트 하는 방식으로 수정해야 함.
         var attribNormal = [];
         var attribNormalDesc = GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), false, false, false, false)
         var elementCount = this.normalVers.length / 3;
         attribNormal.push(createAttribParameter('Pos', 3, new Float32Array(this.normalVers), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
         attribNormal.push(createAttribParameter('Color', 4, GenerateColor(attribNormalDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-        var normalObj = createStaticObject(gl, attribNormalDesc, attribNormal, null, 0, elementCount, gl.LINES);
+        var normalObj = createStaticObject(gl, attribNormalDesc, attribNormal, null, 0, elementCount, gl.LINES, false, true);
         if (TargetObjectArray)
             TargetObjectArray.push(normalObj);
         //obj.hide = true;
@@ -339,9 +340,18 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 UpdateEdge(this.edges, triangle.edgeKey2);
 
                 // front cap
-                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
-                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
-                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+                if (isTwoSide)
+                {
+                    this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
+                    this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+                    this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
+                }
+                else
+                {
+                    this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
+                    this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
+                    this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+                }
             }
             else
             {
@@ -354,14 +364,6 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-
-                // back cap of twoSide is made by front side polygon. so we should wind backward.
-                if (isTwoSide)
-                {
-                    var temp = eV0;
-                    eV0 = eV1;
-                    eV1 = temp;
-                }
 
                 this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
                 this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
@@ -397,22 +399,19 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             CrossProduct3(result, v1.CloneVec3().Sub(v0), v2.CloneVec3().Sub(v0));
 
             // quad should face to triangle normal
-            if (!isTwoSide)
+            const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].normal) < 0.0);
+            if (isBackfaceToLight)
             {
-                const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].normal) < 0.0);
-                if (isBackfaceToLight)
                 {
-                    {
-                        var temp = v0;
-                        v0 = v1;
-                        v1 = temp;
-                    }
+                    var temp = v0;
+                    v0 = v1;
+                    v1 = temp;
+                }
 
-                    {
-                        var temp = v2;
-                        v2 = v3;
-                        v3 = temp;
-                    }
+                {
+                    var temp = v2;
+                    v2 = v3;
+                    v3 = temp;
                 }
             }
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
@@ -450,7 +449,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             var elementCount = this.edgeVerts.length / 3;
             edgeAttrib.push(createAttribParameter('Pos', 3, new Float32Array(this.edgeVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
             edgeAttrib.push(createAttribParameter('Color', 4, GenerateColor(edgeAttribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-            var edgeObj = createStaticObject(gl, edgeAttribDesc, edgeAttrib, null, 0, elementCount, gl.LINES);
+            var edgeObj = createStaticObject(gl, edgeAttribDesc, edgeAttrib, null, 0, elementCount, gl.LINES, false, true);
             if (TargetObjectArray)
                 TargetObjectArray.push(edgeObj);
             this.debugObject.edge = edgeObj;
@@ -463,7 +462,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             var elementCount = this.quadVerts.length / 3;
             quadAttrib.push(createAttribParameter('Pos', 3, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
             quadAttrib.push(createAttribParameter('Color', 4, GenerateColor(quadAttribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-            var quadObj = createStaticObject(gl, quadAttribDesc, quadAttrib, null, 0, elementCount, gl.TRIANGLES);
+            var quadObj = createStaticObject(gl, quadAttribDesc, quadAttrib, null, 0, elementCount, gl.TRIANGLES, false, true);
             if (TargetObjectArray)
                 TargetObjectArray.push(quadObj);
             this.debugObject.quad = quadObj;
@@ -1324,6 +1323,7 @@ var CreateGizmo = function(gl, TargetObjectArray, pos, rot, scale)
     newStaticObject.scale = scale.CloneVec3();
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
+    newStaticObject.isDisablePipeLineChange = true;
     return newStaticObject;
 }
 
@@ -1357,7 +1357,7 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
 
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, false, false), [attrib0, attrib1], null, 0, elementCount, gl.LINES);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, false, false), [attrib0, attrib1], null, 0, elementCount, gl.LINES, false, true);
     newStaticObject.updateFunc = function()
     {
         this.pos.x = Math.floor(camera.pos.x / 10) * 10;
@@ -1369,6 +1369,7 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
+    newStaticObject.isDisablePipeLineChange = true;
     return newStaticObject;
 }
 
@@ -1389,13 +1390,14 @@ var CreateCoordinateYObject = function(gl, TargetObjectArray)
 
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('Color', 4, colors, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0);
-    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, null, null, null), [attrib0, attrib1], null, 0, elementCount, gl.LINES);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(true, null, null, null), [attrib0, attrib1], null, 0, elementCount, gl.LINES, false, true);
 
     newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
     if (TargetObjectArray)
         TargetObjectArray.push(newStaticObject);
+    newStaticObject.isDisablePipeLineChange = true;
     return newStaticObject;
 }
 
