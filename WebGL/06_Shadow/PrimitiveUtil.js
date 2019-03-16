@@ -303,7 +303,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
     return adjacencyInfo;
 }
 
-var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = false, TargetObjectArray = null)
+var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugObject = false, TargetObjectArray = null)
 {
     shadowVolume = {debugObject:{}, isCreateDebugObject:isCreateDebugObject, adjacencyInfo:adjacencyInfo, isInitialized:false};
 
@@ -331,7 +331,8 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
             const v1 = adjacencyInfo.transformedVerts[triangle.v1Index];
             const v2 = adjacencyInfo.transformedVerts[triangle.v2Index];
 
-            if (GetDotProduct3(triangle.transformedNormal, direction) > 0.0)
+            var needBackCap = isTwoSide;
+            if (isTwoSide || GetDotProduct3(triangle.transformedNormal, direction) > 0.0)
             {
                 UpdateEdge(this.edges, triangle.edgeKey0);
                 UpdateEdge(this.edges, triangle.edgeKey1);
@@ -344,26 +345,27 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
             }
             else
             {
+                needBackCap = true;
+            }
+
+            if (needBackCap)
+            {
                 // back cap
                 var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+
+                // back cap of twoSide is made by front side polygon. so we should wind backward.
+                if (isTwoSide)
+                {
+                    var temp = eV0;
+                    eV0 = eV1;
+                    eV1 = temp;
+                }
+
                 this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
                 this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
                 this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
-                hasBackCap = true;
-            }
-        }
-        if (!hasBackCap)
-        {
-            const cnt = this.quadVerts.length / 3;
-            const extrudeDirection = direction.CloneVec3().Mul(extrudeLength);
-            for(var i=0;i<cnt;++i)
-            {
-                const index = i * 3;
-                this.quadVerts.push(this.quadVerts[index] + extrudeDirection.x);
-                this.quadVerts.push(this.quadVerts[index + 1] + extrudeDirection.y);
-                this.quadVerts.push(this.quadVerts[index + 2] + extrudeDirection.z);
             }
         }
 
@@ -395,18 +397,22 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
             CrossProduct3(result, v1.CloneVec3().Sub(v0), v2.CloneVec3().Sub(v0));
 
             // quad should face to triangle normal
-            if (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].normal) < 0.0)
+            if (!isTwoSide)
             {
+                const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].normal) < 0.0);
+                if (isBackfaceToLight)
                 {
-                    var temp = v0;
-                    v0 = v1;
-                    v1 = temp;
-                }
+                    {
+                        var temp = v0;
+                        v0 = v1;
+                        v1 = temp;
+                    }
 
-                {
-                    var temp = v2;
-                    v2 = v3;
-                    v3 = temp;
+                    {
+                        var temp = v2;
+                        v2 = v3;
+                        v3 = temp;
+                    }
                 }
             }
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
@@ -419,21 +425,18 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
         }
         /////////////////////////////////////////
 
-        if (this.isCreateDebugObject)
+        if (this.isInitialized)
         {
-            if (this.isInitialized)
-            {
-                this.updateShadowVolumeObject(direction);
-            }
-            else
-            {
-                this.createShadowVolumeObject(direction);
-                this.isInitialized = true;
-            }
-        }            
+            this.updateShadowVolumeObject(direction);
+        }
+        else
+        {
+            this.createShadowVolumeObject(direction);
+            this.isInitialized = true;
+        }
     };
 
-    const createEdgeObj = false;
+    const createEdgeObj = isCreateDebugObject;
     const createQuadObj = true;
 
     shadowVolume.createShadowVolumeObject = function(direction)
@@ -495,10 +498,12 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isCreateDebugObject = fal
 
 var CreateShadowVolume = function(ownerObject, vertices, faces, targetObjectArray)
 {
-    ownerObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, faces, true, targetObjectArray);
+    const createDebugObject = false;
+
+    ownerObject.adjacencyInfo = GenerateVertexAdjacencyInfo(vertices, faces, createDebugObject, targetObjectArray);
 
     var objectArray = [];
-    ownerObject.shadowVolume = GenerateShadowVolumeInfo(ownerObject.adjacencyInfo, true, objectArray);
+    ownerObject.shadowVolume = GenerateShadowVolumeInfo(ownerObject.adjacencyInfo, ownerObject.twoSide, createDebugObject, objectArray);
     ownerObject.shadowVolume.objectArray = objectArray;
 
     ownerObject.updateFunc = function()
@@ -663,7 +668,7 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, attribDesc)
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES, true);
     
     if (attribDesc.shadowVolume)
         CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
@@ -715,7 +720,7 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, attribDes
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES, true);
     
     if (attribDesc.shadowVolume)
         CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
@@ -763,9 +768,9 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, at
     var faces = [];
     var iCount = 0;
     var toNextSlice = slice+1;
-    for(var j=0;j<halfSlice;++j)
+    for(var j=0;j<=halfSlice;++j)
     {
-        for(var i=0;i<=slice;++i, iCount += 1)
+        for(var i=0;i<(slice-1);++i, iCount += 1)
         {
             faces.push(iCount); faces.push(iCount + 1); faces.push(iCount + toNextSlice);
             faces.push(iCount + toNextSlice); faces.push(iCount + 1); faces.push(iCount + toNextSlice + 1);
@@ -855,7 +860,7 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
         attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
-    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES);
+    var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, gl.TRIANGLES, true);
     
     if (attribDesc.shadowVolume)
         CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
@@ -1216,7 +1221,7 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, slice, 
             vertices.push(x); vertices.push(y+yExt); vertices.push(z);
 
             var normal = null;
-            if (Math.abs(j) < 1)
+            if (!isUpperSphere && !isLowerSphere)
                 normal = CreateVec3(x, 0.0, z).GetNormalize();
             else
                 normal = CreateVec3(x, y, z).GetNormalize();
@@ -1238,9 +1243,9 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, slice, 
     var faces = [];
     var iCount = 0;
     var toNextSlice = slice+1;
-    for(var j=0;j<halfSlice;++j)
+    for(var j=0;j<=halfSlice;++j)
     {
-        for(var i=0;i<=slice;++i, iCount += 1)
+        for(var i=0;i<(slice-1);++i, iCount += 1)
         {
             faces.push(iCount); faces.push(iCount + 1); faces.push(iCount + toNextSlice);
             faces.push(iCount + toNextSlice); faces.push(iCount + 1); faces.push(iCount + toNextSlice + 1);

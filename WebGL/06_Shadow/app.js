@@ -7,11 +7,18 @@ var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
 var pointLight = null;
 var spotLight = null;
-var stencilQuad = null;
-var tempSphere = null;
+var CubeA = null;
+var CubeB = null;
+var CapsuleA = null;
+var QuadA = null;
+var TriangleA = null;
+var ConeA = null;
+var CylinderA = null;
+var BillboardQuadA = null;
+var SphereA = null;
 
 // StaticObject
-var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType)
+var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType, isTwoside = false)
 {
     var shader = [];
     GetShaderFromAttribDesc(shader, attribDesc);
@@ -243,7 +250,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
     return {gl:gl, vbo:vbo, ebo:ebo, program:program, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
         , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
-        , collided:false, hide:false};
+        , collided:false, hide:false, twoSide:isTwoside};
 }
 
 // Framebuffer
@@ -361,13 +368,6 @@ jWebGL.prototype.Init = function()
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
 
-    stencilQuad = CreateQuad(gl, null, ZeroVec3, OneVec3, CreateVec3(150, 150, 150), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false));
-    stencilQuad.updateFunc = function()
-    {
-        //this.rot.x += 0.05;
-        //this.rot.y += 0.02;
-    }
-
     // Create a texture.
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -425,7 +425,7 @@ jWebGL.prototype.Init = function()
     var specularPow = 64.0;
 
     var dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
-        , {debugObject:false, pos:CreateVec3(0.0, 60.0, 60.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
+        , {debugObject:false, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
     //var t = document.getElementById('PointLightX');
     const pointLightPos = CreateVec3(document.getElementById('PointLightX').valueAsNumber, document.getElementById('PointLightY').valueAsNumber, document.getElementById('PointLightZ').valueAsNumber);
@@ -443,29 +443,33 @@ jWebGL.prototype.Init = function()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
-    CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
-    CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
 
-    var capsule = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0, GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
-    quad2 = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    quad2.rot.z = DegreeToRadian(180.0);
-    var tri = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 80.0, 0.0), OneVec3, CreateVec3(20.0, 20.0, 20.0), GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
-    tri.rot.z = DegreeToRadian(180.0);
-    // var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false, false, true));
-
-    var cone = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3, GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
-    var cylinder = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3, GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    //var billboardQuad = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-    //    , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
+        , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
+        , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
+        , GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
+    TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 80.0, 0.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
+        , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
+    ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
+        , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
+    CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
+        , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+        , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+        , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
 
     const spherePosX = document.getElementById('SpherePosX').valueAsNumber;
     const spherePosY = document.getElementById('SpherePosY').valueAsNumber;
     const spherePosZ = document.getElementById('SpherePosZ').valueAsNumber;
     const sphereRadius = document.getElementById('SphereRadius').valueAsNumber;
-    tempSphere = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
+    SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
                             , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
                             , GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, true));
-    //CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50), GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false));
+
+    // var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false, false, true));
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.0, 0.0, 0.0));
     mainCamera.lights.push(dirLight);
@@ -490,13 +494,6 @@ jWebGL.prototype.Init = function()
 
         processKeyEvents();
         main.Update();
-
-        var prePass = function()
-        {
-        };
-
-        prePass();
-
         main.Render(0);
 
         requestAnimationFrame(loop);
@@ -555,6 +552,7 @@ jWebGL.prototype.Render = function(cameraIndex)
     gl.clearColor(0.0, 0.0, 0.0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
+    gl.depthFunc(gl.LEQUAL);
     gl.disable(gl.STENCIL_TEST);
 
     gl.depthMask(true);
@@ -567,8 +565,8 @@ jWebGL.prototype.Render = function(cameraIndex)
     gl.clear(gl.STENCIL_BUFFER_BIT);
     gl.enable(gl.STENCIL_TEST);
     //gl.stencilOp(gl.KEEP, gl.INCR, gl.KEEP);
-    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
-    gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
+    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
+    gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
     // gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
     // gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
     //gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.DECR_WRAP);
@@ -616,7 +614,7 @@ jWebGL.prototype.Render = function(cameraIndex)
 
 	gl.depthMask(true);
     gl.colorMask(true, true, true, true);
-    //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+    gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
     gl.enable(gl.CULL_FACE);
 
     gl.enable(gl.DEPTH_TEST);

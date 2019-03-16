@@ -127,27 +127,27 @@ var OnSliderChangeSpotLightDistance = function(e)
 var OnSliderChangeSpherePosX = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (tempSphere)
-        tempSphere.pos.x = e.target.valueAsNumber;
+    if (SphereA)
+        SphereA.pos.x = e.target.valueAsNumber;
 }
 
 var OnSliderChangeSpherePosY = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (tempSphere)
-        tempSphere.pos.y = e.target.valueAsNumber;
+    if (SphereA)
+        SphereA.pos.y = e.target.valueAsNumber;
 }
 
 var OnSliderChangeSpherePosZ = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (tempSphere)
-        tempSphere.pos.z = e.target.valueAsNumber;
+    if (SphereA)
+        SphereA.pos.z = e.target.valueAsNumber;
 }
 
 var OnSliderChangeSphereRadius = function(e)
 {
     console.log(e.target.valueAsNumber);
-    if (tempSphere)
-        tempSphere.scale.x = tempSphere.scale.y = tempSphere.scale.z = e.target.valueAsNumber;
+    if (SphereA)
+        SphereA.scale.x = SphereA.scale.y = SphereA.scale.z = e.target.valueAsNumber;
 }
