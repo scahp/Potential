@@ -4,7 +4,6 @@ precision highp float;
 
 uniform vec3 Eye;
 
-uniform jAmbientLight AmbientLight;
 uniform jDirectionalLight DirectionalLight;
 uniform jPointLight PointLight;
 uniform jSpotLight SpotLight;

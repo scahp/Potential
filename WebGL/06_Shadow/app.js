@@ -183,6 +183,9 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         if (this.setPipeLine)
             this.setPipeLine(pipeLineHashCode);
 
+        if (this.twoSide)
+            gl.disable(gl.CULL_FACE);
+
         gl.useProgram(this.pipeLineInfo.pipeLine);
     
         if (this.setRenderProperty)
@@ -294,7 +297,10 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
             if (this.drawArray)
             {
                 for(var i=0;i<this.drawArray.length;++i)
-                    gl.drawArrays(this.primitiveType, this.drawArray[i].startVert, this.drawArray[i].count);    
+                {
+                    gl.drawArrays(this.primitiveType, this.drawArray[i].startVert, this.drawArray[i].count);
+                    console.log(this.vertexCount+'drawarrays('+i+')'+'[start : ' + this.drawArray[i].startVert + '][count : ' + this.drawArray[i].count + ']');
+                }
             }
         }
     }
@@ -420,7 +426,7 @@ jWebGL.prototype.Init = function()
     CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
 
     // Create Coordinate Guide lines
-    CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
+    //CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
     //CreateCoordinateYObject(gl, StaticObjectArray);
 
     quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, false));
@@ -502,14 +508,13 @@ jWebGL.prototype.Init = function()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
-
     CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
         , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
     CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
         , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
     CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
         , GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
-    TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 80.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
+    TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
         , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
     ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
         , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
@@ -550,6 +555,23 @@ jWebGL.prototype.Init = function()
             loopCount = 0;
             lastTime = currentTime;
         }
+
+        if (CylinderA)
+            CylinderA.rot.x += 0.1;
+        if (ConeA)
+            ConeA.rot.y += 0.03;
+        if (CapsuleA)
+            CapsuleA.rot.x += 0.01;
+        if (CubeA)
+            CubeA.rot.z += 0.005;
+        if (SphereA)
+            SphereA.rot.x += 0.01;
+        if (TriangleA)
+            TriangleA.rot.x += 0.05;
+        if (QuadA)
+            QuadA.rot.z += 0.08;
+        if (BillboardQuadA)
+            BillboardQuadA.rot.y += 0.04;
 
         processKeyEvents();
         main.Update();
@@ -634,13 +656,8 @@ jWebGL.prototype.Render = function(cameraIndex)
     // 2. 스텐실 볼륨 렌더링
     gl.clear(gl.STENCIL_BUFFER_BIT);
     gl.enable(gl.STENCIL_TEST);
-    //gl.stencilOp(gl.KEEP, gl.INCR, gl.KEEP);
     gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
     gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
-    // gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
-    // gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
-    //gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.DECR_WRAP);
-    //gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.INCR_WRAP);
 
     gl.stencilFunc(gl.ALWAYS, 0, 0xff);
     gl.depthMask(false);
@@ -710,7 +727,6 @@ jWebGL.prototype.Render = function(cameraIndex)
                 var obj = shadowVolume.objectArray[k];
                 if (obj)
                 {
-
                     if (obj.drawFunc)
                         obj.drawFunc(camera, defaultPipeLineHashCode);
                 }

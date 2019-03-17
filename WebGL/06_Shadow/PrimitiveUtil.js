@@ -123,6 +123,22 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         v1Index = addVertex(v1Index);
         v2Index = addVertex(v2Index);
 
+        if (v0Index == v1Index)
+        {
+            //alert('[triangleIndex:' + triangleIndex + ']' + 'v0Index == v1Index('+v0Index+')');
+            return;
+        }
+        if (v1Index == v2Index)
+        {
+            //alert('[triangleIndex:' + triangleIndex + ']'+ 'v1Index == v2Index('+v1Index+')');
+            return;
+        }
+        if (v0Index == v2Index)
+        {
+            //alert('[triangleIndex:' + triangleIndex + ']' + 'v0Index == v2Index('+v2Index+')');
+            return;
+        }
+
         var makeEdgeKey = function(v0Index, v1Index)
         {
             if (v0Index > v1Index)
@@ -134,17 +150,17 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         {
             return edges[makeEdgeKey(v0Index, v1Index)];
         }
-        var addEdge = function(v0Index, v1Index, triangleIndex)
+        var addEdge = function(v0Index, v1Index, triangleIndex, indexInTriangle)
         {
             var result = findEdge(v0Index, v1Index);
             if (!result)
-                result = edges[makeEdgeKey(v0Index, v1Index)] = {v0Index:v0Index, v1Index:v1Index, triangleIndex:triangleIndex};
+                result = edges[makeEdgeKey(v0Index, v1Index)] = {v0Index:v0Index, v1Index:v1Index, triangleIndex:triangleIndex, indexInTriangle:indexInTriangle};
             return result;
         }
 
-        addEdge(v1Index, v0Index, triangleIndex);
-        addEdge(v2Index, v1Index, triangleIndex);
-        addEdge(v0Index, v2Index, triangleIndex);
+        addEdge(v1Index, v0Index, triangleIndex, 0);
+        addEdge(v2Index, v1Index, triangleIndex, 1);
+        addEdge(v0Index, v2Index, triangleIndex, 2);
         
         var edgeKey0 = makeEdgeKey(v1Index, v0Index);
         var edgeKey1 = makeEdgeKey(v2Index, v1Index);
@@ -154,7 +170,8 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         CrossProduct3(normal, verts[v1Index].CloneVec3().Sub(verts[v0Index]), verts[v2Index].CloneVec3().Sub(verts[v0Index]));
         normal = normal.GetNormalize();
         var centerPos = verts[v0Index].CloneVec3().Add(verts[v1Index]).Add(verts[v2Index]).Div(3.0)
-        triangles[triangleIndex] = { v0Index:v0Index, v1Index:v1Index, v2Index:v2Index, normal:normal, centerPos:centerPos, edgeKey0:edgeKey0, edgeKey1:edgeKey1, edgeKey2:edgeKey2 };
+
+        triangles[triangleIndex] = { triangleIndex:triangleIndex, v0Index:v0Index, v1Index:v1Index, v2Index:v2Index, normal:normal, centerPos:centerPos, edgeKey0:edgeKey0, edgeKey1:edgeKey1, edgeKey2:edgeKey2 };
     }
 
     if (faces)
@@ -323,6 +340,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 edges[edgeKey] = edgeKey;
         }
 
+        var cnt = 0;
         var hasBackCap = false;
         const extrudeLength = 200.0;
         for(var key in adjacencyInfo.triangles)
@@ -332,8 +350,25 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             const v1 = adjacencyInfo.transformedVerts[triangle.v1Index];
             const v2 = adjacencyInfo.transformedVerts[triangle.v2Index];
 
-            var needBackCap = isTwoSide;
-            if (isTwoSide || GetDotProduct3(triangle.transformedNormal, direction) > 0.0)
+            const isBackfaceToLight = (GetDotProduct3(triangle.transformedNormal, direction) < 0.0);
+
+            var needFrontCap = false;
+            var needBackCap = false;
+            if (isTwoSide)
+            {
+                needFrontCap = true;
+                needBackCap = true;
+            }
+            else
+            {
+                if (!isBackfaceToLight)
+                    needFrontCap = true;
+                else
+                    needBackCap = true;
+    
+            }
+
+            if (needFrontCap)
             {
                 UpdateEdge(this.edges, triangle.edgeKey0);
                 UpdateEdge(this.edges, triangle.edgeKey1);
@@ -353,21 +388,26 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                     this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
                 }
             }
-            else
-            {
-                needBackCap = true;
-            }
 
             if (needBackCap)
-            {
+            {    
                 // back cap
                 var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
                 var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
 
-                this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
-                this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
-                this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
+                if (isTwoSide && !isBackfaceToLight)
+                {
+                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
+                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
+                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
+                }
+                else
+                {
+                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
+                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
+                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
+                }
             }
         }
 
@@ -395,11 +435,8 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             var v2 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
             var v3 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
             
-            var result = ZeroVec3.CloneVec3();
-            CrossProduct3(result, v1.CloneVec3().Sub(v0), v2.CloneVec3().Sub(v0));
-
             // quad should face to triangle normal
-            const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].normal) < 0.0);
+            const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].transformedNormal) < 0.0);
             if (isBackfaceToLight)
             {
                 {
@@ -414,6 +451,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                     v3 = temp;
                 }
             }
+
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
             this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
@@ -475,20 +513,28 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         
         if (createEdgeObj)
         {
+            const elementCount = this.edgeVerts.length / 3;
+
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.edge.attribs[0].vbo);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.edgeVerts), gl.DYNAMIC_DRAW);
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.edge.attribs[1].vbo);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(GenerateColor(CreateVec4(1.0, 0.0, 0.0, 1.0), this.edgeVerts.length / 3)), gl.DYNAMIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(GenerateColor(CreateVec4(1.0, 0.0, 0.0, 1.0), elementCount)), gl.DYNAMIC_DRAW);
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+            this.debugObject.edge.drawArray = [ {startVert:0, count:elementCount} ];
         }
 
         if (createQuadObj)
         {
+            const elementCount = this.quadVerts.length / 3;
+
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.quad.attribs[0].vbo);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW);
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.quad.attribs[1].vbo);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(GenerateColor(CreateVec4(0.0, 1.0, 0.0, 0.3), this.quadVerts.length / 3)), gl.DYNAMIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(GenerateColor(CreateVec4(0.0, 1.0, 0.0, 0.3), elementCount)), gl.DYNAMIC_DRAW);
             gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+            this.debugObject.quad.drawArray = [ {startVert:0, count:elementCount} ];
         }
     }
 
@@ -1010,9 +1056,9 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
         var cone_y = -height / flank_len;
         
         // Cone Top Normal
-        for(var i=1;i<=360;++i)
+        for(var i=1;i<=slice;++i)
         {
-            var rad = DegreeToRadian(i);
+            var rad = i * stepRadian;
             var x = -cone_y * Math.cos(rad);
             var y = cone_x;
             var z = -cone_y * Math.sin(rad);
@@ -1345,11 +1391,11 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
         {
             z = k * interval;
 
-            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);    colors.push(0.0); colors.push(0.0); colors.push(1.0); colors.push(0.7);
-            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval);   colors.push(0.0); colors.push(0.0); colors.push(1.0); colors.push(0.7);
+            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + interval);    colors.push(0.0); colors.push(0.0); colors.push(1.0); colors.push(0.3);
+            vertices.push(x + 0.0);         vertices.push(0.0);         vertices.push(z + -interval);   colors.push(0.0); colors.push(0.0); colors.push(1.0); colors.push(0.3);
 
-            vertices.push(x + interval);    vertices.push(0.0);         vertices.push(z + 0.0);         colors.push(1.0); colors.push(0.0); colors.push(0.0); colors.push(0.7);
-            vertices.push(x + -interval);   vertices.push(0.0);         vertices.push(z + 0.0);         colors.push(1.0); colors.push(0.0); colors.push(0.0); colors.push(0.7);
+            vertices.push(x + interval);    vertices.push(0.0);         vertices.push(z + 0.0);         colors.push(1.0); colors.push(0.0); colors.push(0.0); colors.push(0.3);
+            vertices.push(x + -interval);   vertices.push(0.0);         vertices.push(z + 0.0);         colors.push(1.0); colors.push(0.0); colors.push(0.0); colors.push(0.3);
         }
     }
 
