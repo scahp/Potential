@@ -3,15 +3,22 @@ var createAttribParameter = function(name, count, datas, bufferType, type, norma
     return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
-var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false, ambientOnly = false)
+var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false, ambientOnly = false, infinityFar)
 {
-    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume, ambientOnly:ambientOnly};
+    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume, ambientOnly:ambientOnly, infinityFar:infinityFar};
 }
 
 var GetShaderFromAttribDesc = function(outShader, attribDesc)
 {
     if (attribDesc.color && attribDesc.normal && attribDesc.uvs)
     {
+        return;
+    }
+
+    if (attribDesc.infinityFar)
+    {
+        outShader.vs = "shaders/vs_infinityFar.glsl";
+        outShader.fs = "shaders/fs_infinityFar.glsl";
         return;
     }
 
@@ -342,7 +349,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
         var cnt = 0;
         var hasBackCap = false;
-        const extrudeLength = 200.0;
+        const extrudeLength = 10.0;
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
@@ -377,36 +384,39 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 // front cap
                 if (isTwoSide)
                 {
-                    this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
-                    this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
-                    this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
+                    this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
+                    this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(1.0);
+                    this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
                 }
                 else
                 {
-                    this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
-                    this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
-                    this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+                    this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
+                    this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
+                    this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(1.0);
                 }
             }
 
             if (needBackCap)
             {    
                 // back cap
-                var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-                var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-                var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                // var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                // var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                // var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+                var eV0 = direction.CloneVec3();
+                var eV1 = direction.CloneVec3();
+                var eV2 = direction.CloneVec3();
 
                 if (isTwoSide && !isBackfaceToLight)
                 {
-                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
-                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
-                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
+                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(0.0);
+                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(0.0);
+                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(0.0);
                 }
                 else
                 {
-                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);
-                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);
-                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);
+                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(0.0);
+                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(0.0);
+                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(0.0);
                 }
             }
         }
@@ -432,8 +442,10 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             const edge = adjacencyInfo.edges[this.edges[key]];
             var v0 = adjacencyInfo.transformedVerts[edge.v0Index];
             var v1 = adjacencyInfo.transformedVerts[edge.v1Index];
-            var v2 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-            var v3 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+            // var v2 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+            // var v3 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
+            var v2 = direction.CloneVec3();
+            var v3 = direction.CloneVec3();
             
             // quad should face to triangle normal
             const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].transformedNormal) < 0.0);
@@ -452,13 +464,13 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 }
             }
 
-            this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);
-            this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
+            this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
+            this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
 
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);
-            this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);
-            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
+            this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
+            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(0.0);
         }
         /////////////////////////////////////////
 
@@ -496,14 +508,15 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         if (createQuadObj)
         {
             var quadAttrib = [];
-            var quadAttribDesc = GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 0.3), false, false, false, false)
-            var elementCount = this.quadVerts.length / 3;
-            quadAttrib.push(createAttribParameter('Pos', 3, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+            var quadAttribDesc = GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 0.3), true, false, false, false, false, false, true)
+            var elementCount = this.quadVerts.length / 4;
+            quadAttrib.push(createAttribParameter('Pos', 4, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
             quadAttrib.push(createAttribParameter('Color', 4, GenerateColor(quadAttribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
             var quadObj = createStaticObject(gl, quadAttribDesc, quadAttrib, null, 0, elementCount, gl.TRIANGLES, false, true);
             if (TargetObjectArray)
                 TargetObjectArray.push(quadObj);
             this.debugObject.quad = quadObj;
+            this.isDisablePipeLineChange = true;
         }
     }
 
@@ -526,7 +539,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
         if (createQuadObj)
         {
-            const elementCount = this.quadVerts.length / 3;
+            const elementCount = this.quadVerts.length / 4;
 
             gl.bindBuffer(gl.ARRAY_BUFFER, this.debugObject.quad.attribs[0].vbo);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW);

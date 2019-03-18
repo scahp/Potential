@@ -206,78 +206,93 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var directionalLightDir = null;
         if (camera.lights)
         {
-            for(var i=0;i<camera.lights.length;++i)
+            var numOfDirectionalLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfDirectionalLight');
+            gl.uniform1i(numOfDirectionalLightLoc, camera.lights.directionalLights.length);
+
+            for(var i=0;i<camera.lights.directionalLights.length;++i)
             {
-                var light = camera.lights[i];
+                const light = camera.lights.directionalLights[i];
+                const structName = 'DirectionalLight[' + i + ']';
+                
+                directionalLightDir = light.direction.CloneVec3();
 
-                if (light.type == "Directional")
-                {
-                    directionalLightDir = light.direction.CloneVec3();
+                var lightDirectionLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'LightDirection');
+                gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
 
-                    var lightDirectionLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'DirectionalLight.LightDirection');
-                    gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
+                var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Color');
+                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
 
-                    var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'DirectionalLight.Color');
-                    gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
+                var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'DiffuseLightIntensity');
+                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
 
-                    var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'DirectionalLight.DiffuseLightIntensity');
-                    gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+                var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularLightIntensity');
+                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
 
-                    var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'DirectionalLight.SpecularLightIntensity');
-                    gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+                var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularPow');
+                gl.uniform1f(specularPowLoc, light.specularPow);
+            }
 
-                    var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'DirectionalLight.SpecularPow');
-                    gl.uniform1f(specularPowLoc, light.specularPow);
-                }
-                else if (light.type == "Point")
-                {
-                    var lightPosLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'PointLight.LightPos');
-                    gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
+            var numOfPointLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfPointLight');
+            gl.uniform1i(numOfPointLightLoc, camera.lights.pointLights.length);
 
-                    var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'PointLight.Color');
-                    gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
+            for(var i=0;i<camera.lights.pointLights.length;++i)
+            {
+                const light = camera.lights.pointLights[i];
+                const structName = 'PointLight[' + i + ']';
 
-                    var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'PointLight.DiffuseLightIntensity');
-                    gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+                var lightPosLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'LightPos');
+                gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
 
-                    var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'PointLight.SpecularLightIntensity');
-                    gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+                var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Color');
+                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
 
-                    var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'PointLight.SpecularPow');
-                    gl.uniform1f(specularPowLoc, light.specularPow);
+                var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'DiffuseLightIntensity');
+                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
 
-                    var maxDistanceLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'PointLight.MaxDistance');
-                    gl.uniform1f(maxDistanceLoc, light.maxDistance);
-                }
-                else if (light.type == "Spot")
-                {
-                    var lightPosLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.LightPos');
-                    gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
+                var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularLightIntensity');
+                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
 
-                    var lightDirectionLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.Direction');
-                    gl.uniform3fv(lightDirectionLoc, [light.lightDirection.x, light.lightDirection.y, light.lightDirection.z]);
+                var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularPow');
+                gl.uniform1f(specularPowLoc, light.specularPow);
 
-                    var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.Color');
-                    gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
+                var maxDistanceLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'MaxDistance');
+                gl.uniform1f(maxDistanceLoc, light.maxDistance);
+            }
 
-                    var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.DiffuseLightIntensity');
-                    gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+            var numOfSpotLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfSpotLight');
+            gl.uniform1i(numOfSpotLightLoc, camera.lights.spotLights.length);
 
-                    var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.SpecularLightIntensity');
-                    gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+            for(var i=0;i<camera.lights.spotLights.length;++i)
+            {
+                const light = camera.lights.spotLights[i];
+                const structName = 'SpotLight[' + i + ']';
 
-                    var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.SpecularPow');
-                    gl.uniform1f(specularPowLoc, light.specularPow);
+                var lightPosLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'LightPos');
+                gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
 
-                    var maxDistanceLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.MaxDistance');
-                    gl.uniform1f(maxDistanceLoc, light.maxDistance);
+                var lightDirectionLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Direction');
+                gl.uniform3fv(lightDirectionLoc, [light.lightDirection.x, light.lightDirection.y, light.lightDirection.z]);
 
-                    var penumbraRadianLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.PenumbraRadian');
-                    gl.uniform1f(penumbraRadianLoc, light.penumbraRadian);
+                var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Color');
+                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
 
-                    var umbraRadianLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'SpotLight.UmbraRadian');
-                    gl.uniform1f(umbraRadianLoc, light.umbraRadian);
-                }
+                var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'DiffuseLightIntensity');
+                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+
+                var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularLightIntensity');
+                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+
+                var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularPow');
+                gl.uniform1f(specularPowLoc, light.specularPow);
+
+                var maxDistanceLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'MaxDistance');
+                gl.uniform1f(maxDistanceLoc, light.maxDistance);
+
+                var penumbraRadianLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'PenumbraRadian');
+                gl.uniform1f(penumbraRadianLoc, light.penumbraRadian);
+
+                var umbraRadianLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'UmbraRadian');
+                gl.uniform1f(umbraRadianLoc, light.umbraRadian);
             }
         }
 
@@ -536,9 +551,9 @@ jWebGL.prototype.Init = function()
     // var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false, false, true));
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.2, 0.2, 0.2));
-    mainCamera.lights.push(dirLight);
-    mainCamera.lights.push(pointLight);
-    mainCamera.lights.push(spotLight);
+    mainCamera.addLight(dirLight);
+    mainCamera.addLight(pointLight);
+    mainCamera.addLight(spotLight);
 
     var main = this;
 

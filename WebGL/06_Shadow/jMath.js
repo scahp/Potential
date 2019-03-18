@@ -536,6 +536,18 @@ var CreatePerspectiveMatrix = function(width, height, fovRadian, far, near)
     return projMat;
 }
 
+var CreatePerspectiveMatrixFarAtInfinity = function(width, height, fovRadian, near)
+{
+	var F = 1.0 / Math.tan(fovRadian);
+
+    var projMat = new jMat4();
+    projMat.m[0][0] = F*(height/width); projMat.m[0][1] = 0.0;      projMat.m[0][2] = 0.0;                      projMat.m[0][3] = 0.0;
+    projMat.m[1][0] = 0.0;              projMat.m[1][1] = F;        projMat.m[1][2] = 0.0;                      projMat.m[1][3] = 0.0;
+    projMat.m[2][0] = 0.0;              projMat.m[2][1] = 0.0;      projMat.m[2][2] = -1.0;                     projMat.m[2][3] = -(2.0*near);
+    projMat.m[3][0] = 0.0;              projMat.m[3][1] = 0.0;      projMat.m[3][2] = -1.0;                     projMat.m[3][3] = 0.0;
+    return projMat;
+}
+
 var DegreeToRadian = function(deg)
 {
     return deg * Math.PI / 180.0;

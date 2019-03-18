@@ -2,11 +2,19 @@
 
 precision highp float;
 
-uniform vec3 Eye;
+#define MAX_NUM_OF_DIRECTIONAL_LIGHT 1
+#define MAX_NUM_OF_POINT_LIGHT 10
+#define MAX_NUM_OF_SPOT_LIGHT 10
 
-uniform jDirectionalLight DirectionalLight;
-uniform jPointLight PointLight;
-uniform jSpotLight SpotLight;
+uniform int NumOfDirectionalLight;
+uniform int NumOfPointLight;
+uniform int NumOfSpotLight;
+
+uniform jDirectionalLight DirectionalLight[MAX_NUM_OF_DIRECTIONAL_LIGHT];
+uniform jPointLight PointLight[MAX_NUM_OF_POINT_LIGHT];
+uniform jSpotLight SpotLight[MAX_NUM_OF_SPOT_LIGHT];
+
+uniform vec3 Eye;
 
 uniform int Collided;
 
@@ -23,23 +31,31 @@ void main()
     if (Collided != 0)
         diffuse = vec3(1.0, 1.0, 1.0);
 
-    vec3 lightDir = normalize(-DirectionalLight.LightDirection);
-    vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
-
     vec3 finalColor = vec3(0.0, 0.0, 0.0);
-    finalColor += GetDirectionalLight(DirectionalLight, normal, reflectLightDir, viewDir);
 
-    vec3 pointLightDir = PointLight.LightPos - Pos_;
-    float pointLightDistance = length(pointLightDir);
-    pointLightDir = normalize(pointLightDir);
-    vec3 pointLightReflectionLightDir = 2.0 * max(dot(pointLightDir, normal), 0.0) * normal - pointLightDir;
-    finalColor += GetPointLight(PointLight, normal, pointLightDir, pointLightReflectionLightDir, viewDir, pointLightDistance);
+    for(int i=0;i<MAX_NUM_OF_DIRECTIONAL_LIGHT;++i)
+    {
+        if (i >= NumOfDirectionalLight)
+            break;
+        
+        finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir);
+    }
 
-    vec3 spotLightDir = SpotLight.LightPos - Pos_;
-    float spotLightDistance = length(spotLightDir);
-    spotLightDir = normalize(spotLightDir);
-    vec3 spotLightReflectionLightDir = 2.0 * max(dot(spotLightDir, normal), 0.0) * normal - spotLightDir;
-    finalColor += GetSpotLight(SpotLight, normal, spotLightDir, spotLightReflectionLightDir, viewDir, spotLightDistance);
+    for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
+    {
+        if (i >= NumOfPointLight)
+            break;
+        
+        finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir);
+    }
+    
+    for(int i=0;i<MAX_NUM_OF_SPOT_LIGHT;++i)
+    {
+        if (i >= NumOfSpotLight)
+            break;
+
+        finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir);
+    }
 
     gl_FragColor = vec4(finalColor * diffuse, Color_.w);
 }

@@ -114,7 +114,8 @@ var updateCamera = function(gl, cameraIndex)
 {
     var camera = Cameras[cameraIndex];
     camera.matView = CreateViewMatrix(camera.pos, camera.target, camera.up);
-    camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
+    //camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
+    camera.matProjection = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
     camera.matViewProjection = CloneMat4(camera.matProjection).Mul(camera.matView);
 }
 
@@ -145,9 +146,30 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
             debugStaticObject2.push(CreateQuad(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), CreateVec4(1.0, 1.0, 1.0, 1.0)));
     }
 
+    var addLight = function(light)
+    {
+        if (light.type == "Directional")
+        {
+            this.lights.directionalLights.push(light);
+        }
+        else if (light.type == "Point")
+        {
+            this.lights.pointLights.push(light);
+        }
+        else if (light.type == "Spot")
+        {
+            this.lights.spotLights.push(light);
+        }
+        else
+        {
+            alert('undefined light type was tried to add');
+        }
+    }
+
     var newCamera = {matView:matView, matProjection:matProjection
         , matViewProjection:matMV, pos:pos, target:target, up:up
-        , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far, lights:[], ambient:null};
+        , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
+        , lights:{directionalLights:[], pointLights:[], spotLights:[]}, addLight:addLight, ambient:null};
     Cameras.push(newCamera);
     return newCamera;
 }

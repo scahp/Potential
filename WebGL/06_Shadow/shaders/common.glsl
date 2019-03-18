@@ -81,8 +81,10 @@ vec3 GetDirectionalLightSpecular(jDirectionalLight light, vec3 reflectLightDir, 
     return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity;
 }
 
-vec3 GetDirectionalLight(jDirectionalLight light, vec3 normal, vec3 reflectLightDir, vec3 viewDir)
+vec3 GetDirectionalLight(jDirectionalLight light, vec3 normal, vec3 viewDir)
 {
+    vec3 lightDir = normalize(-light.LightDirection);
+    vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
     return (GetDirectionalLightDiffuse(light, normal) + GetDirectionalLightSpecular(light, reflectLightDir, viewDir));
 }
 
@@ -96,9 +98,14 @@ vec3 GetPointLightSpecular(jPointLight light, vec3 reflectLightDir, vec3 viewDir
     return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity;
 }
 
-vec3 GetPointLight(jPointLight light, vec3 normal, vec3 lightDir, vec3 reflectLightDir, vec3 viewDir, float distance)
+vec3 GetPointLight(jPointLight light, vec3 normal, vec3 pixelPos, vec3 viewDir)
 {
-    return (GetPointLightDiffuse(light, normal, lightDir) + GetPointLightSpecular(light, reflectLightDir, viewDir)) * DistanceAttenuation(distance, light.MaxDistance);
+    vec3 lightDir = light.LightPos - pixelPos;
+    float pointLightDistance = length(lightDir);
+    lightDir = normalize(lightDir);
+    vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
+   
+    return (GetPointLightDiffuse(light, normal, lightDir) + GetPointLightSpecular(light, reflectLightDir, viewDir)) * DistanceAttenuation(pointLightDistance, light.MaxDistance);
 }
 
 vec3 GetSpotLightDiffuse(jSpotLight light, vec3 normal, vec3 lightDir)
@@ -111,8 +118,13 @@ vec3 GetSpotLightSpecular(jSpotLight light, vec3 reflectLightDir, vec3 viewDir)
     return light.Color * pow(max(dot(reflectLightDir, viewDir), 0.0), light.SpecularPow) * light.SpecularLightIntensity;
 }
 
-vec3 GetSpotLight(jSpotLight light, vec3 normal, vec3 lightDir, vec3 reflectLightDir, vec3 viewDir, float distance)
+vec3 GetSpotLight(jSpotLight light, vec3 normal, vec3 pixelPos, vec3 viewDir)
 {
+    vec3 lightDir = light.LightPos - pixelPos;
+    float distance = length(lightDir);
+    lightDir = normalize(lightDir);
+    vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
+
     float lightRadian = acos(dot(lightDir, light.Direction));
 
     return (GetSpotLightDiffuse(light, normal, lightDir)
