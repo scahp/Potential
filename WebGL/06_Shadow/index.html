@@ -42,7 +42,7 @@
             </div>
             <div>
                 <label>PointLightY</label>
-                <input type="range" min="-100.0" max="100.0" step="0.001" value="40.0" class="slider" id="PointLightY" oninput="OnSliderChangePointLightY(event)">
+                <input type="range" min="-100.0" max="120.0" step="0.001" value="100.0" class="slider" id="PointLightY" oninput="OnSliderChangePointLightY(event)">
             </div>
             <div>
                 <label>PointLightZ</label>
@@ -50,7 +50,7 @@
             </div>
             <div>
                 <label>PointLightRadius</label>
-                <input type="range" min="10.0" max="200.0" step="0.001" value="50.0" class="slider" id="PointLightRadius" oninput="OnSliderChangePointLightRadius(event)">
+                <input type="range" min="10.0" max="5000.0" step="0.001" value="250.0" class="slider" id="PointLightRadius" oninput="OnSliderChangePointLightRadius(event)">
             </div>
             <div>
                 <label>SpotLightX</label>
@@ -91,6 +91,18 @@
             <div>
                 <label>SphereRadius</label>
                 <input type="range" min="1.0" max="50.0" step="0.001" value="30.0" class="slider" id="SphereRadius" oninput="OnSliderChangeSphereRadius(event)">
+            </div>
+            <div>
+                <label>ShowSilhouette-DirectionalLight</label>
+                <input type="checkbox" id="ShowSilhouetteDirectionalLight" value="true" onclick="OnCheckBoxShowSilhouetteDirectionalLight(this)">
+            </div>
+            <div>
+                <label>ShowSilhouette-PointLight</label>
+                <input type="checkbox" id="ShowSilhouettePointLight" value="true" onclick="OnCheckBoxShowSilhouettePointLight(this)">
+            </div>
+            <div>
+                <label>ShowSilhouette-SpotLight</label>
+                <input type="checkbox" id="ShowSilhouetteSpotLight" value="true" onclick="OnCheckBoxShowSilhouetteSpotLight(this)">
             </div>
         </div>
     </div>

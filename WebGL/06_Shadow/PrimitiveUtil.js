@@ -3,7 +3,7 @@ var createAttribParameter = function(name, count, datas, bufferType, type, norma
     return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
-var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false, ambientOnly = false, infinityFar)
+var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false, ambientOnly = false, infinityFar = false)
 {
     return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume, ambientOnly:ambientOnly, infinityFar:infinityFar};
 }
@@ -332,8 +332,24 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 {
     shadowVolume = {debugObject:{}, isCreateDebugObject:isCreateDebugObject, adjacencyInfo:adjacencyInfo, isInitialized:false};
 
-    shadowVolume.updateFunc = function(direction)
+    shadowVolume.updateFunc = function(lightDirection, lightPos)
     {
+        var getLightDirection = function(pos)
+        {
+            if (lightDirection)
+                return lightDirection.CloneVec3();
+            
+            if (lightPos)
+            {
+                //return CreateVec3(-1.0, -1.0, -1.0).GetNormalize();
+                //return pos.CloneVec3().Sub(lightPos).Neg();
+                return pos.CloneVec3().Sub(lightPos).Neg();
+            }
+            
+            alert('lightDirection or lightPos should be not null');
+            return null;
+        }
+        
         this.edges = [];
         this.edgeVerts = [];
         this.quadVerts = [];
@@ -347,9 +363,11 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 edges[edgeKey] = edgeKey;
         }
 
+        var test = 0;
+
         var cnt = 0;
         var hasBackCap = false;
-        const extrudeLength = 10.0;
+        const extrudeLength = 100.0;
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
@@ -357,7 +375,8 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             const v1 = adjacencyInfo.transformedVerts[triangle.v1Index];
             const v2 = adjacencyInfo.transformedVerts[triangle.v2Index];
 
-            const isBackfaceToLight = (GetDotProduct3(triangle.transformedNormal, direction) < 0.0);
+            var lightDir = getLightDirection(triangle.transformedCenterPos);
+            const isBackfaceToLight = (GetDotProduct3(triangle.transformedNormal, lightDir) > 0.0);
 
             var needFrontCap = false;
             var needBackCap = false;
@@ -372,7 +391,6 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                     needFrontCap = true;
                 else
                     needBackCap = true;
-    
             }
 
             if (needFrontCap)
@@ -399,24 +417,24 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             if (needBackCap)
             {    
                 // back cap
-                // var eV0 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-                // var eV1 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-                // var eV2 = v2.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-                var eV0 = direction.CloneVec3();
-                var eV1 = direction.CloneVec3();
-                var eV2 = direction.CloneVec3();
+                // var eV0 = v0.CloneVec3().Add(lightDir.CloneVec3().Mul(extrudeLength));
+                // var eV1 = v1.CloneVec3().Add(lightDir.CloneVec3().Mul(extrudeLength));
+                // var eV2 = v2.CloneVec3().Add(lightDir.CloneVec3().Mul(extrudeLength));
+                var eV0 = v0.CloneVec3().Add(getLightDirection(v0).CloneVec3().Mul(extrudeLength));
+                var eV1 = v1.CloneVec3().Add(getLightDirection(v1).CloneVec3().Mul(extrudeLength));
+                var eV2 = v1.CloneVec3().Add(getLightDirection(v2).CloneVec3().Mul(extrudeLength));
 
                 if (isTwoSide && !isBackfaceToLight)
                 {
-                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(0.0);
-                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(0.0);
-                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(0.0);
+                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(test);
+                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(test);
+                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(test);
                 }
                 else
                 {
-                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(0.0);
-                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(0.0);
-                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(0.0);
+                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(test);
+                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(test);
+                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(test);
                 }
             }
         }
@@ -440,16 +458,20 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         for(var key in this.edges)
         {
             const edge = adjacencyInfo.edges[this.edges[key]];
+            const triangle = adjacencyInfo.triangles[edge.triangleIndex];
+            var lightDir = getLightDirection(triangle.transformedCenterPos);
+
             var v0 = adjacencyInfo.transformedVerts[edge.v0Index];
             var v1 = adjacencyInfo.transformedVerts[edge.v1Index];
-            // var v2 = v0.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-            // var v3 = v1.CloneVec3().Add(direction.CloneVec3().Mul(extrudeLength));
-            var v2 = direction.CloneVec3();
-            var v3 = direction.CloneVec3();
+            var v2 = v0.CloneVec3().Add(getLightDirection(v0).CloneVec3().Mul(extrudeLength));
+            var v3 = v1.CloneVec3().Add(getLightDirection(v1).CloneVec3().Mul(extrudeLength));
+            //var v2 = getLightDirection(v0);
+            //var v3 = getLightDirection(v1);
             
             // quad should face to triangle normal
-            const isBackfaceToLight = (GetDotProduct3(direction, adjacencyInfo.triangles[edge.triangleIndex].transformedNormal) < 0.0);
-            if (isBackfaceToLight)
+            const isBackfaceToLight = (GetDotProduct3(lightDir, triangle.transformedNormal) > 0.0);
+            
+            if (isBackfaceToLight)            
             {
                 {
                     var temp = v0;
@@ -466,21 +488,29 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
 
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(0.0);
+            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(test);
+
+            // this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
+            // this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
+            // this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
+
+            // this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
+            // this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
+            // this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(0.0);
         }
         /////////////////////////////////////////
 
         if (this.isInitialized)
         {
-            this.updateShadowVolumeObject(direction);
+            this.updateShadowVolumeObject(lightDir);
         }
         else
         {
-            this.createShadowVolumeObject(direction);
+            this.createShadowVolumeObject(lightDir);
             this.isInitialized = true;
         }
     };
@@ -1559,6 +1589,7 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
     var attrib0 = createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0);
     var attrib1 = createAttribParameter('TexCoord', 2, uvs, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
     var newStaticObject = createStaticObject(gl, attribDesc, [attrib0, attrib1], null, 0, elementCount, gl.TRIANGLE_STRIP);
+    newStaticObject.isDisablePipeLineChange = true;
     
     if (attribDesc.shadowVolume)
         CreateShadowVolume(newStaticObject, vertices, null, TargetObjectArray);
@@ -1645,6 +1676,7 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
         }
 
         var sphere = CreateSphere(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
+        sphere.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = billboardObject;
         TargetObjectArray.push(newStaticObject);
@@ -1693,6 +1725,8 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
 
         var umbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
         var penumbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
+        umbraCone.isDisablePipeLineChange = true;
+        penumbraCone.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, czdrawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
         SpotLight.__proto__ = billboardObject;
         TargetObjectArray.push(newStaticObject);

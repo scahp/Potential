@@ -151,3 +151,21 @@ var OnSliderChangeSphereRadius = function(e)
     if (SphereA)
         SphereA.scale.x = SphereA.scale.y = SphereA.scale.z = e.target.valueAsNumber;
 }
+
+var OnCheckBoxShowSilhouetteDirectionalLight = function(e)
+{
+    console.log(e.checked);
+    ShowSilhouetteDirectionalLight = e.checked;
+}
+
+var OnCheckBoxShowSilhouettePointLight = function(e)
+{
+    console.log(e.checked);
+    ShowSilhouettePointLight = e.checked;
+}
+
+var OnCheckBoxShowSilhouetteSpotLight = function(e)
+{
+    console.log(e.checked);
+    ShowSilhouetteSpotLight = e.checked;
+}

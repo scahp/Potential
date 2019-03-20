@@ -17,6 +17,9 @@ var ConeA = null;
 var CylinderA = null;
 var BillboardQuadA = null;
 var SphereA = null;
+var ShowSilhouetteDirectionalLight = false;
+var ShowSilhouettePointLight = false;
+var ShowSilhouetteSpotLight = false;
 
 var CreatePipeLineHashCode = function(vsText, fsText)
 {
@@ -92,6 +95,8 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attr.datas), attr.bufferType);
 
         var loc = gl.getAttribLocation(pipeLineInfo.pipeLine, attr.name); 
+        if (loc == -1)
+            alert('attribLoc is -1');
         attribs[i] = { name:attr.name
             , loc:loc
             , vbo:vbo
@@ -155,6 +160,8 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
             var attrib = this.attribs[i];
             
             gl.bindBuffer(gl.ARRAY_BUFFER, attrib.vbo);
+            if (attrib.loc == -1)
+                alert('attrib.loc is -1');
             gl.vertexAttribPointer(attrib.loc,
                 attrib.count,
                 attrib.type,
@@ -175,10 +182,13 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         }
     }
 
-    var drawFunc = function(camera, pipeLineHashCode)
+    var drawFunc = function(camera, pipeLineHashCode, lightIndex)
     {
         if (this.hide)
             return;
+
+        if (this.adjacencyInfo)
+            this.adjacencyInfo.updateFunc(this);
 
         if (this.setPipeLine)
             this.setPipeLine(pipeLineHashCode);
@@ -203,104 +213,139 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
             gl.uniform3fv(AmbientLightIntensityLoc, [camera.ambient.ambientIntensity.x, camera.ambient.ambientIntensity.y, camera.ambient.ambientIntensity.z]);
         }
 
-        var directionalLightDir = null;
-        if (camera.lights)
+        var numOfDirectionalLight = 0;
+        var numOfPointLight = 0;
+        var numOfSpotLight = 0;
+
+        var setDirectionalLight = function(pipeLine, light)
         {
-            var numOfDirectionalLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfDirectionalLight');
-            gl.uniform1i(numOfDirectionalLightLoc, camera.lights.directionalLights.length);
+            const structName = 'DirectionalLight[' + light.index + ']';
 
-            for(var i=0;i<camera.lights.directionalLights.length;++i)
-            {
-                const light = camera.lights.directionalLights[i];
-                const structName = 'DirectionalLight[' + i + ']';
-                
-                directionalLightDir = light.direction.CloneVec3();
+            var lightDirectionLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'LightDirection');
+            gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
 
-                var lightDirectionLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'LightDirection');
-                gl.uniform3fv(lightDirectionLoc, [light.direction.x, light.direction.y, light.direction.z]);
+            var lightColorLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'Color');
+            gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
 
-                var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Color');
-                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
+            var diffuseLightIntensityLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'DiffuseLightIntensity');
+            gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
 
-                var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'DiffuseLightIntensity');
-                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+            var specularLightIntensityLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'SpecularLightIntensity');
+            gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
 
-                var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularLightIntensity');
-                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
-
-                var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularPow');
-                gl.uniform1f(specularPowLoc, light.specularPow);
-            }
-
-            var numOfPointLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfPointLight');
-            gl.uniform1i(numOfPointLightLoc, camera.lights.pointLights.length);
-
-            for(var i=0;i<camera.lights.pointLights.length;++i)
-            {
-                const light = camera.lights.pointLights[i];
-                const structName = 'PointLight[' + i + ']';
-
-                var lightPosLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'LightPos');
-                gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
-
-                var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Color');
-                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
-
-                var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'DiffuseLightIntensity');
-                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
-
-                var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularLightIntensity');
-                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
-
-                var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularPow');
-                gl.uniform1f(specularPowLoc, light.specularPow);
-
-                var maxDistanceLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'MaxDistance');
-                gl.uniform1f(maxDistanceLoc, light.maxDistance);
-            }
-
-            var numOfSpotLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfSpotLight');
-            gl.uniform1i(numOfSpotLightLoc, camera.lights.spotLights.length);
-
-            for(var i=0;i<camera.lights.spotLights.length;++i)
-            {
-                const light = camera.lights.spotLights[i];
-                const structName = 'SpotLight[' + i + ']';
-
-                var lightPosLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'LightPos');
-                gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
-
-                var lightDirectionLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Direction');
-                gl.uniform3fv(lightDirectionLoc, [light.lightDirection.x, light.lightDirection.y, light.lightDirection.z]);
-
-                var lightColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'Color');
-                gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
-
-                var diffuseLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'DiffuseLightIntensity');
-                gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
-
-                var specularLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularLightIntensity');
-                gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
-
-                var specularPowLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'SpecularPow');
-                gl.uniform1f(specularPowLoc, light.specularPow);
-
-                var maxDistanceLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'MaxDistance');
-                gl.uniform1f(maxDistanceLoc, light.maxDistance);
-
-                var penumbraRadianLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'PenumbraRadian');
-                gl.uniform1f(penumbraRadianLoc, light.penumbraRadian);
-
-                var umbraRadianLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, structName + '.' + 'UmbraRadian');
-                gl.uniform1f(umbraRadianLoc, light.umbraRadian);
-            }
+            var specularPowLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'SpecularPow');
+            gl.uniform1f(specularPowLoc, light.specularPow);
         }
 
-        if (this.adjacencyInfo)
-            this.adjacencyInfo.updateFunc(this);
-            
-        if (this.shadowVolume)
-            this.shadowVolume.updateFunc(directionalLightDir);
+        var setPointLight = function(pipeLine, light)
+        {
+            const structName = 'PointLight[' + light.index + ']';
+
+            var lightPosLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'LightPos');
+            gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
+
+            var lightColorLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'Color');
+            gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
+
+            var diffuseLightIntensityLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'DiffuseLightIntensity');
+            gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+
+            var specularLightIntensityLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'SpecularLightIntensity');
+            gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+
+            var specularPowLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'SpecularPow');
+            gl.uniform1f(specularPowLoc, light.specularPow);
+
+            var maxDistanceLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'MaxDistance');
+            gl.uniform1f(maxDistanceLoc, light.maxDistance);
+        }
+
+        var setSpotLight = function(pipeLine, light)
+        {
+            const structName = 'SpotLight[' + light.index + ']';
+
+            var lightPosLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'LightPos');
+            gl.uniform3fv(lightPosLoc, [light.pos.x, light.pos.y, light.pos.z]);
+
+            var lightDirectionLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'Direction');
+            gl.uniform3fv(lightDirectionLoc, [light.lightDirection.x, light.lightDirection.y, light.lightDirection.z]);
+
+            var lightColorLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'Color');
+            gl.uniform3fv(lightColorLoc, [light.lightColor.x, light.lightColor.y, light.lightColor.z]);
+
+            var diffuseLightIntensityLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'DiffuseLightIntensity');
+            gl.uniform3fv(diffuseLightIntensityLoc, [light.diffuseLightIntensity.x, light.diffuseLightIntensity.y, light.diffuseLightIntensity.z]);
+
+            var specularLightIntensityLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'SpecularLightIntensity');
+            gl.uniform3fv(specularLightIntensityLoc, [light.specularLightIntensity.x, light.specularLightIntensity.y, light.specularLightIntensity.z]);
+
+            var specularPowLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'SpecularPow');
+            gl.uniform1f(specularPowLoc, light.specularPow);
+
+            var maxDistanceLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'MaxDistance');
+            gl.uniform1f(maxDistanceLoc, light.maxDistance);
+
+            var penumbraRadianLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'PenumbraRadian');
+            gl.uniform1f(penumbraRadianLoc, light.penumbraRadian);
+
+            var umbraRadianLoc = gl.getUniformLocation(pipeLine, structName + '.' + 'UmbraRadian');
+            gl.uniform1f(umbraRadianLoc, light.umbraRadian);
+        }
+
+        const light = camera.lights.getLightByIndex(lightIndex);
+        if (light)
+        {
+            if (light.type == "Directional")
+            {
+                setDirectionalLight(this.pipeLineInfo.pipeLine, light);
+                numOfDirectionalLight = 1;
+            }
+            else if (light.type == "Point")
+            {
+                setPointLight(this.pipeLineInfo.pipeLine, light);
+                numOfPointLight = 1;
+            }
+            else if (light.type == "Spot")
+            {
+                setSpotLight(this.pipeLineInfo.pipeLine, light);
+                numOfSpotLight = 1;
+            }
+        }
+        
+        // if (camera.lights)
+        // {
+        //     numOfDirectionalLight = camera.lights.directionalLights.length;
+        //     numOfPointLight = camera.lights.pointLights.length;
+        //     numOfSpotLight = camera.lights.spotLights.length;
+
+        //      for(var i=0;i<camera.lights.directionalLights.length;++i)
+        //     {
+        //         const light = camera.lights.directionalLights[i];
+        //         lightDir = light.direction.CloneVec3();
+        //         setDirectionalLight(this.pipeLineInfo.pipeLine, light);
+        //     }
+
+        //     for(var i=0;i<camera.lights.pointLights.length;++i)
+        //     {
+        //         const light = camera.lights.pointLights[i];
+        //         setPointLight(this.pipeLineInfo.pipeLine, light);
+        //     }
+
+        //     for(var i=0;i<camera.lights.spotLights.length;++i)
+        //     {
+        //         const light = camera.lights.spotLights[i];
+        //         setSpotLight(this.pipeLineInfo.pipeLine, light);
+        //     }
+        // }
+
+        var numOfDirectionalLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfDirectionalLight');
+        gl.uniform1i(numOfDirectionalLightLoc, numOfDirectionalLight);
+
+        var numOfPointLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfPointLight');
+        gl.uniform1i(numOfPointLightLoc, numOfPointLight);
+
+        var numOfSpotLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'NumOfSpotLight');
+        gl.uniform1i(numOfSpotLightLoc, numOfSpotLight);
 
         if (this.ebo)
         {
@@ -314,7 +359,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
                 for(var i=0;i<this.drawArray.length;++i)
                 {
                     gl.drawArrays(this.primitiveType, this.drawArray[i].startVert, this.drawArray[i].count);
-                    console.log(this.vertexCount+'drawarrays('+i+')'+'[start : ' + this.drawArray[i].startVert + '][count : ' + this.drawArray[i].count + ']');
+                    //console.log(this.vertexCount+'drawarrays('+i+')'+'[start : ' + this.drawArray[i].startVert + '][count : ' + this.drawArray[i].count + ']');
                 }
             }
         }
@@ -512,7 +557,7 @@ jWebGL.prototype.Init = function()
     const pointLightRadius = document.getElementById('PointLightRadius').valueAsNumber;
 
     pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
     const spotLightPos = CreateVec3(document.getElementById('SpotLightX').valueAsNumber, document.getElementById('SpotLightY').valueAsNumber, document.getElementById('SpotLightZ').valueAsNumber);
     const umbraRadian = document.getElementById('SpotLightUmbraAngle').valueAsNumber;
@@ -521,24 +566,24 @@ jWebGL.prototype.Init = function()
 
     spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
-    CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
-        , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
-    CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
-        , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
-    CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
-        , GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
-    TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
-        , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
-    ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
-        , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
-    CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
-        , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-        , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-        , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    // CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
+    //     , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    // CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
+    //     , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    // CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
+    //     , GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
+    // TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
+    //     , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
+    // ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
+    //     , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
+    // CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
+    //     , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    // QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+    //     , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    // BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+    //     , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
 
     const spherePosX = document.getElementById('SpherePosX').valueAsNumber;
     const spherePosY = document.getElementById('SpherePosY').valueAsNumber;
@@ -546,7 +591,7 @@ jWebGL.prototype.Init = function()
     const sphereRadius = document.getElementById('SphereRadius').valueAsNumber;
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
                             , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
-                            , GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, true));
+                            , GetAttribDesc(CreateVec4(0.8, 0.0, 0.0, 1.0), true, false, false, false, true));
 
     // var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false, false, true));
 
@@ -633,18 +678,18 @@ jWebGL.prototype.Render = function(cameraIndex)
     var gl = this.gl;
     var camera = Cameras[cameraIndex];
 
-    var drawStaticObjecs = function(pipeLineHashCode)
+    var drawStaticObjecs = function(pipeLineHashCode, lightIndex)
     {
         for(var i = 0;i<StaticObjectArray.length;++i)
         {
             if (StaticObjectArray[i].drawFunc)
-                StaticObjectArray[i].drawFunc(camera, pipeLineHashCode);
+                StaticObjectArray[i].drawFunc(camera, pipeLineHashCode, lightIndex);
         }
     
         for(var i = 0;i<TransparentStaticObjectArray.length;++i)
         {
             if (TransparentStaticObjectArray[i].drawFunc)
-                TransparentStaticObjectArray[i].drawFunc(camera, pipeLineHashCode);
+                TransparentStaticObjectArray[i].drawFunc(camera, pipeLineHashCode, lightIndex);
         }
     }
 
@@ -653,7 +698,9 @@ jWebGL.prototype.Render = function(cameraIndex)
     //gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ZERO);
-    
+
+    gl.enable(gl.DEPTH_TEST);
+
     gl.enable(gl.CULL_FACE);
     gl.clearColor(0.5, 0.5, 0.5, 1);
     //gl.clearColor(0.0, 0.0, 0.0, 1);
@@ -664,70 +711,122 @@ jWebGL.prototype.Render = function(cameraIndex)
 
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
+    //gl.colorMask(false, false, false, false);
 
-    drawStaticObjecs(ambientPipeLineHashCode);
+    drawStaticObjecs(ambientPipeLineHashCode, -1);
 
     //////////////////////////////////////////////////////////////////
     // 2. 스텐실 볼륨 렌더링
-    gl.clear(gl.STENCIL_BUFFER_BIT);
-    gl.enable(gl.STENCIL_TEST);
-    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
-    gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
+    const numOfLights = camera.getNumOfLights();
 
-    gl.stencilFunc(gl.ALWAYS, 0, 0xff);
-    gl.depthMask(false);
-    gl.colorMask(false, false, false, false);
-
-    gl.enable(gl.POLYGON_OFFSET_FILL);
-    gl.polygonOffset(0.0, 100.0);
-
-    gl.disable(gl.CULL_FACE);
-
-    for(var i = 0;i<StaticObjectArray.length;++i)
+    for(var lightIndex=0;lightIndex<numOfLights;++lightIndex)
     {
-        var obj = StaticObjectArray[i];
-        if (!obj.shadowVolume)
-            continue;
+        gl.clear(gl.STENCIL_BUFFER_BIT);
+        gl.enable(gl.STENCIL_TEST);
+        gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.DECR_WRAP, gl.KEEP);
+        gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.INCR_WRAP, gl.KEEP);
 
-        const shadowVolume = obj.shadowVolume;
+        gl.stencilFunc(gl.ALWAYS, 0, 0xff);
+        gl.depthFunc(gl.LEQUAL);
+        gl.depthMask(false);
+        gl.colorMask(false, false, false, false);
 
-        for(var k=0;k<shadowVolume.objectArray.length;++k)
+        gl.enable(gl.POLYGON_OFFSET_FILL);
+        gl.polygonOffset(0.0, 100.0);
+
+        gl.disable(gl.CULL_FACE);
+
+        var lightDir = null;
+        var lightPos = null;
+
+        const light = camera.lights.getLightByIndex(lightIndex);
+        if (light)
         {
-            var obj = shadowVolume.objectArray[k];
-            if (obj)
+            if (light.type == "Directional")
+                lightDir = light.direction.CloneVec3();
+            else if (light.type == "Point")
+                lightPos = light.pos.CloneVec3();
+            else if (light.type == "Spot")
+                lightPos = light.pos.CloneVec3();
+        }
+
+        for(var i = 0;i<StaticObjectArray.length;++i)
+        {
+            var obj = StaticObjectArray[i];
+            if (!obj.shadowVolume)
+                continue;
+
+            const shadowVolume = obj.shadowVolume;
+            shadowVolume.updateFunc(lightDir, lightPos);
+
+            for(var k=0;k<shadowVolume.objectArray.length;++k)
             {
-                if (obj.updateFunc)
-                    obj.updateFunc();
-    
-                if (obj.drawFunc)
-                    obj.drawFunc(camera, defaultPipeLineHashCode);
+                var obj = shadowVolume.objectArray[k];
+                if (obj)
+                {
+                    if (obj.updateFunc)
+                        obj.updateFunc();
+        
+                    if (obj.drawFunc)
+                        obj.drawFunc(camera, defaultPipeLineHashCode, lightIndex);
+                }
             }
         }
+
+        gl.disable(gl.POLYGON_OFFSET_FILL);
+
+        //////////////////////////////////////////////////////////////////
+        // 3. 최종 라이팅 렌더링
+        gl.stencilFunc(gl.EQUAL, 0, 0xff);
+        //gl.stencilMask(0xff);
+        gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.KEEP);
+        gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.KEEP);
+
+        gl.depthMask(false);
+        gl.colorMask(true, true, true, true);
+        //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
+        gl.enable(gl.CULL_FACE);
+
+        gl.depthFunc(gl.EQUAL);
+        gl.blendFunc(gl.ONE, gl.ONE);        
+        drawStaticObjecs(defaultPipeLineHashCode, lightIndex);
     }
 
-    gl.disable(gl.POLYGON_OFFSET_FILL);
-
-    //////////////////////////////////////////////////////////////////
-    // 3. 최종 라이팅 렌더링
-    gl.stencilFunc(gl.EQUAL, 0, 0xff);
-    //gl.stencilMask(0xff);
-    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.KEEP);
-    gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.KEEP);
-
-	gl.depthMask(true);
-    gl.colorMask(true, true, true, true);
-    //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
-    gl.enable(gl.CULL_FACE);
-
-    gl.enable(gl.DEPTH_TEST);
-    gl.depthFunc(gl.EQUAL);
-    gl.blendFunc(gl.ONE, gl.ONE);
-    drawStaticObjecs(defaultPipeLineHashCode);
-
     // debug shadow volume
-    var drawDebug = 0;
-    if (drawDebug)
+    for(var lightIndex=0;lightIndex<numOfLights;++lightIndex)
     {
+        var lightDir = null;
+        var lightPos = null;
+        const light = camera.lights.getLightByIndex(lightIndex);
+        if (light)
+        {
+            if (light.type == "Directional")
+            {
+                if (!ShowSilhouetteDirectionalLight)
+                    continue;
+
+                lightDir = light.direction.CloneVec3();
+            }
+            else if (light.type == "Point")
+            {
+                if (!ShowSilhouettePointLight)
+                    continue;
+
+                lightPos = light.pos.CloneVec3();
+            }
+            else if (light.type == "Spot")
+            {
+                if (!ShowSilhouetteSpotLight)
+                    continue;
+
+                lightPos = light.pos.CloneVec3();
+            }
+            else
+            {
+                continue;
+            }
+        }
+
         gl.depthFunc(gl.LEQUAL);
         for(var i = 0;i<StaticObjectArray.length;++i)
         {
@@ -736,6 +835,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                 continue;
 
             const shadowVolume = obj.shadowVolume;
+            shadowVolume.updateFunc(lightDir, lightPos);
 
             for(var k=0;k<shadowVolume.objectArray.length;++k)
             {
@@ -743,7 +843,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                 if (obj)
                 {
                     if (obj.drawFunc)
-                        obj.drawFunc(camera, defaultPipeLineHashCode);
+                        obj.drawFunc(camera, defaultPipeLineHashCode, lightIndex);
                 }
             }
         }

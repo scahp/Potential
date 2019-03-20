@@ -150,14 +150,17 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
     {
         if (light.type == "Directional")
         {
+            light.index = this.lights.directionalLights.length;
             this.lights.directionalLights.push(light);
         }
         else if (light.type == "Point")
         {
+            light.index = this.lights.pointLights.length;
             this.lights.pointLights.push(light);
         }
         else if (light.type == "Spot")
         {
+            light.index = this.lights.spotLights.length;
             this.lights.spotLights.push(light);
         }
         else
@@ -166,10 +169,37 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
         }
     }
 
+    var getLightByIndex = function(index)
+    {
+        if (index >= 0)
+        {
+            if (this.directionalLights.length > index)
+                return this.directionalLights[index];
+
+            index -= this.directionalLights.length;
+
+            if (this.pointLights.length > index)
+                return this.pointLights[index];
+
+            index -= this.pointLights.length;
+
+            if (this.spotLights.length > index)
+                return this.spotLights[index];
+        }
+
+        return null;
+    }
+
+    var getNumOfLights = function()
+    {
+        return this.lights.directionalLights.length + this.lights.pointLights.length + this.lights.spotLights.length;
+    }
+
     var newCamera = {matView:matView, matProjection:matProjection
         , matViewProjection:matMV, pos:pos, target:target, up:up
         , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
-        , lights:{directionalLights:[], pointLights:[], spotLights:[]}, addLight:addLight, ambient:null};
+        , lights:{directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
+        , ambient:null, index:-1, getNumOfLights:getNumOfLights};
     Cameras.push(newCamera);
     return newCamera;
 }

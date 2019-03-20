@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 attribute vec3 Pos;
 attribute vec2 TexCoord;
