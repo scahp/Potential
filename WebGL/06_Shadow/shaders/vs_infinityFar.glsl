@@ -7,6 +7,7 @@ attribute vec4 Color;
 
 uniform mat4 MVP;
 uniform mat4 M;
+uniform mat4 MVP_Infinity;
 
 #define MAX_NUM_OF_DIRECTIONAL_LIGHT 1
 #define MAX_NUM_OF_POINT_LIGHT 10
@@ -33,21 +34,19 @@ void main()
         if (NumOfPointLight > 0)
         {
             lightPos = PointLight[0].LightPos;
-            vec3 vertPos = TransformPos(M, Pos.xyz);
-            lightDir = normalize(lightPos - vertPos);
+            lightDir = normalize(Pos.xyz - lightPos);
         }
         else if (NumOfSpotLight > 0)
         {
             lightPos = SpotLight[0].LightPos;
-            vec3 vertPos = TransformPos(M, Pos.xyz);
-            lightDir = normalize(lightPos - vertPos);
+            lightDir = normalize(Pos.xyz - lightPos);
         }
         else if (NumOfDirectionalLight > 0)
         {
             lightDir = DirectionalLight[0].LightDirection;
         }
 
-        gl_Position = MVP * vec4(lightDir, 0.0);
+        gl_Position = MVP_Infinity * vec4(lightDir, 0.0);
     }
     else
     {

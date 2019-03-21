@@ -81,6 +81,8 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         for(var i=0;i<this.attribs.length;++i)
         {
             var attr = attribs[i];
+            if (loc == -1)
+                alert('attribLoc is -1 - setPipeLine');
             attr.loc = gl.getAttribLocation(this.pipeLineInfo.pipeLine, attr.name); 
         }
     }
@@ -127,14 +129,24 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var matScale = CreateScaleMat4(this.scale.x, this.scale.y, this.scale.z);
         this.matWorld = CloneMat4(matPos).Mul(matRot).Mul(matScale);
 
-        var matMVP = CloneMat4(camera.matViewProjection).Mul(this.matWorld);
-        var matMV = CloneMat4(camera.matView).Mul(this.matWorld);
-        var matM = CloneMat4(this.matWorld);
+        const scaleVar = 0.9;
+        var matScale2 = CreateScaleMat4(this.scale.x * scaleVar, this.scale.y * scaleVar, this.scale.z * scaleVar);
+        this.matWorld2 = CloneMat4(matPos).Mul(matRot).Mul(matScale2);
 
+        var matM = CloneMat4(this.matWorld);
+        var matMV = CloneMat4(camera.matView).Mul(matM);
+
+        var matMVP = CloneMat4(camera.matProjection).Mul(matMV);
         matMVP.Transpose();
         var mvpArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
         var mvpLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'MVP');
         gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mvpArray));
+        
+        var matMVP_Infinity = CloneMat4(camera.matProjectionFarAtInfinity).Mul(matMV);
+        matMVP_Infinity.Transpose();
+        var mvp_InfinityArray = matMVP_Infinity.m[0].concat(matMVP_Infinity.m[1],matMVP_Infinity.m[2],matMVP_Infinity.m[3]);
+        var mvp_InfinityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'MVP_Infinity');
+        gl.uniformMatrix4fv(mvp_InfinityLoc, false, new Float32Array(mvp_InfinityArray));
 
         matMV.Transpose();
         var mvArray = matMV.m[0].concat(matMV.m[1],matMV.m[2],matMV.m[3]);
@@ -370,10 +382,11 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
     ];
 
     var matWorld = new jMat4();
+    var matWorld2 = new jMat4();
     var pos = CreateVec3(0.0, 0.0, 0.0);
     var rot = CreateVec3(0.0, 0.0, 0.0);
     var scale = CreateVec3(1.0, 1.0, 1.0);
-    return {gl:gl, vbo:vbo, ebo:ebo, pipeLineInfo:pipeLineInfo, attribs:attribs, matWorld:matWorld, cameraIndex:cameraIndex, pos:pos
+    return {gl:gl, vbo:vbo, ebo:ebo, pipeLineInfo:pipeLineInfo, attribs:attribs, matWorld:matWorld, matWorld2:matWorld2, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
         , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
         , collided:false, hide:false, twoSide:isTwoside, setPipeLine:setPipeLine, isDisablePipeLineChange:isDisablePipeLineChange};
@@ -557,7 +570,7 @@ jWebGL.prototype.Init = function()
     const pointLightRadius = document.getElementById('PointLightRadius').valueAsNumber;
 
     pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
+        , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
     const spotLightPos = CreateVec3(document.getElementById('SpotLightX').valueAsNumber, document.getElementById('SpotLightY').valueAsNumber, document.getElementById('SpotLightZ').valueAsNumber);
     const umbraRadian = document.getElementById('SpotLightUmbraAngle').valueAsNumber;
@@ -566,20 +579,20 @@ jWebGL.prototype.Init = function()
 
     spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
+        , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
     // CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
     //     , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
-    // CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
-    //     , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
-    // CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
-    //     , GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
+    CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
+        , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
+        , GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), true, false, false, false, true));
+    ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
+        , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
+    CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
+        , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     // TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
     //     , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
-    // ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
-    //     , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
-    // CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
-    //     , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     // QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
     //     , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     // BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)

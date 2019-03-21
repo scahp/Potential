@@ -304,7 +304,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
 
     adjacencyInfo.updateFunc = function(ownerObject)
     {
-        this.updatedTransformedAdjacencyInfo(ownerObject.matWorld);
+        this.updatedTransformedAdjacencyInfo(ownerObject.matWorld2);
 
         if (this.isCreateDebugObject)
         {
@@ -340,11 +340,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 return lightDirection.CloneVec3();
             
             if (lightPos)
-            {
-                //return CreateVec3(-1.0, -1.0, -1.0).GetNormalize();
-                //return pos.CloneVec3().Sub(lightPos).Neg();
-                return pos.CloneVec3().Sub(lightPos).Neg();
-            }
+                return pos.CloneVec3().Sub(lightPos);
             
             alert('lightDirection or lightPos should be not null');
             return null;
@@ -367,7 +363,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
         var cnt = 0;
         var hasBackCap = false;
-        const extrudeLength = 100.0;
+        const extrudeLength = 1.0;
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
@@ -417,12 +413,9 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             if (needBackCap)
             {    
                 // back cap
-                // var eV0 = v0.CloneVec3().Add(lightDir.CloneVec3().Mul(extrudeLength));
-                // var eV1 = v1.CloneVec3().Add(lightDir.CloneVec3().Mul(extrudeLength));
-                // var eV2 = v2.CloneVec3().Add(lightDir.CloneVec3().Mul(extrudeLength));
-                var eV0 = v0.CloneVec3().Add(getLightDirection(v0).CloneVec3().Mul(extrudeLength));
-                var eV1 = v1.CloneVec3().Add(getLightDirection(v1).CloneVec3().Mul(extrudeLength));
-                var eV2 = v1.CloneVec3().Add(getLightDirection(v2).CloneVec3().Mul(extrudeLength));
+                var eV0 = v0.CloneVec3();
+                var eV1 = v1.CloneVec3();
+                var eV2 = v2.CloneVec3();
 
                 if (isTwoSide && !isBackfaceToLight)
                 {
@@ -463,10 +456,8 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
             var v0 = adjacencyInfo.transformedVerts[edge.v0Index];
             var v1 = adjacencyInfo.transformedVerts[edge.v1Index];
-            var v2 = v0.CloneVec3().Add(getLightDirection(v0).CloneVec3().Mul(extrudeLength));
-            var v3 = v1.CloneVec3().Add(getLightDirection(v1).CloneVec3().Mul(extrudeLength));
-            //var v2 = getLightDirection(v0);
-            //var v3 = getLightDirection(v1);
+            var v2 = v0.CloneVec3();
+            var v3 = v1.CloneVec3();
             
             // quad should face to triangle normal
             const isBackfaceToLight = (GetDotProduct3(lightDir, triangle.transformedNormal) > 0.0);
@@ -493,14 +484,6 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
             this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(test);
-
-            // this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
-            // this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            // this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
-
-            // this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
-            // this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            // this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(0.0);
         }
         /////////////////////////////////////////
 

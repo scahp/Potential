@@ -114,9 +114,8 @@ var updateCamera = function(gl, cameraIndex)
 {
     var camera = Cameras[cameraIndex];
     camera.matView = CreateViewMatrix(camera.pos, camera.target, camera.up);
-    //camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
-    camera.matProjection = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
-    camera.matViewProjection = CloneMat4(camera.matProjection).Mul(camera.matView);
+    camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
+    camera.matProjectionFarAtInfinity = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
 }
 
 var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStaticObject)
@@ -130,10 +129,6 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
     t3_up = t3_up.GetNormalize()
 
     var up = t3_up.CloneVec3().Add(pos);
-    var matView = CreateViewMatrix(pos, target, up);
-    var matProjection = CreatePerspectiveMatrix(gl.canvas.width
-        , gl.canvas.height, fovRad, far, near);
-    var matMV = CloneMat4(matProjection).Mul(matView);
     
     var debugStaticObject = [];
     var debugStaticObject2 = [];
@@ -195,8 +190,7 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
         return this.lights.directionalLights.length + this.lights.pointLights.length + this.lights.spotLights.length;
     }
 
-    var newCamera = {matView:matView, matProjection:matProjection
-        , matViewProjection:matMV, pos:pos, target:target, up:up
+    var newCamera = {matView:null, matProjection:null, pos:pos, target:target, up:up
         , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
         , lights:{directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
         , ambient:null, index:-1, getNumOfLights:getNumOfLights};
