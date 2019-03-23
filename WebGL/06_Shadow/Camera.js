@@ -114,8 +114,10 @@ var updateCamera = function(gl, cameraIndex)
 {
     var camera = Cameras[cameraIndex];
     camera.matView = CreateViewMatrix(camera.pos, camera.target, camera.up);
-    camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
-    camera.matProjectionFarAtInfinity = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
+    
+    // Using Far plane at infinity
+    // camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
+    camera.matProjection = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
 }
 
 var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStaticObject)

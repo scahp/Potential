@@ -338,20 +338,20 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
     shadowVolume.updateFunc = function(lightDirection, lightPos, ownerObject)
     {
         const matWorldInv = CloneMat4(ownerObject.matWorld).GetInverse();
-        var lightDirectionWorldmMatInv = null;
+        var lightDirWorldInv = null;
         if (lightDirection)
-            lightDirectionWorldmMatInv = lightDirection.CloneVec3().Transform(matWorldInv, true);
-        var lightPosWorldMatInv = null;
+            lightDirWorldInv = lightDirection.CloneVec3().Transform(matWorldInv, true);
+        var lightPosWorldInv = null;
         if (lightPos)
-        lightPosWorldMatInv = lightPos.CloneVec3().Transform(matWorldInv);
+            lightPosWorldInv = lightPos.CloneVec3().Transform(matWorldInv);
 
         var getLightDirection = function(pos)
         {
-            if (lightDirectionWorldmMatInv)
-                return lightDirectionWorldmMatInv;
+            if (lightDirWorldInv)
+                return lightDirWorldInv;
             
-            if (lightPosWorldMatInv)
-                return pos.CloneVec3().Sub(lightPosWorldMatInv);
+            if (lightPosWorldInv)
+                return pos.CloneVec3().Sub(lightPosWorldInv);
             
             alert('lightDirection or lightPos should be not null');
             return null;
@@ -375,6 +375,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         var cnt = 0;
         var hasBackCap = false;
         const extrudeLength = 1.0;
+        var backfaceToLightDirInTriangle = [];
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
@@ -384,6 +385,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
             var lightDir = getLightDirection(triangle.centerPos);
             const isBackfaceToLight = (GetDotProduct3(triangle.normal, lightDir) > 0.0);
+            backfaceToLightDirInTriangle[triangle.triangleIndex] = isBackfaceToLight;
 
             var needFrontCap = false;
             var needBackCap = false;
@@ -471,7 +473,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             var v3 = v1.CloneVec3();
             
             // quad should face to triangle normal
-            const isBackfaceToLight = (GetDotProduct3(lightDir, triangle.normal) > 0.0);
+            const isBackfaceToLight = backfaceToLightDirInTriangle[triangle.triangleIndex];
             
             if (isBackfaceToLight)            
             {

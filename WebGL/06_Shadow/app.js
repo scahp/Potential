@@ -129,30 +129,15 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var matScale = CreateScaleMat4(this.scale.x, this.scale.y, this.scale.z);
         this.matWorld = CloneMat4(matPos).Mul(matRot).Mul(matScale);
 
-        const scaleVar = 0.9;
-        var matScale2 = CreateScaleMat4(this.scale.x * scaleVar, this.scale.y * scaleVar, this.scale.z * scaleVar);
-        this.matWorld2 = CloneMat4(matPos).Mul(matRot).Mul(matScale2);
-
         var matM = CloneMat4(this.matWorld);
         var matMV = CloneMat4(camera.matView).Mul(matM);
-
+        
         var matMVP = CloneMat4(camera.matProjection).Mul(matMV);
         matMVP.Transpose();
         var mvpArray = matMVP.m[0].concat(matMVP.m[1],matMVP.m[2],matMVP.m[3]);
         var mvpLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'MVP');
-        gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mvpArray));
-        
-        var matMVP_Infinity = CloneMat4(camera.matProjectionFarAtInfinity).Mul(matMV);
-        matMVP_Infinity.Transpose();
-        var mvp_InfinityArray = matMVP_Infinity.m[0].concat(matMVP_Infinity.m[1],matMVP_Infinity.m[2],matMVP_Infinity.m[3]);
-        var mvp_InfinityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'MVP_Infinity');
-        gl.uniformMatrix4fv(mvp_InfinityLoc, false, new Float32Array(mvp_InfinityArray));
-
-        var matVP_Infinity = CloneMat4(camera.matProjectionFarAtInfinity).Mul(camera.matView);
-        matVP_Infinity.Transpose();
-        var vp_InfinityArray = matVP_Infinity.m[0].concat(matVP_Infinity.m[1],matVP_Infinity.m[2],matVP_Infinity.m[3]);
-        var vp_InfinityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'VP_Infinity');
-        gl.uniformMatrix4fv(vp_InfinityLoc, false, new Float32Array(vp_InfinityArray));
+        if (mvpLoc)
+            gl.uniformMatrix4fv(mvpLoc, false, new Float32Array(mvpArray));
 
         matMV.Transpose();
         var mvArray = matMV.m[0].concat(matMV.m[1],matMV.m[2],matMV.m[3]);
@@ -162,19 +147,23 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         matM.Transpose();
         var mArray = matM.m[0].concat(matM.m[1],matM.m[2],matM.m[3]);
         var mLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'M');
-        gl.uniformMatrix4fv(mLoc, false, new Float32Array(mArray));
+        if (mLoc)
+            gl.uniformMatrix4fv(mLoc, false, new Float32Array(mArray));
 
         var matVP = CloneMat4(camera.matProjection).Mul(camera.matView);
         matVP.Transpose();
         var vpArray = matVP.m[0].concat(matVP.m[1],matVP.m[2],matVP.m[3]);
         var vpLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'VP');
-        gl.uniformMatrix4fv(vpLoc, false, new Float32Array(vpArray));
+        if (vpLoc)
+            gl.uniformMatrix4fv(vpLoc, false, new Float32Array(vpArray));
 
         var eyeLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'Eye');
-        gl.uniform3fv(eyeLoc, [camera.pos.x, camera.pos.y, camera.pos.z]);
+        if (eyeLoc)
+            gl.uniform3fv(eyeLoc, [camera.pos.x, camera.pos.y, camera.pos.z]);
 
         var collidedLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'Collided');
-        gl.uniform1i(collidedLoc, this.collided);
+        if (collidedLoc)
+            gl.uniform1i(collidedLoc, this.collided);
     }
 
     var setRenderProperty = function()
@@ -603,8 +592,8 @@ jWebGL.prototype.Init = function()
         , GetAttribDesc(CreateVec4(1.0, 1.0, 0.0, 1.0), true, false, false, false, true));
     CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
         , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    // TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
-    //     , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
+    TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
+        , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
     // QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
     //     , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     // BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
@@ -639,6 +628,9 @@ jWebGL.prototype.Init = function()
             this.fpsNode.nodeValue = loopCount.toFixed(0);
             loopCount = 0;
             lastTime = currentTime;
+
+            // var dist = (GetDotProduct3(quad.plane.n, mainCamera.pos) - quad.plane.d);
+            // console.log(dist);        
         }
 
         if (CylinderA)

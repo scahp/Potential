@@ -5,11 +5,9 @@ precision highp float;
 attribute vec4 Pos;
 attribute vec4 Color;
 
-uniform mat4 MVP;
 uniform mat4 M;
 uniform mat4 VP;
-uniform mat4 MVP_Infinity;
-uniform mat4 VP_Infinity;
+uniform mat4 MVP;
 
 #define MAX_NUM_OF_DIRECTIONAL_LIGHT 1
 #define MAX_NUM_OF_POINT_LIGHT 10
@@ -50,8 +48,7 @@ void main()
         {
             lightDir = DirectionalLight[0].LightDirection;
         }
-
-        gl_Position = VP_Infinity * vec4(lightDir, 0.0);
+        gl_Position = VP * vec4(lightDir, 0.0);
     }
     else
     {
