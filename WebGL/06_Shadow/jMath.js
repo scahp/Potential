@@ -457,6 +457,66 @@ jMat4.prototype.GetRot = function()
     return CreateVec3(X, Y, Z);
 }
 
+jMat4.prototype.GetInverse = function()
+{
+    var a0 = this.m[0][0]*this.m[1][1] - this.m[0][1]*this.m[1][0];
+    var a1 = this.m[0][0]*this.m[1][2] - this.m[0][2]*this.m[1][0];
+    var a2 = this.m[0][0]*this.m[1][3] - this.m[0][3]*this.m[1][0];
+    var a3 = this.m[0][1]*this.m[1][2] - this.m[0][2]*this.m[1][1];
+    var a4 = this.m[0][1]*this.m[1][3] - this.m[0][3]*this.m[1][1];
+    var a5 = this.m[0][2]*this.m[1][3] - this.m[0][3]*this.m[1][2];
+    var b0 = this.m[2][0]*this.m[3][1] - this.m[2][1]*this.m[3][0];
+    var b1 = this.m[2][0]*this.m[3][2] - this.m[2][2]*this.m[3][0];
+    var b2 = this.m[2][0]*this.m[3][3] - this.m[2][3]*this.m[3][0];
+    var b3 = this.m[2][1]*this.m[3][2] - this.m[2][2]*this.m[3][1];
+    var b4 = this.m[2][1]*this.m[3][3] - this.m[2][3]*this.m[3][1];
+    var b5 = this.m[2][2]*this.m[3][3] - this.m[2][3]*this.m[3][2];
+
+    var det = a0*b5 - a1*b4 + a2*b3 + a3*b2 - a4*b1 + a5*b0;
+    if (Math.abs(det) > 0.0001)
+    {
+        var inverse = new jMat4();
+        inverse.m[0][0] = + this.m[1][1]*b5 - this.m[1][2]*b4 + this.m[1][3]*b3;
+        inverse.m[1][0] = - this.m[1][0]*b5 + this.m[1][2]*b2 - this.m[1][3]*b1;
+        inverse.m[2][0] = + this.m[1][0]*b4 - this.m[1][1]*b2 + this.m[1][3]*b0;
+        inverse.m[3][0] = - this.m[1][0]*b3 + this.m[1][1]*b1 - this.m[1][2]*b0;
+        inverse.m[0][1] = - this.m[0][1]*b5 + this.m[0][2]*b4 - this.m[0][3]*b3;
+        inverse.m[1][1] = + this.m[0][0]*b5 - this.m[0][2]*b2 + this.m[0][3]*b1;
+        inverse.m[2][1] = - this.m[0][0]*b4 + this.m[0][1]*b2 - this.m[0][3]*b0;
+        inverse.m[3][1] = + this.m[0][0]*b3 - this.m[0][1]*b1 + this.m[0][2]*b0;
+        inverse.m[0][2] = + this.m[3][1]*a5 - this.m[3][2]*a4 + this.m[3][3]*a3;
+        inverse.m[1][2] = - this.m[3][0]*a5 + this.m[3][2]*a2 - this.m[3][3]*a1;
+        inverse.m[2][2] = + this.m[3][0]*a4 - this.m[3][1]*a2 + this.m[3][3]*a0;
+        inverse.m[3][2] = - this.m[3][0]*a3 + this.m[3][1]*a1 - this.m[3][2]*a0;
+        inverse.m[0][3] = - this.m[2][1]*a5 + this.m[2][2]*a4 - this.m[2][3]*a3;
+        inverse.m[1][3] = + this.m[2][0]*a5 - this.m[2][2]*a2 + this.m[2][3]*a1;
+        inverse.m[2][3] = - this.m[2][0]*a4 + this.m[2][1]*a2 - this.m[2][3]*a0;
+        inverse.m[3][3] = + this.m[2][0]*a3 - this.m[2][1]*a1 + this.m[2][2]*a0;
+
+        var invDet = 1.0/det;
+        inverse.m[0][0] *= invDet;
+        inverse.m[0][1] *= invDet;
+        inverse.m[0][2] *= invDet;
+        inverse.m[0][3] *= invDet;
+        inverse.m[1][0] *= invDet;
+        inverse.m[1][1] *= invDet;
+        inverse.m[1][2] *= invDet;
+        inverse.m[1][3] *= invDet;
+        inverse.m[2][0] *= invDet;
+        inverse.m[2][1] *= invDet;
+        inverse.m[2][2] *= invDet;
+        inverse.m[2][3] *= invDet;
+        inverse.m[3][0] *= invDet;
+        inverse.m[3][1] *= invDet;
+        inverse.m[3][2] *= invDet;
+        inverse.m[3][3] *= invDet;
+
+        return inverse;
+    }
+
+    return null;
+}
+
 ////////////////////////////////////////////////
 // jPlane
 var jPlane = function()

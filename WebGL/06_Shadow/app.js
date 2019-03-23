@@ -148,6 +148,12 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var mvp_InfinityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'MVP_Infinity');
         gl.uniformMatrix4fv(mvp_InfinityLoc, false, new Float32Array(mvp_InfinityArray));
 
+        var matVP_Infinity = CloneMat4(camera.matProjectionFarAtInfinity).Mul(camera.matView);
+        matVP_Infinity.Transpose();
+        var vp_InfinityArray = matVP_Infinity.m[0].concat(matVP_Infinity.m[1],matVP_Infinity.m[2],matVP_Infinity.m[3]);
+        var vp_InfinityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'VP_Infinity');
+        gl.uniformMatrix4fv(vp_InfinityLoc, false, new Float32Array(vp_InfinityArray));
+
         matMV.Transpose();
         var mvArray = matMV.m[0].concat(matMV.m[1],matMV.m[2],matMV.m[3]);
         var mvLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'MV');
@@ -157,6 +163,12 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var mArray = matM.m[0].concat(matM.m[1],matM.m[2],matM.m[3]);
         var mLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'M');
         gl.uniformMatrix4fv(mLoc, false, new Float32Array(mArray));
+
+        var matVP = CloneMat4(camera.matProjection).Mul(camera.matView);
+        matVP.Transpose();
+        var vpArray = matVP.m[0].concat(matVP.m[1],matVP.m[2],matVP.m[3]);
+        var vpLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'VP');
+        gl.uniformMatrix4fv(vpLoc, false, new Float32Array(vpArray));
 
         var eyeLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'Eye');
         gl.uniform3fv(eyeLoc, [camera.pos.x, camera.pos.y, camera.pos.z]);
@@ -563,14 +575,14 @@ jWebGL.prototype.Init = function()
     var specularPow = 64.0;
 
     var dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
-        , {debugObject:false, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
+        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
     //var t = document.getElementById('PointLightX');
     const pointLightPos = CreateVec3(document.getElementById('PointLightX').valueAsNumber, document.getElementById('PointLightY').valueAsNumber, document.getElementById('PointLightZ').valueAsNumber);
     const pointLightRadius = document.getElementById('PointLightRadius').valueAsNumber;
 
     pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
     const spotLightPos = CreateVec3(document.getElementById('SpotLightX').valueAsNumber, document.getElementById('SpotLightY').valueAsNumber, document.getElementById('SpotLightZ').valueAsNumber);
     const umbraRadian = document.getElementById('SpotLightUmbraAngle').valueAsNumber;
@@ -579,10 +591,10 @@ jWebGL.prototype.Init = function()
 
     spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:false, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
-    // CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
-    //     , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
+    CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
+        , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
     CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
         , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
     CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
@@ -691,18 +703,31 @@ jWebGL.prototype.Render = function(cameraIndex)
     var gl = this.gl;
     var camera = Cameras[cameraIndex];
 
-    var drawStaticObjecs = function(pipeLineHashCode, lightIndex)
+    var drawStaticOpaqueObjects = function(pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)
     {
         for(var i = 0;i<StaticObjectArray.length;++i)
         {
-            if (StaticObjectArray[i].drawFunc)
-                StaticObjectArray[i].drawFunc(camera, pipeLineHashCode, lightIndex);
+            var obj = StaticObjectArray[i];
+
+            if (drawShadowCasterOnly && !obj.shadowVolume)
+                continue;
+
+            if (obj.drawFunc)
+                obj.drawFunc(camera, pipeLineHashCode, lightIndex);
         }
-    
+    }
+
+    var drawStaticTransparentObjects = function(pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)
+    {
         for(var i = 0;i<TransparentStaticObjectArray.length;++i)
         {
-            if (TransparentStaticObjectArray[i].drawFunc)
-                TransparentStaticObjectArray[i].drawFunc(camera, pipeLineHashCode, lightIndex);
+            var obj = TransparentStaticObjectArray[i];
+
+            if (drawShadowCasterOnly && !obj.shadowVolume)
+                continue;
+
+            if (obj.drawFunc)
+                obj.drawFunc(camera, pipeLineHashCode, lightIndex);
         }
     }
 
@@ -726,7 +751,7 @@ jWebGL.prototype.Render = function(cameraIndex)
     gl.colorMask(true, true, true, true);
     //gl.colorMask(false, false, false, false);
 
-    drawStaticObjecs(ambientPipeLineHashCode, -1);
+    drawStaticOpaqueObjects(ambientPipeLineHashCode, -1);
 
     //////////////////////////////////////////////////////////////////
     // 2. 스텐실 볼륨 렌더링
@@ -770,7 +795,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                 continue;
 
             const shadowVolume = obj.shadowVolume;
-            shadowVolume.updateFunc(lightDir, lightPos);
+            shadowVolume.updateFunc(lightDir, lightPos, obj);
 
             for(var k=0;k<shadowVolume.objectArray.length;++k)
             {
@@ -781,7 +806,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                         obj.updateFunc();
         
                     if (obj.drawFunc)
-                        obj.drawFunc(camera, defaultPipeLineHashCode, lightIndex);
+                        obj.drawFunc(camera, defaultPipeLineHashCode, lightIndex, true);
                 }
             }
         }
@@ -802,8 +827,16 @@ jWebGL.prototype.Render = function(cameraIndex)
 
         gl.depthFunc(gl.EQUAL);
         gl.blendFunc(gl.ONE, gl.ONE);        
-        drawStaticObjecs(defaultPipeLineHashCode, lightIndex);
+        drawStaticOpaqueObjects(defaultPipeLineHashCode, lightIndex);
     }
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthFunc(gl.LEQUAL);
+    gl.depthMask(true);
+    gl.colorMask(true, true, true, true);
+    gl.disable(gl.STENCIL_TEST);
+    drawStaticTransparentObjects(defaultPipeLineHashCode, -1);
 
     // debug shadow volume
     for(var lightIndex=0;lightIndex<numOfLights;++lightIndex)
@@ -848,7 +881,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                 continue;
 
             const shadowVolume = obj.shadowVolume;
-            shadowVolume.updateFunc(lightDir, lightPos);
+            shadowVolume.updateFunc(lightDir, lightPos, obj);
 
             for(var k=0;k<shadowVolume.objectArray.length;++k)
             {

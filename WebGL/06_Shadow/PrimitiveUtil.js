@@ -223,33 +223,36 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
 
     var adjacencyInfo = {result:result, triangles:triangles, verts:verts, edges:edges, debugObject:{}, isCreateDebugObject:isCreateDebugObject, isInitialized:false};
 
-    adjacencyInfo.updatedTransformedAdjacencyInfo = function(matWorld)
+    adjacencyInfo.updatedTransformedAdjacencyInfo = function(matWorld, generateTransformedInfo = false)
     {
-        this.normalVers = [];
-        for(var key in this.triangles)
+        if (generateTransformedInfo)
         {
-            var triangle = this.triangles[key];
-            var transformedNormal = triangle.normal.CloneVec3().Transform(matWorld, true).GetNormalize();
-            var transformedCenterPos = triangle.centerPos.CloneVec3().Transform(matWorld);
+            this.normalVers = [];
+            for(var key in this.triangles)
+            {
+                var triangle = this.triangles[key];
+                var transformedNormal = triangle.normal.CloneVec3().Transform(matWorld, true).GetNormalize();
+                var transformedCenterPos = triangle.centerPos.CloneVec3().Transform(matWorld);
 
-            triangle.transformedNormal = transformedNormal;
-            triangle.transformedCenterPos = transformedCenterPos;
-            
-            var normalEnd = transformedCenterPos.CloneVec3().Add(transformedNormal.CloneVec3().Mul(2.0));
+                triangle.transformedNormal = transformedNormal;
+                triangle.transformedCenterPos = transformedCenterPos;
+                
+                var normalEnd = transformedCenterPos.CloneVec3().Add(transformedNormal.CloneVec3().Mul(2.0));
 
-            this.normalVers.push(transformedCenterPos.x);
-            this.normalVers.push(transformedCenterPos.y);
-            this.normalVers.push(transformedCenterPos.z);
-            this.normalVers.push(normalEnd.x);
-            this.normalVers.push(normalEnd.y);
-            this.normalVers.push(normalEnd.z);
-        }
+                this.normalVers.push(transformedCenterPos.x);
+                this.normalVers.push(transformedCenterPos.y);
+                this.normalVers.push(transformedCenterPos.z);
+                this.normalVers.push(normalEnd.x);
+                this.normalVers.push(normalEnd.y);
+                this.normalVers.push(normalEnd.z);
+            }
 
-        this.transformedVerts = [];
-        for(var i=0;i<this.verts.length;++i)
-        {
-            var vert = this.verts[i].CloneVec3();
-            this.transformedVerts.push(vert.Transform(matWorld));
+            this.transformedVerts = [];
+            for(var i=0;i<this.verts.length;++i)
+            {
+                var vert = this.verts[i].CloneVec3();
+                this.transformedVerts.push(vert.Transform(matWorld));
+            }
         }
     }
 
@@ -332,15 +335,23 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 {
     shadowVolume = {debugObject:{}, isCreateDebugObject:isCreateDebugObject, adjacencyInfo:adjacencyInfo, isInitialized:false};
 
-    shadowVolume.updateFunc = function(lightDirection, lightPos)
+    shadowVolume.updateFunc = function(lightDirection, lightPos, ownerObject)
     {
+        const matWorldInv = CloneMat4(ownerObject.matWorld).GetInverse();
+        var lightDirectionWorldmMatInv = null;
+        if (lightDirection)
+            lightDirectionWorldmMatInv = lightDirection.CloneVec3().Transform(matWorldInv, true);
+        var lightPosWorldMatInv = null;
+        if (lightPos)
+        lightPosWorldMatInv = lightPos.CloneVec3().Transform(matWorldInv);
+
         var getLightDirection = function(pos)
         {
-            if (lightDirection)
-                return lightDirection.CloneVec3();
+            if (lightDirectionWorldmMatInv)
+                return lightDirectionWorldmMatInv;
             
-            if (lightPos)
-                return pos.CloneVec3().Sub(lightPos);
+            if (lightPosWorldMatInv)
+                return pos.CloneVec3().Sub(lightPosWorldMatInv);
             
             alert('lightDirection or lightPos should be not null');
             return null;
@@ -367,12 +378,12 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
-            const v0 = adjacencyInfo.transformedVerts[triangle.v0Index];
-            const v1 = adjacencyInfo.transformedVerts[triangle.v1Index];
-            const v2 = adjacencyInfo.transformedVerts[triangle.v2Index];
+            const v0 = adjacencyInfo.verts[triangle.v0Index];
+            const v1 = adjacencyInfo.verts[triangle.v1Index];
+            const v2 = adjacencyInfo.verts[triangle.v2Index];
 
-            var lightDir = getLightDirection(triangle.transformedCenterPos);
-            const isBackfaceToLight = (GetDotProduct3(triangle.transformedNormal, lightDir) > 0.0);
+            var lightDir = getLightDirection(triangle.centerPos);
+            const isBackfaceToLight = (GetDotProduct3(triangle.normal, lightDir) > 0.0);
 
             var needFrontCap = false;
             var needBackCap = false;
@@ -435,8 +446,8 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         for(var key in this.edges)
         {
             const edge = adjacencyInfo.edges[this.edges[key]];
-            const v0 = adjacencyInfo.transformedVerts[edge.v0Index];
-            const v1 = adjacencyInfo.transformedVerts[edge.v1Index];
+            const v0 = adjacencyInfo.verts[edge.v0Index];
+            const v1 = adjacencyInfo.verts[edge.v1Index];
 
             this.edgeVerts.push(v0.x);
             this.edgeVerts.push(v0.y);
@@ -452,15 +463,15 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         {
             const edge = adjacencyInfo.edges[this.edges[key]];
             const triangle = adjacencyInfo.triangles[edge.triangleIndex];
-            var lightDir = getLightDirection(triangle.transformedCenterPos);
+            var lightDir = getLightDirection(triangle.centerPos);
 
-            var v0 = adjacencyInfo.transformedVerts[edge.v0Index];
-            var v1 = adjacencyInfo.transformedVerts[edge.v1Index];
+            var v0 = adjacencyInfo.verts[edge.v0Index];
+            var v1 = adjacencyInfo.verts[edge.v1Index];
             var v2 = v0.CloneVec3();
             var v3 = v1.CloneVec3();
             
             // quad should face to triangle normal
-            const isBackfaceToLight = (GetDotProduct3(lightDir, triangle.transformedNormal) > 0.0);
+            const isBackfaceToLight = (GetDotProduct3(lightDir, triangle.normal) > 0.0);
             
             if (isBackfaceToLight)            
             {
@@ -489,19 +500,23 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
         if (this.isInitialized)
         {
-            this.updateShadowVolumeObject(lightDir);
+            this.updateShadowVolumeObject();
         }
         else
         {
-            this.createShadowVolumeObject(lightDir);
+            this.createShadowVolumeObject();
             this.isInitialized = true;
         }
+
+        this.debugObject.quad.pos = ownerObject.pos.CloneVec3();
+        this.debugObject.quad.rot = ownerObject.rot.CloneVec3();
+        this.debugObject.quad.scale = ownerObject.scale.CloneVec3();
     };
 
     const createEdgeObj = isCreateDebugObject;
     const createQuadObj = true;
 
-    shadowVolume.createShadowVolumeObject = function(direction)
+    shadowVolume.createShadowVolumeObject = function()
     {
         const gl = jWebGL.gl;
 
@@ -533,7 +548,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         }
     }
 
-    shadowVolume.updateShadowVolumeObject = function(direction)
+    shadowVolume.updateShadowVolumeObject = function()
     {
         const gl = jWebGL.gl;
         
@@ -1237,7 +1252,10 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
 var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneHeight, coneRadius, segmentAttribDesc, coneAttribDesc)
 {
     var segment = CreateSegment(gl, TargetObjectArray, ZeroVec3, start, end, time, segmentAttribDesc);
+    segment.isDisablePipeLineChange = true;
+    
     var cone = CreateCone(gl, TargetObjectArray, ZeroVec3, coneHeight, coneRadius, 100, OneVec3, coneAttribDesc);
+    cone.isDisablePipeLineChange = true;
 
     var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, cone:cone};
     newStaticObject.updateFunc = function()
@@ -1620,16 +1638,17 @@ var CreateDirectionalLight = function(gl, TargetObjectArray, direction, lightCol
     var DirectionalLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, TargetObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, TransparentStaticObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
-        var segment = CreateArrowSegment(gl, TargetObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
+        var segment = CreateArrowSegment(gl, TransparentStaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
             , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
         segment.pos = debugObjectDesc.pos.CloneVec3();
+        segment.isDisablePipeLineChange = true;
 
         var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
         DirectionalLight.__proto__ = newStaticObject;
-        TargetObjectArray.push(newStaticObject);
+        TransparentStaticObjectArray.push(newStaticObject);
     }
 
     DirectionalLight.type = "Directional";
@@ -1646,7 +1665,7 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
     var PointLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, TargetObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
         var updateFunc = function()
@@ -1658,11 +1677,11 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
             sphere.scale.z = PointLight.maxDistance;
         }
 
-        var sphere = CreateSphere(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
+        var sphere = CreateSphere(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
         sphere.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = billboardObject;
-        TargetObjectArray.push(newStaticObject);
+        TransparentStaticObjectArray.push(newStaticObject);
     }
 
     PointLight.type = "Point";
@@ -1681,7 +1700,7 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
     var SpotLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, TargetObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
         var updateFunc = function()
@@ -1706,13 +1725,13 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
             penumbraCone.rot = dirctionToRot;
         }
 
-        var umbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
-        var penumbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
+        var umbraCone = CreateCone(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
+        var penumbraCone = CreateCone(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
         umbraCone.isDisablePipeLineChange = true;
         penumbraCone.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, czdrawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
         SpotLight.__proto__ = billboardObject;
-        TargetObjectArray.push(newStaticObject);
+        TransparentStaticObjectArray.push(newStaticObject);
     }
 
     SpotLight.type = "Spot";
