@@ -10,8 +10,8 @@ uniform mat4 VP;
 uniform mat4 MVP;
 
 #define MAX_NUM_OF_DIRECTIONAL_LIGHT 1
-#define MAX_NUM_OF_POINT_LIGHT 10
-#define MAX_NUM_OF_SPOT_LIGHT 10
+#define MAX_NUM_OF_POINT_LIGHT 1
+#define MAX_NUM_OF_SPOT_LIGHT 1
 
 uniform int NumOfDirectionalLight;
 uniform int NumOfPointLight;
