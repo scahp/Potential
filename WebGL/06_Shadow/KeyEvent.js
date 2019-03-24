@@ -40,118 +40,6 @@ var OnMouseButtonDown = function(e)
     Clicks[0] = 1;
 }
 
-var OnSliderChangePointLightX = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (pointLight)
-        pointLight.pos.x = e.target.valueAsNumber;
-}
-
-var OnSliderChangePointLightY = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (pointLight)
-        pointLight.pos.y = e.target.valueAsNumber;
-}
-
-var OnSliderChangePointLightZ = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (pointLight)
-        pointLight.pos.z = e.target.valueAsNumber;
-}
-
-var OnSliderChangePointLightRadius = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (pointLight)
-        pointLight.maxDistance = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpotLightX = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (spotLight)
-        spotLight.pos.x = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpotLightY = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (spotLight)
-        spotLight.pos.y = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpotLightZ = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (spotLight)
-        spotLight.pos.z = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpotLightUmbraAngle = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (spotLight)
-    {
-        spotLight.umbraRadian = e.target.valueAsNumber;
-        if (spotLight.penumbraRadian > spotLight.umbraRadian)
-        {
-            spotLight.penumbraRadian = spotLight.umbraRadian;
-            document.getElementById('SpotLightPenumbraAngle').value = spotLight.penumbraRadian;
-        }
-    }
-}
-
-var OnSliderChangeSpotLightPenumbraAngle = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (spotLight)
-    {
-        spotLight.penumbraRadian = e.target.valueAsNumber;
-        if (spotLight.penumbraRadian > spotLight.umbraRadian)
-        {
-            spotLight.umbraRadian = spotLight.penumbraRadian;
-            document.getElementById('SpotLightUmbraAngle').value = spotLight.umbraRadian;
-        }
-    }
-}
-
-var OnSliderChangeSpotLightDistance = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (spotLight)
-        spotLight.maxDistance = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpherePosX = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (SphereA)
-        SphereA.pos.x = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpherePosY = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (SphereA)
-        SphereA.pos.y = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSpherePosZ = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (SphereA)
-        SphereA.pos.z = e.target.valueAsNumber;
-}
-
-var OnSliderChangeSphereRadius = function(e)
-{
-    console.log(e.target.valueAsNumber);
-    if (SphereA)
-        SphereA.scale.x = SphereA.scale.y = SphereA.scale.z = e.target.valueAsNumber;
-}
-
 var OnCheckBoxShowSilhouetteDirectionalLight = function(e)
 {
     console.log(e.checked);
@@ -169,3 +57,43 @@ var OnCheckBoxShowSilhouetteSpotLight = function(e)
     console.log(e.checked);
     ShowSilhouetteSpotLight = e.checked;
 }
+
+var OnCheckBoxToggleVisibleDirectionalLightDebugInfo = function(e)
+{
+    console.log(e.checked);
+    ShowDebugInfoOfDirectionalLight = e.checked;
+}
+
+var OnCheckBoxToggleVisiblePointLightDebugInfo = function(e)
+{
+    console.log(e.checked);
+    ShowDebugInfoOfPointLight = e.checked;
+}
+
+var OnCheckBoxToggleVisibleSpotLightDebugInfo = function(e)
+{
+    console.log(e.checked);
+    ShowDebugInfoOfSpotLight = e.checked;
+}
+
+var OnCheckBoxShowDirectionalLight = function(e)
+{
+    console.log(e.checked);
+    if (dirLight)
+        dirLight.setHideDebugInfo(!e.checked);
+}
+
+var OnCheckBoxShowPointLight = function(e)
+{
+    console.log(e.checked);
+    if (pointLight)
+        pointLight.setHideDebugInfo(!e.checked);
+}
+
+var OnCheckBoxShowSpotLight = function(e)
+{
+    console.log(e.checked);
+    if (spotLight)
+        spotLight.setHideDebugInfo(!e.checked);
+}
+

@@ -1650,6 +1650,19 @@ var CreateDirectionalLight = function(gl, TargetObjectArray, direction, lightCol
     DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
     DirectionalLight.specularLightIntensity = specularLightIntensity;
     DirectionalLight.specularPow = specularPow;
+    DirectionalLight.setHideDebugInfo = function(isHide)
+    {
+        if (this.__proto__.hasOwnProperty('segment'))
+        {
+            this.__proto__.segment.segment.hide = isHide;
+            this.__proto__.segment.cone.hide = isHide;
+        }
+
+        if (this.__proto__.hasOwnProperty('billboardObject'))
+        {
+            this.__proto__.billboardObject.hide = isHide;
+        }
+    };
     return DirectionalLight;
 }
 
@@ -1673,7 +1686,7 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
         var sphere = CreateSphere(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
         sphere.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
-        PointLight.__proto__ = billboardObject;
+        PointLight.__proto__ = newStaticObject;
         TransparentStaticObjectArray.push(newStaticObject);
     }
 
@@ -1684,6 +1697,18 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
     PointLight.diffuseLightIntensity = diffuseLightIntensity;
     PointLight.specularLightIntensity = specularLightIntensity;
     PointLight.specularPow = specularPow;
+    PointLight.setHideDebugInfo = function(isHide)
+    {
+        if (this.__proto__.hasOwnProperty('sphere'))
+        {
+            this.__proto__.sphere.hide = isHide;
+        }
+
+        if (this.__proto__.hasOwnProperty('billboardObject'))
+        {
+            this.__proto__.billboardObject.hide = isHide;
+        }
+    };
 
     return PointLight;
 }
@@ -1722,8 +1747,8 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
         var penumbraCone = CreateCone(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
         umbraCone.isDisablePipeLineChange = true;
         penumbraCone.isDisablePipeLineChange = true;
-        var newStaticObject = {updateFunc:updateFunc, czdrawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
-        SpotLight.__proto__ = billboardObject;
+        var newStaticObject = {updateFunc:updateFunc, drawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
+        SpotLight.__proto__ = newStaticObject;
         TransparentStaticObjectArray.push(newStaticObject);
     }
 
@@ -1737,6 +1762,23 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
     SpotLight.diffuseLightIntensity = diffuseLightIntensity;
     SpotLight.specularLightIntensity = specularLightIntensity;
     SpotLight.specularPow = specularPow;
+    SpotLight.setHideDebugInfo = function(isHide)
+    {
+        if (this.__proto__.hasOwnProperty('umbraCone'))
+        {
+            this.__proto__.umbraCone.hide = isHide;
+        }
+
+        if (this.__proto__.hasOwnProperty('penumbraCone'))
+        {
+            this.__proto__.penumbraCone.hide = isHide;
+        }
+
+        if (this.__proto__.hasOwnProperty('billboardObject'))
+        {
+            this.__proto__.billboardObject.hide = isHide;
+        }
+    };
 
     return SpotLight;
 }

@@ -6,6 +6,7 @@ var UIStaticObject = [];
 var PipeLines = [];
 var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
+var dirLight = null;
 var pointLight = null;
 var spotLight = null;
 var CubeA = null;
@@ -20,6 +21,9 @@ var SphereA = null;
 var ShowSilhouetteDirectionalLight = false;
 var ShowSilhouettePointLight = false;
 var ShowSilhouetteSpotLight = false;
+var ShowDebugInfoOfDirectionalLight = false;
+var ShowDebugInfoOfSphereLight = false;
+var ShowDebugInfoOfSpotLight = false;
 
 var CreatePipeLineHashCode = function(vsText, fsText)
 {
@@ -305,6 +309,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
             gl.uniform1f(umbraRadianLoc, light.umbraRadian);
         }
 
+        // Each light should be used one in a render pass.
         const light = camera.lights.getLightByIndex(lightIndex);
         if (light)
         {
@@ -563,24 +568,29 @@ jWebGL.prototype.Init = function()
     var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
     var specularPow = 64.0;
 
-    var dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
+    dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
-    //var t = document.getElementById('PointLightX');
-    const pointLightPos = CreateVec3(document.getElementById('PointLightX').valueAsNumber, document.getElementById('PointLightY').valueAsNumber, document.getElementById('PointLightZ').valueAsNumber);
-    const pointLightRadius = document.getElementById('PointLightRadius').valueAsNumber;
+    dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLight').checked);
+
+    const pointLightPos = CreateVec3(-10.0, 100.0, -50.0);
+    const pointLightRadius = 250.0;
 
     pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
-    const spotLightPos = CreateVec3(document.getElementById('SpotLightX').valueAsNumber, document.getElementById('SpotLightY').valueAsNumber, document.getElementById('SpotLightZ').valueAsNumber);
-    const umbraRadian = document.getElementById('SpotLightUmbraAngle').valueAsNumber;
-    const penumbraRadian = document.getElementById('SpotLightPenumbraAngle').valueAsNumber;
-    const spotMaxDistance = document.getElementById('SpotLightDistance').valueAsNumber;
+    pointLight.setHideDebugInfo(!document.getElementById('ShowPointLight').checked);
+
+    const spotLightPos = CreateVec3(0.0, 40.0, 5.0);
+    const umbraRadian = 0.6;
+    const penumbraRadian = 0.5;
+    const spotMaxDistance = 132.0;
 
     spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
+
+    spotLight.setHideDebugInfo(!document.getElementById('ShowSpotLight').checked);
 
     CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
         , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
@@ -594,15 +604,15 @@ jWebGL.prototype.Init = function()
         , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
         , GetAttribDesc(CreateVec4(0.5, 0.1, 1.0, 1.0), true, false, false, false, true));
-    // QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-    //     , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    // BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-    //     , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+        , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+        , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
 
-    const spherePosX = document.getElementById('SpherePosX').valueAsNumber;
-    const spherePosY = document.getElementById('SpherePosY').valueAsNumber;
-    const spherePosZ = document.getElementById('SpherePosZ').valueAsNumber;
-    const sphereRadius = document.getElementById('SphereRadius').valueAsNumber;
+    const spherePosX = 65.0;
+    const spherePosY = 35.0;
+    const spherePosZ = 10.0;
+    const sphereRadius = 30.0;
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
                             , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
                             , GetAttribDesc(CreateVec4(0.8, 0.0, 0.0, 1.0), true, false, false, false, true));

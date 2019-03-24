@@ -31,66 +31,15 @@
 <body onload="Init()" onkeydown="OnKeyDown(event)" onkeyup="OnKeyUp(event)">
     <div class="container">
         <canvas id="webgl-surface" width = 300 height = 300 onmousemove="OnMouseMove(event)" 
-            onmousedown="OnMouseButtonDown(event)" onmouseup="OnMouseButtonUp(event)"></canvas>
+            onmousedown="OnMouseButtonDown(event)" onmouseup="OnMouseButtonUp(event)">
+        </canvas>
         <div id="overlay">
             <div>FPS: <span id="FPS"></span></div>
         </div>
         <div id="overlay2">
             <div>
-                <label>PointLightX</label>
-                <input type="range" min="-100.0" max="100.0" step="0.001" value="-10.0" class="slider" id="PointLightX" oninput="OnSliderChangePointLightX(event)">
-            </div>
-            <div>
-                <label>PointLightY</label>
-                <input type="range" min="-100.0" max="120.0" step="0.001" value="100.0" class="slider" id="PointLightY" oninput="OnSliderChangePointLightY(event)">
-            </div>
-            <div>
-                <label>PointLightZ</label>
-                <input type="range" min="-100.0" max="100.0" step="0.001" value="-50.0" class="slider" id="PointLightZ" oninput="OnSliderChangePointLightZ(event)">
-            </div>
-            <div>
-                <label>PointLightRadius</label>
-                <input type="range" min="10.0" max="5000.0" step="0.001" value="250.0" class="slider" id="PointLightRadius" oninput="OnSliderChangePointLightRadius(event)">
-            </div>
-            <div>
-                <label>SpotLightX</label>
-                <input type="range" min="-100.0" max="100.0" step="0.001" value="0.0" class="slider" id="SpotLightX" oninput="OnSliderChangeSpotLightX(event)">
-            </div>
-            <div>
-                <label>SpotLightY</label>
-                <input type="range" min="-100.0" max="50.0" step="0.001" value="40.0" class="slider" id="SpotLightY" oninput="OnSliderChangeSpotLightY(event)">
-            </div>
-            <div>
-                <label>SpotLightZ</label>
-                <input type="range" min="-100.0" max="100.0" step="0.001" value="5.0" class="slider" id="SpotLightZ" oninput="OnSliderChangeSpotLightZ(event)">
-            </div>
-            <div>
-                <label>SpotLightUmbraAngle</label>
-                <input type="range" min="0" max="1.5" step="0.001" value="0.6" class="slider" id="SpotLightUmbraAngle" oninput="OnSliderChangeSpotLightUmbraAngle(event)">
-            </div>
-            <div>
-                <label>SpotLightPenumbraAngle</label>
-                <input type="range" min="0" max="1.5" step="0.001" value="0.5" class="slider" id="SpotLightPenumbraAngle" oninput="OnSliderChangeSpotLightPenumbraAngle(event)">
-            </div>
-            <div>
-                <label>SpotLightDistance</label>
-                <input type="range" min="10.0" max="200.0" step="0.001" value="132.0" class="slider" id="SpotLightDistance" oninput="OnSliderChangeSpotLightDistance(event)">
-            </div>
-            <div>
-                <label>SpherePosX</label>
-                <input type="range" min="-200.0" max="200.0" step="0.001" value="65.0" class="slider" id="SpherePosX" oninput="OnSliderChangeSpherePosX(event)">
-            </div>
-            <div>
-                <label>SpherePosY</label>
-                <input type="range" min="-200.0" max="200.0" step="0.001" value="35.0" class="slider" id="SpherePosY" oninput="OnSliderChangeSpherePosY(event)">
-            </div>
-            <div>
-                <label>SpherePosZ</label>
-                <input type="range" min="-200.0" max="200.0" step="0.001" value="10.0" class="slider" id="SpherePosZ" oninput="OnSliderChangeSpherePosZ(event)">
-            </div>
-            <div>
-                <label>SphereRadius</label>
-                <input type="range" min="1.0" max="50.0" step="0.001" value="30.0" class="slider" id="SphereRadius" oninput="OnSliderChangeSphereRadius(event)">
+                WASD : Camera movement <br>
+                Mouse drag with click : Camera rotation <br><br>
             </div>
             <div>
                 <label>ShowSilhouette-DirectionalLight</label>
@@ -103,6 +52,18 @@
             <div>
                 <label>ShowSilhouette-SpotLight</label>
                 <input type="checkbox" id="ShowSilhouetteSpotLight" value="true" onclick="OnCheckBoxShowSilhouetteSpotLight(this)">
+            </div>
+            <div>
+                <label>ShowDirectionalLight</label>
+                <input type="checkbox" id="ShowDirectionalLight" value="true" onclick="OnCheckBoxShowDirectionalLight(this)">
+            </div>
+            <div>
+                <label>ShowPointLight</label>
+                <input type="checkbox" id="ShowPointLight" value="true" onclick="OnCheckBoxShowPointLight(this)">
+            </div>
+            <div>
+                <label>ShowSpotLight</label>
+                <input type="checkbox" id="ShowSpotLight" value="true" onclick="OnCheckBoxShowSpotLight(this)">
             </div>
         </div>
     </div>
