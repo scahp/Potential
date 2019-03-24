@@ -571,7 +571,7 @@ jWebGL.prototype.Init = function()
     dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
-    dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLight').checked);
+    dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
 
     const pointLightPos = CreateVec3(-10.0, 100.0, -50.0);
     const pointLightRadius = 250.0;
@@ -579,7 +579,7 @@ jWebGL.prototype.Init = function()
     pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
-    pointLight.setHideDebugInfo(!document.getElementById('ShowPointLight').checked);
+    pointLight.setHideDebugInfo(!document.getElementById('ShowPointLightInfo').checked);
 
     const spotLightPos = CreateVec3(0.0, 40.0, 5.0);
     const umbraRadian = 0.6;
@@ -590,7 +590,7 @@ jWebGL.prototype.Init = function()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
-    spotLight.setHideDebugInfo(!document.getElementById('ShowSpotLight').checked);
+    spotLight.setHideDebugInfo(!document.getElementById('ShowSpotLightInfo').checked);
 
     CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
         , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));

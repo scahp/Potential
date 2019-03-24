@@ -76,21 +76,21 @@ var OnCheckBoxToggleVisibleSpotLightDebugInfo = function(e)
     ShowDebugInfoOfSpotLight = e.checked;
 }
 
-var OnCheckBoxShowDirectionalLight = function(e)
+var OnCheckBoxShowDirectionalLightInfo = function(e)
 {
     console.log(e.checked);
     if (dirLight)
         dirLight.setHideDebugInfo(!e.checked);
 }
 
-var OnCheckBoxShowPointLight = function(e)
+var OnCheckBoxShowPointLightInfo = function(e)
 {
     console.log(e.checked);
     if (pointLight)
         pointLight.setHideDebugInfo(!e.checked);
 }
 
-var OnCheckBoxShowSpotLight = function(e)
+var OnCheckBoxShowSpotLightInfo = function(e)
 {
     console.log(e.checked);
     if (spotLight)
