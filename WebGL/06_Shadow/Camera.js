@@ -137,10 +137,10 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
     if (createDebugStaticObject)
     {
         for(var i=0;i<12;++i)
-            debugStaticObject.push(CreateSegment(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, CreateVec4(1.0, 1.0, 1.0, 1.0)));
+            debugStaticObject.push(CreateSegment(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0))));
 
         for(var i=0;i<6;++i)
-            debugStaticObject2.push(CreateQuad(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), CreateVec4(1.0, 1.0, 1.0, 1.0)));
+            debugStaticObject2.push(CreateQuad(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0))));
     }
 
     var addLight = function(light)

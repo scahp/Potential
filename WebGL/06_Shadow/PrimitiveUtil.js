@@ -379,9 +379,9 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         for(var key in adjacencyInfo.triangles)
         {
             const triangle = adjacencyInfo.triangles[key];
-            const v0 = adjacencyInfo.verts[triangle.v0Index];
-            const v1 = adjacencyInfo.verts[triangle.v1Index];
-            const v2 = adjacencyInfo.verts[triangle.v2Index];
+            var v0 = adjacencyInfo.verts[triangle.v0Index];
+            var v1 = adjacencyInfo.verts[triangle.v1Index];
+            var v2 = adjacencyInfo.verts[triangle.v2Index];
 
             var lightDir = getLightDirection(triangle.centerPos);
             const isBackfaceToLight = (GetDotProduct3(triangle.normal, lightDir) > 0.0);
@@ -409,6 +409,12 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 UpdateEdge(this.edges, triangle.edgeKey2);
 
                 // front cap
+                if (isBackfaceToLight)
+                {
+                    var temp = v2;
+                    v2 = v1;
+                    v1 = temp;
+                }
                 this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
                 this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
                 this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(1.0);
@@ -417,22 +423,16 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             if (needBackCap)
             {    
                 // back cap
-                var eV0 = v0.CloneVec3();
-                var eV1 = v1.CloneVec3();
-                var eV2 = v2.CloneVec3();
+                if (!isBackfaceToLight)
+                {
+                    var temp = v2;
+                    v2 = v1;
+                    v1 = temp;
+                }
 
-                if (isTwoSide && !isBackfaceToLight)
-                {
-                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(test);
-                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(test);
-                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(test);
-                }
-                else
-                {
-                    this.quadVerts.push(eV0.x);   this.quadVerts.push(eV0.y);   this.quadVerts.push(eV0.z);    this.quadVerts.push(test);
-                    this.quadVerts.push(eV1.x);   this.quadVerts.push(eV1.y);   this.quadVerts.push(eV1.z);    this.quadVerts.push(test);
-                    this.quadVerts.push(eV2.x);   this.quadVerts.push(eV2.y);   this.quadVerts.push(eV2.z);    this.quadVerts.push(test);
-                }
+                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(test);
+                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(test);
+                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
             }
         }
 

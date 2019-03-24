@@ -608,6 +608,7 @@ jWebGL.prototype.Init = function()
         , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
         , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
+    BillboardQuadA.camera = mainCamera;
 
     const spherePosX = 65.0;
     const spherePosY = 35.0;
@@ -657,8 +658,6 @@ jWebGL.prototype.Init = function()
             TriangleA.rot.x += 0.05;
         if (QuadA)
             QuadA.rot.z += 0.08;
-        if (BillboardQuadA)
-            BillboardQuadA.rot.y += 0.04;
 
         processKeyEvents();
         main.Update();
