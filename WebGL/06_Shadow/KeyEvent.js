@@ -169,9 +169,3 @@ var OnCheckBoxShowSilhouetteSpotLight = function(e)
     console.log(e.checked);
     ShowSilhouetteSpotLight = e.checked;
 }
-
-var OnCheckBoxcheckFlag = function(e)
-{
-    console.log(e.checked);
-    g_flag = e.checked;
-}
