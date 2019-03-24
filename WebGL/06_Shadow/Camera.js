@@ -137,10 +137,18 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
     if (createDebugStaticObject)
     {
         for(var i=0;i<12;++i)
-            debugStaticObject.push(CreateSegment(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0))));
+        {
+            var segment = CreateSegment(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0)));
+            segment.isDisablePipeLineChange = true;
+            debugStaticObject.push(segment);
+        }
 
         for(var i=0;i<6;++i)
-            debugStaticObject2.push(CreateQuad(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0))));
+        {
+            var quad = CreateQuad(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0)));
+            quad.isDisablePipeLineChange = true;
+            debugStaticObject2.push(quad);
+        }
     }
 
     var addLight = function(light)
@@ -223,13 +231,26 @@ var updateCameraFrustum = function(gl, cameraIndex)
 
     var updateSegment = function(segment, start, end, color)
     {
-        var vertices = [
-            start.x,               start.y,               start.z,           color.x, color.y, color.z, color.w,
-            end.x,                 end.y,                 end.z,             color.x, color.y, color.z, color.w,
-        ];
+        segment.start = start;
+        segment.end = end;
+        segment.color = color;
+        var end = segment.getCurrentEnd();
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, segment.vbo);
+        var vertices = [
+            segment.start.x,    segment.start.y,    segment.start.z,
+            end.x,              end.y,              end.z,
+        ];
+    
+        var colors = [
+            segment.color.x, segment.color.y, segment.color.z, segment.color.w,
+            segment.color.x, segment.color.y, segment.color.z, segment.color.w,
+        ];
+    
+        gl.bindBuffer(gl.ARRAY_BUFFER, segment.attribs[0].vbo);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, segment.attribs[1].vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
@@ -266,14 +287,29 @@ var updateCameraFrustum = function(gl, cameraIndex)
     var updateQuad = function(quad, p1, p2, p3, p4, color)
     {
         var vertices = [
-            p1.x,   p1.y,   p1.z,   color.x, color.y, color.z, color.w,
-            p2.x,   p2.y,   p2.z,   color.x, color.y, color.z, color.w,
-            p3.x,   p3.y,   p3.z,   color.x, color.y, color.z, color.w,
-            p4.x,   p4.y,   p4.z,   color.x, color.y, color.z, color.w,
+            p1.x,   p1.y,   p1.z,
+            p2.x,   p2.y,   p2.z,
+            p3.x,   p3.y,   p3.z,
+            p3.x,   p3.y,   p3.z,
+            p2.x,   p2.y,   p2.z,
+            p4.x,   p4.y,   p4.z,
         ];
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, quad.vbo);
+        var colors = [
+            color.x, color.y, color.z, color.w,
+            color.x, color.y, color.z, color.w,
+            color.x, color.y, color.z, color.w,
+            color.x, color.y, color.z, color.w,
+            color.x, color.y, color.z, color.w,
+            color.x, color.y, color.z, color.w,
+            color.x, color.y, color.z, color.w,
+        ];
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad.attribs[0].vbo);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad.attribs[1].vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
