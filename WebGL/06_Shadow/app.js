@@ -810,6 +810,13 @@ jWebGL.prototype.Render = function(cameraIndex)
                 if (!obj.shadowVolume)
                     continue;
 
+                if (lightPos)
+                {
+                    const isCasterOutOfLightRadius = lightPos.CloneVec3().Sub(obj.pos).GetLength() > light.maxDistance;
+                    if (isCasterOutOfLightRadius)
+                        continue;
+                }
+        
                 const shadowVolume = obj.shadowVolume;
                 shadowVolume.updateFunc(lightDir, lightPos, obj);
 
@@ -860,6 +867,9 @@ jWebGL.prototype.Render = function(cameraIndex)
     {
         var lightDir = null;
         var lightPos = null;
+        var isDirectionalLight = false;
+        var isPointLight = false;
+        var isSpotLight = false;
         const light = camera.lights.getLightByIndex(lightIndex);
         if (light)
         {
@@ -869,6 +879,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                     continue;
 
                 lightDir = light.direction.CloneVec3();
+                isDirectionalLight = true;
             }
             else if (light.type == "Point")
             {
@@ -879,6 +890,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                     continue;
 
                 lightPos = light.pos.CloneVec3();
+                isPointLight = true;
             }
             else if (light.type == "Spot")
             {
@@ -889,6 +901,7 @@ jWebGL.prototype.Render = function(cameraIndex)
                     continue;
 
                 lightPos = light.pos.CloneVec3();
+                isSpotLight = true;
             }
             else
             {
@@ -902,6 +915,13 @@ jWebGL.prototype.Render = function(cameraIndex)
             var obj = StaticObjectArray[i];
             if (!obj.shadowVolume)
                 continue;
+
+            if (lightPos)
+            {
+                const isCasterOutOfLightRadius = lightPos.CloneVec3().Sub(obj.pos).GetLength() > light.maxDistance;
+                if (isCasterOutOfLightRadius)
+                    continue;
+            }
 
             const shadowVolume = obj.shadowVolume;
             shadowVolume.updateFunc(lightDir, lightPos, obj);
