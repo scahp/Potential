@@ -125,7 +125,7 @@ vec3 GetSpotLight(jSpotLight light, vec3 normal, vec3 pixelPos, vec3 viewDir)
     lightDir = normalize(lightDir);
     vec3 reflectLightDir = 2.0 * max(dot(lightDir, normal), 0.0) * normal - lightDir;
 
-    float lightRadian = acos(dot(lightDir, light.Direction));
+    float lightRadian = acos(dot(lightDir, -light.Direction));
 
     return (GetSpotLightDiffuse(light, normal, lightDir)
      + GetSpotLightSpecular(light, reflectLightDir, viewDir))

@@ -1645,7 +1645,7 @@ var CreateDirectionalLight = function(gl, TargetObjectArray, direction, lightCol
     }
 
     DirectionalLight.type = "Directional";
-    DirectionalLight.direction = direction.CloneVec3().GetNormalize();
+    DirectionalLight.direction = direction.GetNormalize();
     DirectionalLight.lightColor = lightColor;
     DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
     DirectionalLight.specularLightIntensity = specularLightIntensity;
@@ -1725,17 +1725,18 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
         {
             billboardObject.pos = SpotLight.pos;
 
-            var dirctionToRot = GetEulerAngleFromVec3(SpotLight.lightDirection);
-            var spotLightPos = SpotLight.pos.CloneVec3().Add(SpotLight.lightDirection.CloneVec3().Neg().Mul(umbraCone.scale.y / 2.0));
+            const lightDir = SpotLight.lightDirection.CloneVec3().Neg();
+            const dirctionToRot = GetEulerAngleFromVec3(lightDir);
+            const spotLightPos = SpotLight.pos.CloneVec3().Add(lightDir.CloneVec3().Mul(-umbraCone.scale.y / 2.0));
 
-            var umbraRadius = Math.tan(SpotLight.umbraRadian) * SpotLight.maxDistance;
+            const umbraRadius = Math.tan(SpotLight.umbraRadian) * SpotLight.maxDistance;
             umbraCone.scale.x = umbraRadius;
             umbraCone.scale.z = umbraRadius;
             umbraCone.scale.y = SpotLight.maxDistance;
             umbraCone.pos = spotLightPos
             umbraCone.rot = dirctionToRot;
 
-            var penumbraRadius = Math.tan(SpotLight.penumbraRadian) * SpotLight.maxDistance;
+            const penumbraRadius = Math.tan(SpotLight.penumbraRadian) * SpotLight.maxDistance;
             penumbraCone.scale.x = penumbraRadius;
             penumbraCone.scale.z = penumbraRadius;
             penumbraCone.scale.y = SpotLight.maxDistance;
@@ -1755,7 +1756,7 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
     SpotLight.type = "Spot";
     SpotLight.pos = lightPos.CloneVec3();
     SpotLight.maxDistance = maxDistance;
-    SpotLight.lightDirection = lightDirection;
+    SpotLight.lightDirection = lightDirection.GetNormalize();
     SpotLight.lightColor = lightColor;
     SpotLight.penumbraRadian = penumbraRadian;
     SpotLight.umbraRadian = umbraRadian;
