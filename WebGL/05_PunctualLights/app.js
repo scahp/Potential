@@ -417,7 +417,7 @@ jWebGL.prototype.Init = function()
     const penumbraRadian = document.getElementById('SpotLightPenumbraAngle').valueAsNumber;
     const spotMaxDistance = document.getElementById('SpotLightDistance').valueAsNumber;
 
-    spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
+    spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(-1.0, -0.2, -0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotMaxDistance, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
