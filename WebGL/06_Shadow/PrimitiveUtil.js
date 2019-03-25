@@ -370,11 +370,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 edges[edgeKey] = edgeKey;
         }
 
-        var test = 0;
-
-        var cnt = 0;
         var hasBackCap = false;
-        const extrudeLength = 1.0;
         var backfaceToLightDirInTriangle = [];
         for(var key in adjacencyInfo.triangles)
         {
@@ -430,9 +426,9 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                     v1 = temp;
                 }
 
-                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(test);
-                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(test);
-                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
+                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(0.0);
+                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(0.0);
+                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
             }
         }
 
@@ -483,11 +479,11 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
 
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(test);
+            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(0.0);
         }
         /////////////////////////////////////////
 
