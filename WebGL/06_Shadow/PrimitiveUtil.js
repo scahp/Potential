@@ -419,7 +419,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             if (needBackCap)
             {    
                 // back cap
-                if (!isBackfaceToLight)
+                if (isTwoSide || !isBackfaceToLight)
                 {
                     var temp = v2;
                     v2 = v1;
