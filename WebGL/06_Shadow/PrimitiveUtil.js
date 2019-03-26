@@ -370,11 +370,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 edges[edgeKey] = edgeKey;
         }
 
-        var test = 0;
-
-        var cnt = 0;
         var hasBackCap = false;
-        const extrudeLength = 1.0;
         var backfaceToLightDirInTriangle = [];
         for(var key in adjacencyInfo.triangles)
         {
@@ -430,9 +426,9 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                     v1 = temp;
                 }
 
-                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(test);
-                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(test);
-                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
+                this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(0.0);
+                this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(0.0);
+                this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
             }
         }
 
@@ -483,11 +479,11 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
 
             this.quadVerts.push(v0.x);   this.quadVerts.push(v0.y);   this.quadVerts.push(v0.z);    this.quadVerts.push(1.0);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
 
-            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(test);
+            this.quadVerts.push(v2.x);   this.quadVerts.push(v2.y);   this.quadVerts.push(v2.z);    this.quadVerts.push(0.0);
             this.quadVerts.push(v1.x);   this.quadVerts.push(v1.y);   this.quadVerts.push(v1.z);    this.quadVerts.push(1.0);
-            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(test);
+            this.quadVerts.push(v3.x);   this.quadVerts.push(v3.y);   this.quadVerts.push(v3.z);    this.quadVerts.push(0.0);
         }
         /////////////////////////////////////////
 
@@ -1631,21 +1627,21 @@ var CreateDirectionalLight = function(gl, TargetObjectArray, direction, lightCol
     var DirectionalLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, TransparentStaticObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, TargetObjectArray, debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
-        var segment = CreateArrowSegment(gl, TransparentStaticObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
+        var segment = CreateArrowSegment(gl, TargetObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
             , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
         segment.pos = debugObjectDesc.pos.CloneVec3();
         segment.isDisablePipeLineChange = true;
 
         var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
         DirectionalLight.__proto__ = newStaticObject;
-        TransparentStaticObjectArray.push(newStaticObject);
+        TargetObjectArray.push(newStaticObject);
     }
 
     DirectionalLight.type = "Directional";
-    DirectionalLight.direction = direction.CloneVec3().GetNormalize();
+    DirectionalLight.direction = direction.GetNormalize();
     DirectionalLight.lightColor = lightColor;
     DirectionalLight.diffuseLightIntensity = diffuseLightIntensity;
     DirectionalLight.specularLightIntensity = specularLightIntensity;
@@ -1671,7 +1667,7 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
     var PointLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, TargetObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
         var updateFunc = function()
@@ -1683,11 +1679,11 @@ var CreatePointLight = function(gl, TargetObjectArray, lightPos, lightColor, max
             sphere.scale.z = PointLight.maxDistance;
         }
 
-        var sphere = CreateSphere(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
+        var sphere = CreateSphere(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
         sphere.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = newStaticObject;
-        TransparentStaticObjectArray.push(newStaticObject);
+        TargetObjectArray.push(newStaticObject);
     }
 
     PointLight.type = "Point";
@@ -1718,24 +1714,25 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
     var SpotLight = {};
     if (debugObjectDesc.debugObject)
     {
-        var billboardObject = CreateBillboardQuadTexture(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
+        var billboardObject = CreateBillboardQuadTexture(gl, TargetObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, debugObjectDesc.texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
         var updateFunc = function()
         {
             billboardObject.pos = SpotLight.pos;
 
-            var dirctionToRot = GetEulerAngleFromVec3(SpotLight.lightDirection);
-            var spotLightPos = SpotLight.pos.CloneVec3().Add(SpotLight.lightDirection.CloneVec3().Neg().Mul(umbraCone.scale.y / 2.0));
+            const lightDir = SpotLight.lightDirection.CloneVec3().Neg();
+            const dirctionToRot = GetEulerAngleFromVec3(lightDir);
+            const spotLightPos = SpotLight.pos.CloneVec3().Add(lightDir.CloneVec3().Mul(-umbraCone.scale.y / 2.0));
 
-            var umbraRadius = Math.tan(SpotLight.umbraRadian) * SpotLight.maxDistance;
+            const umbraRadius = Math.tan(SpotLight.umbraRadian) * SpotLight.maxDistance;
             umbraCone.scale.x = umbraRadius;
             umbraCone.scale.z = umbraRadius;
             umbraCone.scale.y = SpotLight.maxDistance;
             umbraCone.pos = spotLightPos
             umbraCone.rot = dirctionToRot;
 
-            var penumbraRadius = Math.tan(SpotLight.penumbraRadian) * SpotLight.maxDistance;
+            const penumbraRadius = Math.tan(SpotLight.penumbraRadian) * SpotLight.maxDistance;
             penumbraCone.scale.x = penumbraRadius;
             penumbraCone.scale.z = penumbraRadius;
             penumbraCone.scale.y = SpotLight.maxDistance;
@@ -1743,19 +1740,19 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
             penumbraCone.rot = dirctionToRot;
         }
 
-        var umbraCone = CreateCone(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
-        var penumbraCone = CreateCone(gl, TransparentStaticObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
+        var umbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
+        var penumbraCone = CreateCone(gl, TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
         umbraCone.isDisablePipeLineChange = true;
         penumbraCone.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
         SpotLight.__proto__ = newStaticObject;
-        TransparentStaticObjectArray.push(newStaticObject);
+        TargetObjectArray.push(newStaticObject);
     }
 
     SpotLight.type = "Spot";
     SpotLight.pos = lightPos.CloneVec3();
     SpotLight.maxDistance = maxDistance;
-    SpotLight.lightDirection = lightDirection;
+    SpotLight.lightDirection = lightDirection.GetNormalize();
     SpotLight.lightColor = lightColor;
     SpotLight.penumbraRadian = penumbraRadian;
     SpotLight.umbraRadian = umbraRadian;

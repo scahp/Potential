@@ -1152,8 +1152,9 @@ var CreateSpotLight = function(gl, TargetObjectArray, lightPos, lightDirection, 
         {
             billboardObject.pos = SpotLight.pos;
 
-            var dirctionToRot = GetEulerAngleFromVec3(SpotLight.lightDirection);
-            var spotLightPos = SpotLight.pos.CloneVec3().Add(SpotLight.lightDirection.CloneVec3().Neg().Mul(umbraCone.scale.y / 2.0));
+            const lightDir = SpotLight.lightDirection.CloneVec3().Neg();
+            const dirctionToRot = GetEulerAngleFromVec3(lightDir);
+            const spotLightPos = SpotLight.pos.CloneVec3().Add(lightDir.CloneVec3().Mul(-umbraCone.scale.y / 2.0));
 
             var umbraRadius = Math.tan(SpotLight.umbraRadian) * SpotLight.maxDistance;
             umbraCone.scale.x = umbraRadius;

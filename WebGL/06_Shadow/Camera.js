@@ -215,12 +215,32 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
         return true;
     }
 
+    var checkIsInFrustomWithDirection = function(pos, radius, dir)
+    {
+        for(var i=0;i<this.frustumPlanes.length;++i)
+        {
+            const plane = frustumPlanes[i];
+            if (!plane)
+                continue;
+
+            var r = GetDotProduct3(pos, plane.n) - plane.d + radius;    
+            if (r < 0.0)
+            {
+                if (GetDotProduct3(dir, plane.n) <= 0)
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
     var frustumPlanes = [null, null, null, null, null, null];
 
     var newCamera = {matView:null, matProjection:null, pos:pos, target:target, up:up
         , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
         , lights:{directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
-        , ambient:null, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom, frustumPlanes:frustumPlanes};
+        , ambient:null, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom
+        , frustumPlanes:frustumPlanes, checkIsInFrustomWithDirection:checkIsInFrustomWithDirection};
     Cameras.push(newCamera);
     return newCamera;
 }

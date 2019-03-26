@@ -24,14 +24,16 @@ var ShowSilhouetteSpotLight = false;
 var ShowDebugInfoOfDirectionalLight = false;
 var ShowDebugInfoOfSphereLight = false;
 var ShowDebugInfoOfSpotLight = false;
-
 const pointLightPos = CreateVec3(-10.0, 100.0, -50.0);
 const pointLightRadius = 250.0;
-
-const spotLightPos = CreateVec3(0.0, 40.0, 5.0);
+const spotLightPos = CreateVec3(0.0, 60.0, 5.0);
 const umbraRadian = 0.6;
 const penumbraRadian = 0.5;
 const spotLightRadius = 132.0;
+const spherePosX = 65.0;
+const spherePosY = 35.0;
+const spherePosZ = 10.0;
+const sphereRadius = 30.0;
 
 var mainCamera = null;
 
@@ -579,17 +581,17 @@ jWebGL.prototype.Init = function()
     var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
     var specularPow = 64.0;
 
-    dirLight = CreateDirectionalLight(gl, StaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
+    dirLight = CreateDirectionalLight(gl, TransparentStaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
 
     dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
 
-    pointLight = CreatePointLight(gl, StaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
+    pointLight = CreatePointLight(gl, TransparentStaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
 
     pointLight.setHideDebugInfo(!document.getElementById('ShowPointLightInfo').checked);
 
-    spotLight = CreateSpotLight(gl, StaticObjectArray, spotLightPos, CreateVec3(1.0, 0.2, 0.4).GetNormalize()
+    spotLight = CreateSpotLight(gl, TransparentStaticObjectArray, spotLightPos, CreateVec3(-1.0, -1.0, -0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotLightRadius, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
 
@@ -613,20 +615,16 @@ jWebGL.prototype.Init = function()
         , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     BillboardQuadA.camera = mainCamera;
 
-    const spherePosX = 65.0;
-    const spherePosY = 35.0;
-    const spherePosZ = 10.0;
-    const sphereRadius = 30.0;
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
                             , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
                             , GetAttribDesc(CreateVec4(0.8, 0.0, 0.0, 1.0), true, false, false, false, true));
-
-    // var tile = CreateTile(gl, StaticObjectArray, CreateVec3(0.0, -20.0, 0.0), 30, 30, 15, OneVec3, GetAttribDesc(CreateVec4(0.3, 0.3, 0.6, 1.0), true, false, false, false, true));
 
     mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.2, 0.2, 0.2));
     mainCamera.addLight(dirLight);
     mainCamera.addLight(pointLight);
     mainCamera.addLight(spotLight);
+
+    const matRotate = CreateRotationAxisMat4(CreateVec3(0.0, 1.0, 0.0), 0.01);
 
     var main = this;
 
@@ -642,9 +640,6 @@ jWebGL.prototype.Init = function()
             this.fpsNode.nodeValue = loopCount.toFixed(0);
             loopCount = 0;
             lastTime = currentTime;
-
-            // var dist = (GetDotProduct3(quad.plane.n, mainCamera.pos) - quad.plane.d);
-            // console.log(dist);        
         }
 
         if (CylinderA)
@@ -661,6 +656,9 @@ jWebGL.prototype.Init = function()
             TriangleA.rot.x += 0.05;
         if (QuadA)
             QuadA.rot.z += 0.08;
+
+        // rotate spot light direction
+        spotLight.lightDirection = spotLight.lightDirection.Transform(matRotate).GetNormalize();
 
         processKeyEvents();
         main.Update();
@@ -735,8 +733,48 @@ jWebGL.prototype.Render = function(cameraIndex)
         }
     }
 
+    var checkWhetherCanSkipShadowObj = function(obj, lightPos, lightDir, light)
+    {
+        var radius = 0.0;
+        if (obj.hasOwnProperty('radius'))
+            radius = obj.radius;
+        else
+            radius = obj.scale.x;
+
+        if (lightDir)       // Directional light
+        {            
+            // 1. check direction against frustum
+            if (!camera.checkIsInFrustomWithDirection(obj.pos, radius, lightDir))
+                return true;
+        }
+        else if (lightPos)  // Sphere or Spot Light
+        {
+            // 1. check out of light radius with obj
+            const isCasterOutOfLightRadius = (lightPos.CloneVec3().Sub(obj.pos).GetLength() > light.maxDistance);
+            if (isCasterOutOfLightRadius)
+                return true;
+
+            // 2. check direction against frustum
+            if (!camera.checkIsInFrustomWithDirection(obj.pos, radius, obj.pos.CloneVec3().Sub(lightPos)))
+                return true;
+
+            // 3. check Spot light range with obj
+            if (isSpotLight)
+            {
+                const lightToObjVector = obj.pos.CloneVec3().Sub(lightPos);
+                const radianOfRadiusOffset = Math.atan(radius / lightToObjVector.GetLength());
+
+                const radian = GetDotProduct3(lightToObjVector.GetNormalize(), light.lightDirection);
+                const limitRadian = Math.cos(Math.max(light.umbraRadian, light.penumbraRadian)) - radianOfRadiusOffset;
+                if (limitRadian > radian)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     //////////////////////////////////////////////////////////////////
-    // 1. 뎁스 버퍼에 오브젝트 그려줌
+    // 1. Render objects to depth buffer and Ambient & Emissive to color buffer.
     //gl.disable(gl.SAMPLE_ALPHA_TO_COVERAGE);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ZERO);
@@ -745,7 +783,6 @@ jWebGL.prototype.Render = function(cameraIndex)
 
     gl.enable(gl.CULL_FACE);
     gl.clearColor(0.5, 0.5, 0.5, 1);
-    //gl.clearColor(0.0, 0.0, 0.0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
 
     gl.depthFunc(gl.LEQUAL);
@@ -753,12 +790,11 @@ jWebGL.prototype.Render = function(cameraIndex)
 
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
-    //gl.colorMask(false, false, false, false);
 
     drawStaticOpaqueObjects(ambientPipeLineHashCode, -1);
 
     //////////////////////////////////////////////////////////////////
-    // 2. 스텐실 볼륨 렌더링
+    // 2. Stencil volume update & rendering (z-fail)
     const numOfLights = camera.getNumOfLights();
 
     var isSpotlightInFrustum = camera.checkIsInFrustom(spotLightPos.CloneVec3(), spotLightRadius);
@@ -780,6 +816,7 @@ jWebGL.prototype.Render = function(cameraIndex)
 
         var lightDir = null;
         var lightPos = null;
+        var isSpotLight = false;
 
         const light = camera.lights.getLightByIndex(lightIndex);
         if (light)
@@ -797,6 +834,8 @@ jWebGL.prototype.Render = function(cameraIndex)
                 lightPos = light.pos.CloneVec3();
                 if (!isSpotlightInFrustum)
                     continue;
+
+                isSpotLight = true;
             }
         }
 
@@ -810,26 +849,22 @@ jWebGL.prototype.Render = function(cameraIndex)
                 if (!obj.shadowVolume)
                     continue;
 
-                if (lightPos)
-                {
-                    const isCasterOutOfLightRadius = lightPos.CloneVec3().Sub(obj.pos).GetLength() > light.maxDistance;
-                    if (isCasterOutOfLightRadius)
-                        continue;
-                }
-        
+                if (checkWhetherCanSkipShadowObj(obj, lightPos, lightDir, light))
+                    continue;
+                
                 const shadowVolume = obj.shadowVolume;
                 shadowVolume.updateFunc(lightDir, lightPos, obj);
 
                 for(var k=0;k<shadowVolume.objectArray.length;++k)
                 {
-                    var obj = shadowVolume.objectArray[k];
-                    if (obj)
+                    var shadowObj = shadowVolume.objectArray[k];
+                    if (shadowObj)
                     {
-                        if (obj.updateFunc)
-                            obj.updateFunc();
+                        if (shadowObj.updateFunc)
+                            shadowObj.updateFunc();
             
-                        if (obj.drawFunc)
-                            obj.drawFunc(camera, defaultPipeLineHashCode, lightIndex, true);
+                        if (shadowObj.drawFunc)
+                            shadowObj.drawFunc(camera, defaultPipeLineHashCode, lightIndex, true);
                     }
                 }
             }
@@ -838,15 +873,13 @@ jWebGL.prototype.Render = function(cameraIndex)
         }
 
         //////////////////////////////////////////////////////////////////
-        // 3. 최종 라이팅 렌더링
+        // 3. Final light(Directional, Point, Spot) rendering.
         gl.stencilFunc(gl.EQUAL, 0, 0xff);
-        //gl.stencilMask(0xff);
         gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.KEEP);
         gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.KEEP);
 
         gl.depthMask(false);
         gl.colorMask(true, true, true, true);
-        //gl.enable(gl.SAMPLE_ALPHA_TO_COVERAGE);
         gl.enable(gl.CULL_FACE);
 
         gl.depthFunc(gl.EQUAL);
@@ -867,8 +900,6 @@ jWebGL.prototype.Render = function(cameraIndex)
     {
         var lightDir = null;
         var lightPos = null;
-        var isDirectionalLight = false;
-        var isPointLight = false;
         var isSpotLight = false;
         const light = camera.lights.getLightByIndex(lightIndex);
         if (light)
@@ -915,24 +946,20 @@ jWebGL.prototype.Render = function(cameraIndex)
             var obj = StaticObjectArray[i];
             if (!obj.shadowVolume)
                 continue;
-
-            if (lightPos)
-            {
-                const isCasterOutOfLightRadius = lightPos.CloneVec3().Sub(obj.pos).GetLength() > light.maxDistance;
-                if (isCasterOutOfLightRadius)
-                    continue;
-            }
+            
+            if (checkWhetherCanSkipShadowObj(obj, lightPos, lightDir, light))
+                continue;
 
             const shadowVolume = obj.shadowVolume;
             shadowVolume.updateFunc(lightDir, lightPos, obj);
 
             for(var k=0;k<shadowVolume.objectArray.length;++k)
             {
-                var obj = shadowVolume.objectArray[k];
-                if (obj)
+                var shadowObj = shadowVolume.objectArray[k];
+                if (shadowObj)
                 {
-                    if (obj.drawFunc)
-                        obj.drawFunc(camera, defaultPipeLineHashCode, lightIndex);
+                    if (shadowObj.drawFunc)
+                        shadowObj.drawFunc(camera, defaultPipeLineHashCode, lightIndex);
                 }
             }
         }
