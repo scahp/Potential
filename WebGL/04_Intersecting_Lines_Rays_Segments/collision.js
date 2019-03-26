@@ -298,3 +298,43 @@ var IntersectSegmentBox = function(pa, pb, box)
     var q = p.Clone().Add(d.Clone().Mul(tmin));
     return { point:q, t:tmin };
 }
+
+var TestSegmentBox = function(pa, pb, box)
+{
+    var aabb = box.aabb;
+
+    var c = aabb.min.Clone().Add(aabb.max).Mul(0.5);    // Box center-point
+    var e = aabb.max.Clone().Sub(c);                    // Box halflength extents
+    var m = pa.Clone().Add(pb).Mul(0.5);                // Segent midpoint
+    var d = pb.Clone().Sub(m);                          // Segment halflength vector
+    
+    m.Sub(c);       // Translate box and segment to origin
+
+    // Try world coordinate axes as separating axes
+    var adx = Math.abs(d.x);
+    if (Math.abs(m.x) > e.x + adx)
+        return false;
+    var ady = Math.abs(d.y);
+    if (Math.abs(m.y) > e.y + ady)
+        return false;
+    var adz = Math.abs(d.z);
+    if (Math.abs(m.z) > e.z + adz)
+        return false;
+
+    const epsilon = 0.0000001;
+
+    // Add in an epsilon term to counteract arithmetic errors when segment is
+    // (near) parallel to a coordinate axis
+    adx += epsilon; ady += epsilon; adz += epsilon;
+
+    // Try cross products of segment direction vector with coordinate axes
+    if (Math.abs(m.y * d.z - m.z * d.y) > e.y * adz + e.z * ady)
+        return false;
+    if (Math.abs(m.z * d.x - m.x * d.z) > e.x * adz + e.z * adx)
+        return false;
+    if (Math.abs(m.x * d.y - m.y * d.x) > e.x * ady + e.y * adx)
+        return false;
+
+    // No separating axis found; segment must be overlapping AABB
+    return true;
+}

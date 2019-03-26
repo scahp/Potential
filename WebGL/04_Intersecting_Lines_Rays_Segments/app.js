@@ -286,17 +286,19 @@ var CreateSegmentAgainstBoxPrimitives = function(gl)
 
             // Test for segment
             var result = IntersectSegmentBox(a, b, box);
+            //var result = TestSegmentBox(a, b, box);
 
             if (result && intersectionPoint)
             {
-                intersectionPoint.pos = result.point.Clone();
-                intersectionPoint.hide = false;
+                intersectionPoint.hide = !result.hasOwnProperty('point');
+                if (!intersectionPoint.hide)
+                    intersectionPoint.pos = result.point.Clone();
                 box.collided = true;
             }
             else
             {
-                intersectionPoint.pos = CreateVec3(0.0, 0.0, 0.0);
                 intersectionPoint.hide = true;
+                intersectionPoint.pos = CreateVec3(0.0, 0.0, 0.0);
                 box.collided = false;
             }
         }
