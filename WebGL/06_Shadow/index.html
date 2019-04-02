@@ -42,16 +42,22 @@
                 Mouse drag with click : Camera rotation <br><br>
             </div>
             <div>
-                <label>ShowSilhouette-DirectionalLight</label>
-                <input type="checkbox" id="ShowSilhouetteDirectionalLight" value="true" onclick="OnCheckBoxShowSilhouetteDirectionalLight(this)">
+                    <input type="radio" name="ShadowMode" value="ShadowVolume" checked="checked" onclick="OnChangedShadowMode(this)"> ShadowVolume<br>
+                    <input type="radio" name="ShadowMode" value="ShadowMap" onclick="OnChangedShadowMode(this)"> ShadowMap<br>
             </div>
-            <div>
-                <label>ShowSilhouette-PointLight</label>
-                <input type="checkbox" id="ShowSilhouettePointLight" value="true" onclick="OnCheckBoxShowSilhouettePointLight(this)">
-            </div>
-            <div>
-                <label>ShowSilhouette-SpotLight</label>
-                <input type="checkbox" id="ShowSilhouetteSpotLight" value="true" onclick="OnCheckBoxShowSilhouetteSpotLight(this)">
+            <div id="div-ShadowVolume">
+                <div>
+                    <label>ShowSilhouette-DirectionalLight</label>
+                    <input type="checkbox" id="ShowSilhouetteDirectionalLight" value="true" onclick="OnCheckBoxShowSilhouetteDirectionalLight(this)">
+                </div>
+                <div>
+                    <label>ShowSilhouette-PointLight</label>
+                    <input type="checkbox" id="ShowSilhouettePointLight" value="true" onclick="OnCheckBoxShowSilhouettePointLight(this)">
+                </div>
+                <div>
+                    <label>ShowSilhouette-SpotLight</label>
+                    <input type="checkbox" id="ShowSilhouetteSpotLight" value="true" onclick="OnCheckBoxShowSilhouetteSpotLight(this)">
+                </div>
             </div>
             <div>
                 <label>ShowDirectionalLightInfo</label>

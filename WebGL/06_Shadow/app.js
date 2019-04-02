@@ -6,6 +6,7 @@ var UIStaticObject = [];
 var PipeLines = [];
 var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
+var ambientLight = null;
 var dirLight = null;
 var pointLight = null;
 var spotLight = null;
@@ -25,7 +26,7 @@ var ShowDebugInfoOfDirectionalLight = false;
 var ShowDebugInfoOfSphereLight = false;
 var ShowDebugInfoOfSpotLight = false;
 const pointLightPos = CreateVec3(-10.0, 100.0, -50.0);
-const pointLightRadius = 250.0;
+const pointLightRadius = 500.0;
 const spotLightPos = CreateVec3(0.0, 60.0, 5.0);
 const umbraRadian = 0.6;
 const penumbraRadian = 0.5;
@@ -37,6 +38,44 @@ const sphereRadius = 30.0;
 
 var mainCamera = null;
 
+var TestCube = null;
+const shadow_width = 1024.0;
+const shadow_height = 1024.0;
+var directionalShadowMap = null;
+var ShadowMode = 'ShadowVolume';
+
+var SetShadowVolumeMode = function()
+{
+    ShadowMode = 'ShadowVolume';
+
+    var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
+    div_segmentAgainstPlane.style.display = 'block';
+}
+
+var SetShadowMapMode = function()
+{
+    ShadowMode = 'ShadowMap';
+    var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
+    div_segmentAgainstPlane.style.display = 'none';
+}
+
+var IsShadowVolumeMode = function()
+{
+    return (ShadowMode == 'ShadowVolume');
+}
+
+var IsShadowMapMode = function()
+{
+    return (ShadowMode == 'ShadowMap');
+}
+
+var SwitchShadowMode = function(mode)
+{
+    if (mode == 'ShadowVolume')
+        SetShadowVolumeMode();
+    else if (mode == 'ShadowMap')
+        SetShadowMapMode();
+}
 
 var CreatePipeLineHashCode = function(vsText, fsText)
 {
@@ -99,7 +138,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         {
             var attr = attribs[i];
             if (loc == -1)
-                alert('attribLoc is -1 - setPipeLine');
+                continue;//alert('attribLoc is -1 - setPipeLine');
             attr.loc = gl.getAttribLocation(this.pipeLineInfo.pipeLine, attr.name); 
         }
     }
@@ -115,7 +154,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
 
         var loc = gl.getAttribLocation(pipeLineInfo.pipeLine, attr.name); 
         if (loc == -1)
-            alert('attribLoc is -1');
+            continue;//alert('attribLoc is -1');
         attribs[i] = { name:attr.name
             , loc:loc
             , vbo:vbo
@@ -181,6 +220,14 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         var collidedLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'Collided');
         if (collidedLoc)
             gl.uniform1i(collidedLoc, this.collided);
+
+        ////////////////////////
+        if (this.shadowVPArray)
+        {
+            var shadowVPLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'ShadowVP');
+            if (shadowVPLoc)
+                gl.uniformMatrix4fv(shadowVPLoc, false, new Float32Array(this.shadowVPArray));
+        }
     }
 
     var setRenderProperty = function()
@@ -191,7 +238,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
             
             gl.bindBuffer(gl.ARRAY_BUFFER, attrib.vbo);
             if (attrib.loc == -1)
-                alert('attrib.loc is -1');
+                continue;//alert('attrib.loc is -1');
             gl.vertexAttribPointer(attrib.loc,
                 attrib.count,
                 attrib.type,
@@ -201,14 +248,22 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
             gl.enableVertexAttribArray(attrib.loc);
         }
 
+        var tex_object = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'tex_object');
+        if (tex_object)
+            gl.uniform1i(tex_object, 0);
+
+        gl.activeTexture(gl.TEXTURE0);
         if (this.texture)
-        {
-            var tex_object = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'tex_object');
-            if (tex_object)
-                gl.uniform1i(tex_object, 0);
-    
-            gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        if (this.textureCubeMap)
+            gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.textureCubeMap);
+        
+        if (this.textureShadowMap)
+        {
+            gl.activeTexture(gl.TEXTURE1);
+            var shadow_object = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'shadow_object');
+            gl.uniform1i(shadow_object, 1);
+            gl.bindTexture(gl.TEXTURE_2D, this.textureShadowMap);
         }
     }
 
@@ -234,6 +289,7 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
         if (this.setCameraProperty)
             this.setCameraProperty(camera);
     
+        var useAmbientLight = 0;
         if (camera.ambient)
         {
             var ambientColorLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'AmbientLight.Color');
@@ -241,7 +297,10 @@ var createStaticObject = function(gl, attribDesc, attribParameters, faceInfo, ca
 
             var AmbientLightIntensityLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'AmbientLight.Intensity');
             gl.uniform3fv(AmbientLightIntensityLoc, [camera.ambient.ambientIntensity.x, camera.ambient.ambientIntensity.y, camera.ambient.ambientIntensity.z]);
+            useAmbientLight = 1;
         }
+        var useAmbientLightLoc = gl.getUniformLocation(this.pipeLineInfo.pipeLine, 'UseAmbientLight');
+        gl.uniform1i(useAmbientLightLoc, useAmbientLight);
 
         var numOfDirectionalLight = 0;
         var numOfPointLight = 0;
@@ -419,7 +478,8 @@ var CraeteFramebuffer = function(gl, width, height)
 
     var tbo = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tbo);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tbo, 0);
@@ -440,22 +500,115 @@ var CraeteFramebuffer = function(gl, width, height)
     return {fbo:fbo, tbo:tbo, dbo:rbo};
 }
 
+var CreateDirectionalShadowMap = function(gl, dirLight)
+{
+    var framebuffer = CraeteFramebuffer(gl, shadow_width, shadow_height);
+    var eye = ZeroVec3.CloneVec3().Add(dirLight.direction.CloneVec3().Neg().Mul(200.0));
+    var target = ZeroVec3.CloneVec3();
+
+    var rightVec = new jVec3();
+    CrossProduct3(rightVec, target.CloneVec3().Sub(eye).GetNormalize(), CreateVec3(0.0, 1.0, 0.0));
+
+    var upVec = new jVec3();
+    CrossProduct3(upVec, rightVec, dirLight.direction);
+    upVec = upVec.GetNormalize();
+
+    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 10.0, 500.0, false, false);
+
+    var getDepthMap = function()
+    {
+        if (this.framebuffer)
+            return this.framebuffer.tbo;
+        return null;
+    }
+
+    camera.addLight(dirLight);
+
+    return {camera:camera, framebuffer:framebuffer, getDepthMap:getDepthMap};
+}
+
+var CreateOmniDirectionalShadowMap = function(gl, light)
+{
+    const depthCubeMap = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, depthCubeMap);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    var framebuffers = [];
+    var renderbuffers = [];
+    for(var i=0;i<6;++i)
+    {
+        gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, gl.R32F
+            , shadow_width, shadow_height, 0, gl.RED, gl.FLOAT, null);
+    }
+
+    for(var i=0;i<6;++i)
+    {
+        var depthMapFBO = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, depthCubeMap, 0);
+
+        var rbo = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, shadow_width, shadow_height);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+        {
+            var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+            alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+            return null;
+        }
+
+        framebuffers.push(depthMapFBO);
+        renderbuffers.push(rbo);
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    var cameras = [];
+    const lightPos = light.pos;
+
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(-1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+
+    for(var i=0;i<cameras.length;++i)
+        cameras[i].addLight(light);
+
+    return {depthCubeMap:depthCubeMap, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras};
+}
+
 var Init = function()
 {
     console.log('init function start');
 
     var canvas = document.getElementById('webgl-surface');
-    var gl = canvas.getContext('webgl', {stencil:true});
+    var gl = canvas.getContext('webgl2', {stencil:true});
     if (!gl)
     {
-        console.log('webgl not supported');
-        gl = canvas.getContext('experimental-webgl');
+        console.log('webgl2 not supported');
+        //gl = canvas.getContext('experimental-webgl');
     }
 
     if (!gl)
         alert('Your browser does not support webgl');
 
-    var ext = gl.getExtension('OES_element_index_uint');        // To use gl.UNSIGNED_INT
+    var loadExtension = function(extName)
+    {
+        var ext = gl.getExtension(extName);
+        if (!ext) { console.log(extName); }
+    }
+
+    loadExtension('OES_element_index_uint');        // To use gl.UNSIGNED_INT
+    loadExtension('OES_texture_float');             // To use gl.FLOAT
+    loadExtension('EXT_color_buffer_float');        // To use gl.FLOAT
+    loadExtension("OES_texture_float_linear");      // To use gl.FLOAT
 
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
@@ -510,8 +663,8 @@ jWebGL.prototype.Init = function()
     }
 
     // Create Cameras
-    mainCamera = CreateCamera(gl, CreateVec3(85, 119, -102), CreateVec3(24.0, 39.0, -44.0), DegreeToRadian(45), 1.0, 500.0, false);
-    CreateCamera(gl, CreateVec3(100, 50, 0), CreateVec3(100.0, 50.0, -1.0), DegreeToRadian(40), 5.0, 200.0, false);
+    const mainCameraPos = CreateVec3(85, 119, -102);
+    mainCamera = CreateCamera(gl, mainCameraPos, mainCameraPos.CloneVec3().Add(CreateVec3(-1.0, -1.0, 1.0)), mainCameraPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false);
     updateCamera(gl, 0);
 
     // Origin Point Gizmo
@@ -522,6 +675,7 @@ jWebGL.prototype.Init = function()
     //CreateCoordinateYObject(gl, StaticObjectArray);
 
     quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, false));
+    quad.shadowSkip = false;
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
 
@@ -619,12 +773,26 @@ jWebGL.prototype.Init = function()
                             , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
                             , GetAttribDesc(CreateVec4(0.8, 0.0, 0.0, 1.0), true, false, false, false, true));
 
-    mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.2, 0.2, 0.2));
+    ambientLight = mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.2, 0.2, 0.2));
     mainCamera.addLight(dirLight);
     mainCamera.addLight(pointLight);
     mainCamera.addLight(spotLight);
 
     const matRotate = CreateRotationAxisMat4(CreateVec3(0.0, 1.0, 0.0), 0.01);
+
+    pointLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, pointLight);
+    spotLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, spotLight);
+    directionalShadowMap = CreateDirectionalShadowMap(gl, dirLight);
+
+    // TestCube = CreateSphere(gl, null, ZeroVec3.CloneVec3(), 1.0, 20, CreateVec3(50, 50, 50)
+    //                         , GetAttribDesc(false, true, false, false, false, false, false, false, false, true));
+    TestCube = CreateCube(gl, null, ZeroVec3.CloneVec3(), OneVec3, CreateVec3(50, 50, 50)
+                            , GetAttribDesc(false, true, false, false, false, false, false, false, false, true));
+    TestCube.isDisablePipeLineChange = true;
+    TestCube.pos = spotLight.pos;
+
+    // Create frameBuffer to render at offscreen
+    CreateUIQuad(gl, UIStaticObject, 10, 10, 300, 300, directionalShadowMap.getDepthMap());
 
     var main = this;
 
@@ -662,7 +830,24 @@ jWebGL.prototype.Init = function()
 
         processKeyEvents();
         main.Update();
-        main.Render(0);
+        if (IsShadowVolumeMode())
+        {
+            main.RenderWithShadowVolume(0);
+        }
+        else if( IsShadowMapMode())
+        {
+            main.RenderWithShadowMap(0);
+
+            // Render To 3D UI
+            for(var i=0;i<UIStaticObject.length;++i)
+            {
+                var obj = UIStaticObject[i];
+                if (obj.updateFunc)
+                    obj.updateFunc();
+                if (obj.drawFunc)
+                    obj.drawFunc(mainCamera, 0, 0);
+            }
+        }
 
         requestAnimationFrame(loop);
     };
@@ -692,7 +877,177 @@ jWebGL.prototype.Update = function()
     }
 }
 
-jWebGL.prototype.Render = function(cameraIndex)
+var drawStaticTransparentObjects = function(camera, pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)
+{
+    for(var i = 0;i<TransparentStaticObjectArray.length;++i)
+    {
+        var obj = TransparentStaticObjectArray[i];
+
+        if (drawShadowCasterOnly && !obj.shadowVolume)
+            continue;
+
+        if (obj.drawFunc)
+            obj.drawFunc(camera, pipeLineHashCode, lightIndex);
+    }
+}
+
+jWebGL.prototype.RenderWithShadowMap = function(cameraIndex)
+{
+    var gl = this.gl;
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+
+    var shadowMapAttribDesc = GetAttribDesc(false, false, false, false, false, false, false, false, true);
+    var shadowMapPipeLineInfo = GetPipeLineFromAttribDesc(shadowMapAttribDesc);
+    const shadowMapPipeLineHashCode = shadowMapPipeLineInfo.hashCode;
+
+    var shadowMapAttribDesc2 = GetAttribDesc(false, false, false, false, false, false, false, false, false, false, true);
+    var shadowMapPipeLineInfo2 = GetPipeLineFromAttribDesc(shadowMapAttribDesc2);
+    const shadowMapPipeLineHashCode2 = shadowMapPipeLineInfo2.hashCode;
+
+    var defaultAttribDesc = GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, false, false);
+    var defaultPipeLineInfo = GetPipeLineFromAttribDesc(defaultAttribDesc);
+    const defaultPipeLineHashCode = defaultPipeLineInfo.hashCode;
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+
+    var drawOmniShadowMap = function(omniShadowMap)
+    {
+        for(var k=0;k<omniShadowMap.cameras.length;++k)
+        {
+            var framebuffer = omniShadowMap.framebuffers[k];
+            var camera = omniShadowMap.cameras[k];
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    
+            gl.enable(gl.DEPTH_TEST);
+            gl.depthFunc(gl.LEQUAL);
+    
+            gl.viewport(0, 0, shadow_width, shadow_height);
+            
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        
+            for(var i = 0;i<StaticObjectArray.length;++i)
+            {
+                var obj = StaticObjectArray[i];
+                if (obj.shadowSkip)
+                    continue;
+                if (obj.drawFunc)
+                    obj.drawFunc(camera, shadowMapPipeLineHashCode, 0);
+            }
+        }
+    }
+
+    {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, directionalShadowMap.framebuffer.fbo);
+        
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+
+        gl.viewport(0, 0, shadow_width, shadow_height);
+        
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        for(var i = 0;i<StaticObjectArray.length;++i)
+        {
+            var obj = StaticObjectArray[i];
+            if (obj.shadowSkip)
+                continue;
+            if (obj.drawFunc)
+                obj.drawFunc(directionalShadowMap.camera, shadowMapPipeLineHashCode2, 0);
+        }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    var camera = Cameras[cameraIndex];
+    for(var i=0;i<camera.lights.pointLights.length;++i)
+        drawOmniShadowMap(camera.lights.pointLights[i].omniShadowMap);
+
+    for(var i=0;i<camera.lights.spotLights.length;++i)
+        drawOmniShadowMap(camera.lights.spotLights[i].omniShadowMap);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    
+    gl.enable(gl.BLEND);
+
+    gl.clearColor(0.5, 0.5, 0.5, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    var currentCamera = Cameras[cameraIndex];
+    var drawLightWithOmniShadowMap = function(light, index)
+    {
+        gl.blendFunc(gl.ONE, gl.ONE);
+
+        // if (TestCube)
+        // {
+        //     TestCube.textureCubeMap = light.omniShadowMap.depthCubeMap;
+        //     if (TestCube.updateFunc)
+        //         TestCube.updateFunc();
+        //     if (TestCube.drawFunc)
+        //         TestCube.drawFunc(Cameras[cameraIndex], null, index);
+        // }
+    
+        for(var i = 0;i<StaticObjectArray.length;++i)
+        {
+            var obj = StaticObjectArray[i];
+    
+            obj.textureCubeMap = light.omniShadowMap.depthCubeMap;
+            if (obj.drawFunc)
+                obj.drawFunc(currentCamera, defaultPipeLineHashCode, index);
+            obj.textureCubeMap = null;
+        }
+    }
+
+    // todo directionalShadowMap에서 그린 쉐도우맵 데이터를 사용해서 그림자를 그려준다. (glsl 변경 필요)
+    gl.blendFunc(gl.ONE, gl.ZERO);
+    currentCamera.ambient = ambientLight;
+
+    var matShadowVP = CloneMat4(directionalShadowMap.camera.matProjection).Mul(directionalShadowMap.camera.matView);
+    matShadowVP.Transpose();
+    var shadowVPArray = matShadowVP.m[0].concat(matShadowVP.m[1],matShadowVP.m[2],matShadowVP.m[3]);
+
+    if (camera.lights.directionalLights.length > 0)
+    {
+        for(var i = 0;i<StaticObjectArray.length;++i)
+        {
+            var obj = StaticObjectArray[i];
+    
+            obj.textureShadowMap = directionalShadowMap.framebuffer.tbo;
+            obj.shadowVPArray = shadowVPArray;
+            if (obj.drawFunc)
+                obj.drawFunc(currentCamera, defaultPipeLineHashCode, 0);
+            obj.textureShadowMap = null;
+            obj.shadowVPArray = null;
+        }
+    }
+    currentCamera.ambient = null;
+
+    for(var i=0;i<camera.lights.pointLights.length;++i)
+        drawLightWithOmniShadowMap(camera.lights.pointLights[i], camera.lights.directionalLights.length + i);
+
+    for(var i=0;i<camera.lights.spotLights.length;++i)
+        drawLightWithOmniShadowMap(camera.lights.spotLights[i], camera.lights.directionalLights.length + camera.lights.pointLights.length + i);
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthFunc(gl.LEQUAL);
+    gl.depthMask(true);
+    gl.colorMask(true, true, true, true);
+    gl.disable(gl.STENCIL_TEST);
+    drawStaticTransparentObjects(camera, defaultPipeLineHashCode, -1);
+
+    gl.disable(gl.BLEND);
+}
+
+jWebGL.prototype.RenderWithShadowVolume = function(cameraIndex)
 {
     var ambientAttribDesc = GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true, true);
     var ambientPipeLineInfo = GetPipeLineFromAttribDesc(ambientAttribDesc);
@@ -710,20 +1065,6 @@ jWebGL.prototype.Render = function(cameraIndex)
         for(var i = 0;i<StaticObjectArray.length;++i)
         {
             var obj = StaticObjectArray[i];
-
-            if (drawShadowCasterOnly && !obj.shadowVolume)
-                continue;
-
-            if (obj.drawFunc)
-                obj.drawFunc(camera, pipeLineHashCode, lightIndex);
-        }
-    }
-
-    var drawStaticTransparentObjects = function(pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)
-    {
-        for(var i = 0;i<TransparentStaticObjectArray.length;++i)
-        {
-            var obj = TransparentStaticObjectArray[i];
 
             if (drawShadowCasterOnly && !obj.shadowVolume)
                 continue;
@@ -893,7 +1234,7 @@ jWebGL.prototype.Render = function(cameraIndex)
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
     gl.disable(gl.STENCIL_TEST);
-    drawStaticTransparentObjects(defaultPipeLineHashCode, -1);
+    drawStaticTransparentObjects(camera, defaultPipeLineHashCode, -1);
 
     // debug shadow volume
     for(var lightIndex=0;lightIndex<numOfLights;++lightIndex)

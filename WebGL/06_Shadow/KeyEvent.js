@@ -97,3 +97,7 @@ var OnCheckBoxShowSpotLightInfo = function(e)
         spotLight.setHideDebugInfo(!e.checked);
 }
 
+var OnChangedShadowMode = function(e)
+{
+    SwitchShadowMode(e.value);
+}

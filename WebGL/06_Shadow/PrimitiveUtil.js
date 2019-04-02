@@ -3,13 +3,38 @@ var createAttribParameter = function(name, count, datas, bufferType, type, norma
     return { name:name, datas:datas, bufferType:bufferType, count:count, type:type, normalized:normalized, stride:stride, offset:offset };
 }
 
-var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false, shadowVolume = false, ambientOnly = false, infinityFar = false)
+var GetAttribDesc = function(color = false, normal = false, uvs = false, ui = false, wireframe = false
+    , shadowVolume = false, ambientOnly = false, infinityFar = false, omniDirectionalShadowMap = false
+    , cubeMapTest = false, shadowMap = false)
 {
-    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume, ambientOnly:ambientOnly, infinityFar:infinityFar};
+    return {color:color, normal:normal, uvs:uvs, ui:ui, wireframe:wireframe, shadowVolume:shadowVolume
+        , ambientOnly:ambientOnly, infinityFar:infinityFar, omniDirectionalShadowMap:omniDirectionalShadowMap
+        , cubeMapTest:cubeMapTest, shadowMap:shadowMap};
 }
 
 var GetShaderFromAttribDesc = function(outShader, attribDesc)
 {
+    if (attribDesc.cubeMapTest)
+    {
+        outShader.vs = "shaders/shadowmap/vs_cubemap.glsl";
+        outShader.fs = "shaders/shadowmap/fs_cubemap.glsl";
+        return;
+    }
+
+    if (attribDesc.shadowMap)
+    {
+        outShader.vs = "shaders/shadowmap/vs_shadowMap.glsl";
+        outShader.fs = "shaders/shadowmap/fs_shadowMap.glsl";
+        return;
+    }
+
+    if (attribDesc.omniDirectionalShadowMap)
+    {
+        outShader.vs = "shaders/shadowmap/vs_omniDirectionalShadowMap.glsl";
+        outShader.fs = "shaders/shadowmap/fs_omniDirectionalShadowMap.glsl";
+        return;
+    }
+
     if (attribDesc.color && attribDesc.normal && attribDesc.uvs)
     {
         return;
@@ -17,15 +42,23 @@ var GetShaderFromAttribDesc = function(outShader, attribDesc)
 
     if (attribDesc.infinityFar)
     {
-        outShader.vs = "shaders/vs_infinityFar.glsl";
-        outShader.fs = "shaders/fs_infinityFar.glsl";
+        outShader.vs = "shaders/shadowvolume/vs_infinityFar.glsl";
+        outShader.fs = "shaders/shadowvolume/fs_infinityFar.glsl";
         return;
     }
 
     if (attribDesc.color && attribDesc.normal)
     {
-        outShader.vs = 'shaders/vs.glsl';
-        outShader.fs = 'shaders/fs.glsl';
+        if (attribDesc.shadowVolume)
+        {
+            outShader.vs = 'shaders/shadowvolume/vs.glsl';
+            outShader.fs = 'shaders/shadowvolume/fs.glsl';
+        }
+        else
+        {
+            outShader.vs = 'shaders/shadowmap/vs.glsl';
+            outShader.fs = 'shaders/shadowmap/fs.glsl';
+        }
         if (attribDesc.ambientOnly)
             outShader.fs = outShader.fs.replace(".glsl", "_ambientonly.glsl");
         return;
@@ -1217,7 +1250,7 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
 
         /////////////////////////////////////////////////////
 
-        attribs.push(createAttribParameter('Normal', 3, normals, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+        attribs.push(createAttribParameter('Normal', 3, normals, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
     }
 
     var newStaticObject = createStaticObject(gl, attribDesc, attribs, null, 0, elementCount, (attribDesc.wireframe ? gl.LINES : gl.TRIANGLES));
@@ -1489,33 +1522,35 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
         1.0, 0.0,
     ];
 
-    var elementCount = 2;
+    var elementCount = vertices.length / 2;
     var attrib0 = createAttribParameter('VertPos', 2, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 2, 0);
-    var newStaticObject = createStaticObject(gl, null, GetAttribDesc(null, null, null, true), [attrib0], 0, elementCount, gl.TRIANGLE_STRIP);
+    var newStaticObject = createStaticObject(gl, GetAttribDesc(null, null, null, true), [attrib0], null, 0, elementCount, gl.TRIANGLE_STRIP);
 
     var uiStaticObject = { UIInfo:CreateVec4(x, y, width, height) };
     uiStaticObject.__proto__ = newStaticObject;
-    uiStaticObject.texture = texture;
+    uiStaticObject.isDisablePipeLineChange = true;
     uiStaticObject.setRenderProperty = function()
     {
         if (this.__proto__.setRenderProperty)
             this.__proto__.setRenderProperty();
 
-        var pixelSizeLoc = gl.getUniformLocation(this.program, 'PixelSize');
+        var program = this.pipeLineInfo.pipeLine;
+
+        var pixelSizeLoc = gl.getUniformLocation(program, 'PixelSize');
         if (pixelSizeLoc)
         {
             var pixelSize = [1.0 / gl.canvas.width, 1.0 / gl.canvas.height];
             gl.uniform2fv(pixelSizeLoc, pixelSize);
         }
     
-        var posLoc = gl.getUniformLocation(this.program, 'Pos');
+        var posLoc = gl.getUniformLocation(program, 'Pos');
         if (posLoc)
         {
             var pos = [this.UIInfo.x, this.UIInfo.y];
             gl.uniform2fv(posLoc, pos);
         }
     
-        var sizeLoc = gl.getUniformLocation(this.program, 'Size');
+        var sizeLoc = gl.getUniformLocation(program, 'Size');
         if (sizeLoc)
         {
             var size = [this.UIInfo.z, this.UIInfo.w];
@@ -1523,6 +1558,7 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
         }
     };
 
+    newStaticObject.texture = texture;
     newStaticObject.pos = CreateVec3(0, 0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);

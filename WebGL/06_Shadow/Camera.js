@@ -116,21 +116,29 @@ var updateCamera = function(gl, cameraIndex)
     camera.matView = CreateViewMatrix(camera.pos, camera.target, camera.up);
     
     // Using Far plane at infinity
-    // camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
-    camera.matProjection = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
+    if (camera.isPerspectiveMatrix)
+    {
+        //camera.matProjection = CreatePerspectiveMatrix(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.far, camera.near);
+        camera.matProjection = CreatePerspectiveMatrixFarAtInfinity(gl.canvas.width, gl.canvas.height, camera.fovRad, camera.near);
+    }
+    else
+    {
+        // todo made ortho matrix
+        camera.matProjection = CreateOrthogonalMatrix(gl.canvas.width, gl.canvas.height, camera.far, camera.near);
+    }
 }
 
-var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStaticObject)
+var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugStaticObject, isPerspectiveMatrix = true)
 {
-    var t1 = pos.CloneVec3().Sub(target).GetNormalize();
-    var t2_right = new jVec3();
-    CrossProduct3(t2_right, CreateVec3(0.0, 1.0, 0.0), t1);
-    t2_right = t2_right.GetNormalize();
-    var t3_up = new jVec3();
-    CrossProduct3(t3_up, t1, t2_right);
-    t3_up = t3_up.GetNormalize()
+    // var t1 = pos.CloneVec3().Sub(target).GetNormalize();
+    // var t2_right = new jVec3();
+    // CrossProduct3(t2_right, up, t1);
+    // t2_right = t2_right.GetNormalize();
+    // var t3_up = new jVec3();
+    // CrossProduct3(t3_up, t1, t2_right);
+    // t3_up = t3_up.GetNormalize()
 
-    var up = t3_up.CloneVec3().Add(pos);
+    // up = t3_up.CloneVec3().Add(pos);
     
     var debugStaticObject = [];
     var debugStaticObject2 = [];
@@ -240,7 +248,7 @@ var CreateCamera = function(gl, pos, target, fovRad, near, far, createDebugStati
         , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
         , lights:{directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
         , ambient:null, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom
-        , frustumPlanes:frustumPlanes, checkIsInFrustomWithDirection:checkIsInFrustomWithDirection};
+        , frustumPlanes:frustumPlanes, checkIsInFrustomWithDirection:checkIsInFrustomWithDirection, isPerspectiveMatrix:isPerspectiveMatrix};
     Cameras.push(newCamera);
     return newCamera;
 }
