@@ -2,7 +2,8 @@ var jWebGL;
 var Clicks = [];
 var StaticObjectArray = [];
 var TransparentStaticObjectArray = [];
-var UIStaticObject = [];
+var UIStaticObjectArray = [];
+var LightArray = []
 var PipeLines = [];
 var quad = null;
 var quadRot = CreateVec3(0.0, 0.0, 0.0);
@@ -41,7 +42,6 @@ var mainCamera = null;
 var TestCube = null;
 const shadow_width = 1024.0;
 const shadow_height = 1024.0;
-var directionalShadowMap = null;
 var ShadowMode = 'ShadowVolume';
 
 var SetShadowVolumeMode = function()
@@ -500,90 +500,6 @@ var CraeteFramebuffer = function(gl, width, height)
     return {fbo:fbo, tbo:tbo, dbo:rbo};
 }
 
-var CreateDirectionalShadowMap = function(gl, dirLight)
-{
-    var framebuffer = CraeteFramebuffer(gl, shadow_width, shadow_height);
-    var eye = ZeroVec3.CloneVec3().Add(dirLight.direction.CloneVec3().Neg().Mul(200.0));
-    var target = ZeroVec3.CloneVec3();
-
-    var rightVec = new jVec3();
-    CrossProduct3(rightVec, target.CloneVec3().Sub(eye).GetNormalize(), CreateVec3(0.0, 1.0, 0.0));
-
-    var upVec = new jVec3();
-    CrossProduct3(upVec, rightVec, dirLight.direction);
-    upVec = upVec.GetNormalize();
-
-    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 10.0, 500.0, false, false);
-
-    var getDepthMap = function()
-    {
-        if (this.framebuffer)
-            return this.framebuffer.tbo;
-        return null;
-    }
-
-    camera.addLight(dirLight);
-
-    return {camera:camera, framebuffer:framebuffer, getDepthMap:getDepthMap};
-}
-
-var CreateOmniDirectionalShadowMap = function(gl, light)
-{
-    const depthCubeMap = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_CUBE_MAP, depthCubeMap);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-    var framebuffers = [];
-    var renderbuffers = [];
-    for(var i=0;i<6;++i)
-    {
-        gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, gl.R32F
-            , shadow_width, shadow_height, 0, gl.RED, gl.FLOAT, null);
-    }
-
-    for(var i=0;i<6;++i)
-    {
-        var depthMapFBO = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, depthCubeMap, 0);
-
-        var rbo = gl.createRenderbuffer();
-        gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, shadow_width, shadow_height);
-        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
-
-        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
-        {
-            var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-            alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
-            return null;
-        }
-
-        framebuffers.push(depthMapFBO);
-        renderbuffers.push(rbo);
-    }
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    var cameras = [];
-    const lightPos = light.pos;
-
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(-1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-
-    for(var i=0;i<cameras.length;++i)
-        cameras[i].addLight(light);
-
-    return {depthCubeMap:depthCubeMap, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras};
-}
-
 var Init = function()
 {
     console.log('init function start');
@@ -668,88 +584,50 @@ jWebGL.prototype.Init = function()
     updateCamera(gl, 0);
 
     // Origin Point Gizmo
-    CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
+    var gizmo = CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
+    gizmo.shadowSkip = true;
 
     // Create Coordinate Guide lines
     //CreateCoordinateXZObject(gl, StaticObjectArray, mainCamera);
     //CreateCoordinateYObject(gl, StaticObjectArray);
-
-    quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, false));
-    quad.shadowSkip = false;
-    var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
-    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
-
-    // Create a texture.
-    var texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    // Fill the texture with a 1x1 blue pixel.
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-                new Uint8Array([0, 0, 255, 255]));
-                
-    // Asynchronously load an image
-    var image = new Image();
-    image.src = "sun.png";
-    image.addEventListener('load', function() {
-        // Now that the image has loaded make copy it to the texture.
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
-        gl.generateMipmap(gl.TEXTURE_2D);
-    });
-
-    // Create a texture.
-    var texture2 = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture2);
-    // Fill the texture with a 1x1 blue pixel.
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-                new Uint8Array([0, 0, 255, 255]));
-                
-    // Asynchronously load an image
-    var image2 = new Image();
-    image2.src = "bulb.png";
-    image2.addEventListener('load', function() {
-        // Now that the image has loaded make copy it to the texture.
-        gl.bindTexture(gl.TEXTURE_2D, texture2);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image2);
-        gl.generateMipmap(gl.TEXTURE_2D);
-    });
-
-    // Create a texture.
-    var texture3 = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture3);
-    // Fill the texture with a 1x1 blue pixel.
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-                new Uint8Array([0, 0, 255, 255]));
-                
-    // Asynchronously load an image
-    var image3 = new Image();
-    image3.src = "spot.png";
-    image3.addEventListener('load', function() {
-        // Now that the image has loaded make copy it to the texture.
-        gl.bindTexture(gl.TEXTURE_2D, texture3);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image3);
-        gl.generateMipmap(gl.TEXTURE_2D);
-    });
 
     var lightColor = CreateVec3(1.0, 1.0, 1.0);
     var diffuseLightIntensity = CreateVec3(1.0, 1.0, 1.0);
     var specularLightIntensity = CreateVec3(0.4, 0.4, 0.4);
     var specularPow = 64.0;
 
-    dirLight = CreateDirectionalLight(gl, TransparentStaticObjectArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
-        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:texture});
-
+    // Create lights
+    dirLight = CreateDirectionalLight(gl, LightArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
+        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:"sun.png", TargetObjectArray:TransparentStaticObjectArray});
     dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
+    mainCamera.addLight(dirLight);
 
-    pointLight = CreatePointLight(gl, TransparentStaticObjectArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture2});
-
+    pointLight = CreatePointLight(gl, LightArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"bulb.png", TargetObjectArray:TransparentStaticObjectArray});
     pointLight.setHideDebugInfo(!document.getElementById('ShowPointLightInfo').checked);
+    mainCamera.addLight(pointLight);
 
-    spotLight = CreateSpotLight(gl, TransparentStaticObjectArray, spotLightPos, CreateVec3(-1.0, -1.0, -0.4).GetNormalize()
+    spotLight = CreateSpotLight(gl, LightArray, spotLightPos, CreateVec3(-1.0, -1.0, -0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotLightRadius, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:texture3});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"spot.png", TargetObjectArray:TransparentStaticObjectArray});
+    spotLight.setHideDebugInfo(!document.getElementById('ShowSpotLightInfo').checked);    
+    
+    const matRotate = CreateRotationAxisMat4(CreateVec3(0.0, 1.0, 0.0), 0.01);
+    spotLight.updateFunc = function()
+    {
+        // rotate spot light direction
+        spotLight.lightDirection = spotLight.lightDirection.Transform(matRotate).GetNormalize();
+    }
+    mainCamera.addLight(spotLight);
 
-    spotLight.setHideDebugInfo(!document.getElementById('ShowSpotLightInfo').checked);
+    ambientLight = mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.2, 0.2, 0.2));
+
+    // Create primitives
+    quad = CreateQuad(gl, StaticObjectArray, ZeroVec3, OneVec3, CreateVec3(10000.0, 10000.0, 10000.0)
+        , GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), true, false, false, false, false));
+    quad.shadowSkip = false;
+    var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
+    quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
 
     CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
         , GetAttribDesc(CreateVec4(0.7, 0.7, 0.7, 1.0), true, false, false, false, true));
@@ -766,23 +644,30 @@ jWebGL.prototype.Init = function()
     QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
         , GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), true, false, false, false, true));
     BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-        , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true));
-    BillboardQuadA.camera = mainCamera;
-
+        , GetAttribDesc(CreateVec4(1.0, 0.0, 1.0, 1.0), true, false, false, false, true), mainCamera);
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
-                            , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius)
-                            , GetAttribDesc(CreateVec4(0.8, 0.0, 0.0, 1.0), true, false, false, false, true));
+        , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), GetAttribDesc(CreateVec4(0.8, 0.0, 0.0, 1.0), true, false, false, false, true));
 
-    ambientLight = mainCamera.ambient = CreateAmbientLight(CreateVec3(0.7, 0.8, 0.8), CreateVec3(0.2, 0.2, 0.2));
-    mainCamera.addLight(dirLight);
-    mainCamera.addLight(pointLight);
-    mainCamera.addLight(spotLight);
+    // Create frameBuffer to render at offscreen
+    CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
 
-    const matRotate = CreateRotationAxisMat4(CreateVec3(0.0, 1.0, 0.0), 0.01);
-
-    pointLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, pointLight);
-    spotLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, spotLight);
-    directionalShadowMap = CreateDirectionalShadowMap(gl, dirLight);
+    var customUpdateForPrimitives = function()
+    {
+        if (CylinderA)
+            CylinderA.rot.x += 0.1;
+        if (ConeA)
+            ConeA.rot.y += 0.03;
+        if (CapsuleA)
+            CapsuleA.rot.x += 0.01;
+        if (CubeA)
+            CubeA.rot.z += 0.005;
+        if (SphereA)
+            SphereA.rot.x += 0.01;
+        if (TriangleA)
+            TriangleA.rot.x += 0.05;
+        if (QuadA)
+            QuadA.rot.z += 0.08;
+    }
 
     // TestCube = CreateSphere(gl, null, ZeroVec3.CloneVec3(), 1.0, 20, CreateVec3(50, 50, 50)
     //                         , GetAttribDesc(false, true, false, false, false, false, false, false, false, true));
@@ -790,9 +675,6 @@ jWebGL.prototype.Init = function()
                             , GetAttribDesc(false, true, false, false, false, false, false, false, false, true));
     TestCube.isDisablePipeLineChange = true;
     TestCube.pos = spotLight.pos;
-
-    // Create frameBuffer to render at offscreen
-    CreateUIQuad(gl, UIStaticObject, 10, 10, 300, 300, directionalShadowMap.getDepthMap());
 
     var main = this;
 
@@ -810,23 +692,7 @@ jWebGL.prototype.Init = function()
             lastTime = currentTime;
         }
 
-        if (CylinderA)
-            CylinderA.rot.x += 0.1;
-        if (ConeA)
-            ConeA.rot.y += 0.03;
-        if (CapsuleA)
-            CapsuleA.rot.x += 0.01;
-        if (CubeA)
-            CubeA.rot.z += 0.005;
-        if (SphereA)
-            SphereA.rot.x += 0.01;
-        if (TriangleA)
-            TriangleA.rot.x += 0.05;
-        if (QuadA)
-            QuadA.rot.z += 0.08;
-
-        // rotate spot light direction
-        spotLight.lightDirection = spotLight.lightDirection.Transform(matRotate).GetNormalize();
+        customUpdateForPrimitives();
 
         processKeyEvents();
         main.Update();
@@ -838,10 +704,11 @@ jWebGL.prototype.Init = function()
         {
             main.RenderWithShadowMap(0);
 
+            gl.disable(gl.DEPTH_TEST);
             // Render To 3D UI
-            for(var i=0;i<UIStaticObject.length;++i)
+            for(var i=0;i<UIStaticObjectArray.length;++i)
             {
-                var obj = UIStaticObject[i];
+                var obj = UIStaticObjectArray[i];
                 if (obj.updateFunc)
                     obj.updateFunc();
                 if (obj.drawFunc)
@@ -857,6 +724,12 @@ jWebGL.prototype.Init = function()
 jWebGL.prototype.Update = function()
 {
     var gl = this.gl;
+
+    for(var i=0;i<LightArray.length;++i)
+    {
+        if(LightArray[i].hasOwnProperty('updateFunc'))
+            LightArray[i].updateFunc();
+    }
 
     for(var i=0;i<Cameras.length;++i)
     {
@@ -942,7 +815,7 @@ jWebGL.prototype.RenderWithShadowMap = function(cameraIndex)
     }
 
     {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, directionalShadowMap.framebuffer.fbo);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, dirLight.directionalShadowMap.framebuffer.fbo);
         
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
@@ -958,7 +831,7 @@ jWebGL.prototype.RenderWithShadowMap = function(cameraIndex)
             if (obj.shadowSkip)
                 continue;
             if (obj.drawFunc)
-                obj.drawFunc(directionalShadowMap.camera, shadowMapPipeLineHashCode2, 0);
+                obj.drawFunc(dirLight.directionalShadowMap.camera, shadowMapPipeLineHashCode2, 0);
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
@@ -1010,7 +883,7 @@ jWebGL.prototype.RenderWithShadowMap = function(cameraIndex)
     gl.blendFunc(gl.ONE, gl.ZERO);
     currentCamera.ambient = ambientLight;
 
-    var matShadowVP = CloneMat4(directionalShadowMap.camera.matProjection).Mul(directionalShadowMap.camera.matView);
+    var matShadowVP = CloneMat4(dirLight.directionalShadowMap.camera.matProjection).Mul(dirLight.directionalShadowMap.camera.matView);
     matShadowVP.Transpose();
     var shadowVPArray = matShadowVP.m[0].concat(matShadowVP.m[1],matShadowVP.m[2],matShadowVP.m[3]);
 
@@ -1020,7 +893,7 @@ jWebGL.prototype.RenderWithShadowMap = function(cameraIndex)
         {
             var obj = StaticObjectArray[i];
     
-            obj.textureShadowMap = directionalShadowMap.framebuffer.tbo;
+            obj.textureShadowMap = dirLight.directionalShadowMap.framebuffer.tbo;
             obj.shadowVPArray = shadowVPArray;
             if (obj.drawFunc)
                 obj.drawFunc(currentCamera, defaultPipeLineHashCode, 0);
