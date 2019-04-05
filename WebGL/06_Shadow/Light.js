@@ -15,8 +15,10 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
                 , debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
 
+        const colorOnlyShader = CreateBaseColorOnlyShaderFile();
+
         var segment = CreateArrowSegment(gl, debugObjectDesc.TargetObjectArray, ZeroVec3, ZeroVec3.CloneVec3().Add(direction.CloneVec3().Mul(debugObjectDesc.length)), 1.0
-            , 3.0, 1.5, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0), false, false, false), GetAttribDesc(CreateVec4(1.0, 1.0, 0.1, 1.0), false, false, false));       
+            , 3.0, 1.5, CreateVec4(1.0, 1.0, 1.0, 1.0), colorOnlyShader, CreateVec4(1.0, 1.0, 0.1, 1.0), colorOnlyShader);
         segment.pos = debugObjectDesc.pos.CloneVec3();
         segment.isDisablePipeLineChange = true;
 
@@ -67,7 +69,7 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
             sphere.scale.z = PointLight.maxDistance;
         }
 
-        var sphere = CreateSphere(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), false, false, false, true));
+        var sphere = CreateSphere(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), CreateBaseColorOnlyShaderFile(), true);
         sphere.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = newStaticObject;
@@ -126,8 +128,10 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
             penumbraCone.rot = dirctionToRot;
         }
 
-        var umbraCone = CreateCone(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), false, false, false, true));
-        var penumbraCone = CreateCone(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), false, false, false, true));
+        const colorOnlyShader = CreateBaseColorOnlyShaderFile();
+
+        var umbraCone = CreateCone(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), colorOnlyShader, true);
+        var penumbraCone = CreateCone(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), colorOnlyShader, true);
         umbraCone.isDisablePipeLineChange = true;
         penumbraCone.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
@@ -159,4 +163,48 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
     SpotLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, SpotLight);
     TargetArray.push(SpotLight);
     return SpotLight;
+}
+
+var setAmbientLight = function(gl, pipeLine, light)
+{
+    setVec3ToUniformLocation(gl, pipeLine, "AmbientLight.Color", light.ambientColor);
+    setVec3ToUniformLocation(gl, pipeLine, "AmbientLight.Intensity", light.ambientIntensity);
+}
+
+var setDirectionalLight = function(gl, pipeLine, light)
+{
+    const structName = 'DirectionalLight[' + light.index + ']';
+
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'LightDirection', light.direction);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Color', light.lightColor);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'DiffuseLightIntensity', light.diffuseLightIntensity);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'SpecularLightIntensity', light.specularLightIntensity);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'SpecularPow', light.specularPow);
+}
+
+var setPointLight = function(gl, pipeLine, light)
+{
+    const structName = 'PointLight[' + light.index + ']';
+
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'LightPos', light.pos);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Color', light.lightColor);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'DiffuseLightIntensity', light.diffuseLightIntensity);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'SpecularLightIntensity', light.specularLightIntensity);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'SpecularPow', light.specularPow);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'MaxDistance', light.maxDistance);
+}
+
+var setSpotLight = function(gl, pipeLine, light)
+{
+    const structName = 'SpotLight[' + light.index + ']';
+
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'LightPos', light.pos);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Direction', light.lightDirection);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Color', light.lightColor);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'DiffuseLightIntensity', light.diffuseLightIntensity);
+    setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'SpecularLightIntensity', light.specularLightIntensity);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'SpecularPow', light.specularPow);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'MaxDistance', light.maxDistance);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'PenumbraRadian', light.penumbraRadian);
+    setFloatToUniformLocation(gl, pipeLine, structName + '.' + 'UmbraRadian', light.umbraRadian);
 }

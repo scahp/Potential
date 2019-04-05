@@ -166,11 +166,10 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         const gl = jWebGL.gl;
 
         var attribEdges = [];
-        var attribEdgesDesc = GetAttribDesc(CreateVec4(1.0, 0.0, 0.0, 1.0), false, false, false, false)
         var elementCount = this.result.length / 3;
         attribEdges.push(createAttribParameter('Pos', 3, this.result, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
-        attribEdges.push(createAttribParameter('Color', 4, GenerateColor(attribEdgesDesc.color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-        var obj = createStaticObject(gl, attribEdgesDesc, attribEdges, null, 0, elementCount, gl.LINES, false, true);
+        attribEdges.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(1.0, 0.0, 0.0, 1.0), elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+        var obj = createStaticObject(gl, CreateBaseColorOnlyShaderFile(), attribEdges, null, 0, elementCount, gl.LINES, false, true);
         obj.pos = pos.CloneVec3();
         obj.rot = rot.CloneVec3();
         obj.scale = scale.CloneVec3();
@@ -187,11 +186,10 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         const gl = jWebGL.gl;
 
         var attribNormal = [];
-        var attribNormalDesc = GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 1.0), false, false, false, false)
         var elementCount = this.normalVers.length / 3;
         attribNormal.push(createAttribParameter('Pos', 3, new Float32Array(this.normalVers), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
-        attribNormal.push(createAttribParameter('Color', 4, GenerateColor(attribNormalDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-        var normalObj = createStaticObject(gl, attribNormalDesc, attribNormal, null, 0, elementCount, gl.LINES, false, true);
+        attribNormal.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(0.0, 1.0, 0.0, 1.0), elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+        var normalObj = createStaticObject(gl, CreateBaseColorOnlyShaderFile(), attribNormal, null, 0, elementCount, gl.LINES, false, true);
         if (TargetObjectArray)
             TargetObjectArray.push(normalObj);
         //obj.hide = true;
@@ -274,7 +272,6 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
                 edges[edgeKey] = edgeKey;
         }
 
-        var hasBackCap = false;
         var backfaceToLightDirInTriangle = [];
         for(var key in adjacencyInfo.triangles)
         {
@@ -416,11 +413,10 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         if (createEdgeObj)
         {
             var edgeAttrib = [];
-            var edgeAttribDesc = GetAttribDesc(CreateVec4(0.0, 0.0, 1.0, 1.0), false, false, false, false)
             var elementCount = this.edgeVerts.length / 3;
             edgeAttrib.push(createAttribParameter('Pos', 3, new Float32Array(this.edgeVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
-            edgeAttrib.push(createAttribParameter('Color', 4, GenerateColor(edgeAttribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-            var edgeObj = createStaticObject(gl, edgeAttribDesc, edgeAttrib, null, 0, elementCount, gl.LINES, false, true);
+            edgeAttrib.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(0.0, 0.0, 1.0, 1.0), elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+            var edgeObj = createStaticObject(gl, CreateBaseColorOnlyShaderFile(), edgeAttrib, null, 0, elementCount, gl.LINES, false, true);
             if (TargetObjectArray)
                 TargetObjectArray.push(edgeObj);
             this.debugObject.edge = edgeObj;
@@ -429,11 +425,10 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
         if (createQuadObj)
         {
             var quadAttrib = [];
-            var quadAttribDesc = GetAttribDesc(CreateVec4(0.0, 1.0, 0.0, 0.3), true, false, false, false, false, false, true)
             var elementCount = this.quadVerts.length / 4;
             quadAttrib.push(createAttribParameter('Pos', 4, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-            quadAttrib.push(createAttribParameter('Color', 4, GenerateColor(quadAttribDesc.color, elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
-            var quadObj = createStaticObject(gl, quadAttribDesc, quadAttrib, null, 0, elementCount, gl.TRIANGLES, false, true);
+            quadAttrib.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(0.0, 1.0, 0.0, 0.3), elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+            var quadObj = createStaticObject(gl, CreateBaseInfinityFarShaderFile(), quadAttrib, null, 0, elementCount, gl.TRIANGLES, false, true);
             if (TargetObjectArray)
                 TargetObjectArray.push(quadObj);
             this.debugObject.quad = quadObj;

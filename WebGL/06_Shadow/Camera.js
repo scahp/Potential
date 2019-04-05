@@ -144,16 +144,18 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
     var debugStaticObject2 = [];
     if (createDebugStaticObject)
     {
+        const colorOnlyShader = CreateBaseColorOnlyShaderFile();
+        const whiteColor = CreateVec3(1.0, 1.0, 1.0, 1.0);
         for(var i=0;i<12;++i)
         {
-            var segment = CreateSegment(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), CreateVec3(0.0, 0.0, 0.0), 1.0, GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0)));
+            var segment = CreateSegment(gl, TransparentStaticObjectArray, ZeroVec3, ZeroVec3, ZeroVec3, 1.0, whiteColor, colorOnlyShader);
             segment.isDisablePipeLineChange = true;
             debugStaticObject.push(segment);
         }
 
         for(var i=0;i<6;++i)
         {
-            var quad = CreateQuad(gl, TransparentStaticObjectArray, CreateVec3(0.0, 0.0, 0.0), CreateVec3(1.0, 1.0, 1.0), CreateVec3(1.0, 1.0, 1.0), GetAttribDesc(CreateVec4(1.0, 1.0, 1.0, 1.0)));
+            var quad = CreateQuad(gl, TransparentStaticObjectArray, ZeroVec3, OneVec3, OneVec3, whiteColor, colorOnlyShader);
             quad.isDisablePipeLineChange = true;
             debugStaticObject2.push(quad);
         }
