@@ -123,8 +123,12 @@ var updateCamera = function(gl, cameraIndex)
     }
     else
     {
-        // todo made ortho matrix
-        camera.matProjection = CreateOrthogonalMatrix(gl.canvas.width, gl.canvas.height, camera.far, camera.near);
+        // todo : this is only for shadowmap tutorial, it should be removed
+        //const width = gl.canvas.width;
+        //const height = gl.canvas.height;
+        const width = 130.0;
+        const height = 130.0;
+        camera.matProjection = CreateOrthogonalMatrix(width, height, camera.far, camera.near);
     }
 }
 

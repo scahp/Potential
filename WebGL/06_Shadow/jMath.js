@@ -586,19 +586,20 @@ var CreateViewMatrix = function(eye, target, up)
 
 var CreatePerspectiveMatrix = function(width, height, fovRadian, far, near)
 {
-	var F = 1.0 / Math.tan(fovRadian);
+	const F = 1.0 / Math.tan(fovRadian);
+    const farSubNear = (far - near);
 
     var projMat = new jMat4();
     projMat.m[0][0] = F*(height/width); projMat.m[0][1] = 0.0;      projMat.m[0][2] = 0.0;                      projMat.m[0][3] = 0.0;
     projMat.m[1][0] = 0.0;              projMat.m[1][1] = F;        projMat.m[1][2] = 0.0;                      projMat.m[1][3] = 0.0;
-    projMat.m[2][0] = 0.0;              projMat.m[2][1] = 0.0;      projMat.m[2][2] = -(far+near) / (far-near); projMat.m[2][3] = -(2.0*near*far)/(far-near);
+    projMat.m[2][0] = 0.0;              projMat.m[2][1] = 0.0;      projMat.m[2][2] = -(far+near) / farSubNear; projMat.m[2][3] = -(2.0*near*far)/farSubNear;
     projMat.m[3][0] = 0.0;              projMat.m[3][1] = 0.0;      projMat.m[3][2] = -1.0;                     projMat.m[3][3] = 0.0;
     return projMat;
 }
 
 var CreatePerspectiveMatrixFarAtInfinity = function(width, height, fovRadian, near)
 {
-	var F = 1.0 / Math.tan(fovRadian);
+	const F = 1.0 / Math.tan(fovRadian);
 
     var projMat = new jMat4();
     projMat.m[0][0] = F*(height/width); projMat.m[0][1] = 0.0;      projMat.m[0][2] = 0.0;                      projMat.m[0][3] = 0.0;
@@ -610,13 +611,13 @@ var CreatePerspectiveMatrixFarAtInfinity = function(width, height, fovRadian, ne
 
 var CreateOrthogonalMatrix = function(width, height, far, near)
 {
-    width = 100.0;
-    height = 100.0;
+    const farSubNear = (far - near);
+
     var projMat = new jMat4();
-    projMat.m[0][0] = 1.0/width/2.0;    projMat.m[0][1] = 0.0;              projMat.m[0][2] = 0.0;                      projMat.m[0][3] = 0.0;
-    projMat.m[1][0] = 0.0;              projMat.m[1][1] = 1.0/height/2.0;   projMat.m[1][2] = 0.0;                      projMat.m[1][3] = 0.0;
-    projMat.m[2][0] = 0.0;              projMat.m[2][1] = 0.0;              projMat.m[2][2] = -2.0/(far-near);          projMat.m[2][3] = -(far+near)/(far-near);
-    projMat.m[3][0] = 0.0;              projMat.m[3][1] = 0.0;              projMat.m[3][2] = 0.0;                      projMat.m[3][3] = 1.0;
+    projMat.m[0][0] = 1.0 / width;      projMat.m[0][1] = 0.0;                  projMat.m[0][2] = 0.0;                      projMat.m[0][3] = 0.0;
+    projMat.m[1][0] = 0.0;              projMat.m[1][1] = 1.0 / height;         projMat.m[1][2] = 0.0;                      projMat.m[1][3] = 0.0;
+    projMat.m[2][0] = 0.0;              projMat.m[2][1] = 0.0;                  projMat.m[2][2] = -2.0 / farSubNear;        projMat.m[2][3] = -(far + near) / farSubNear;
+    projMat.m[3][0] = 0.0;              projMat.m[3][1] = 0.0;                  projMat.m[3][2] = 0.0;                      projMat.m[3][3] = 1.0;
     return projMat;
 }
 
