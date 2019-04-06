@@ -119,8 +119,12 @@ jWebGL.prototype.Init = function()
     };
     requestAnimationFrame(loop);
 
-    game.Teardown();
-    renderer.Teardown();
+    var TearDown = function()
+    {
+        game.Teardown();
+        renderer.Teardown();
+    };
+    //TearDown();
 }
 
 jWebGL.prototype.OnResizeWindow = function()

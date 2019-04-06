@@ -312,8 +312,7 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color, shader
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -361,8 +360,7 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, color, shader
         this.rot = GetEulerAngleFromVec3(plane.n);
         this.pos = plane.n.CloneVec3().Mul(plane.d);
     };
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -397,8 +395,7 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, color, sh
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -450,8 +447,7 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, co
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
-    if (TargetObjectArray)
-       TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     //newStaticObject.hide = true;
     return newStaticObject;
 }
@@ -526,8 +522,7 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -579,8 +574,7 @@ var CreateSegment = function(gl, TargetObjectArray, pos, start, end, time, color
     {
         return this.end.CloneVec3().Sub(this.start).GetNormalize();
     };
-    if (TargetObjectArray)
-        TargetObjectArray.push(segmentStaticObject);
+    addObject(TargetObjectArray, segmentStaticObject);
     return segmentStaticObject;
 }
 
@@ -688,8 +682,7 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
     coneStaticObject.height = height;
     coneStaticObject.radius = radius;
     coneStaticObject.color = color;
-    if (TargetObjectArray)
-        TargetObjectArray.push(coneStaticObject);
+    addObject(TargetObjectArray, coneStaticObject);
     return coneStaticObject;
 }
 
@@ -788,8 +781,7 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
     cylinderStaticObject.height = height;
     cylinderStaticObject.radius = radius;
     cylinderStaticObject.color = color;
-    if (TargetObjectArray)
-        TargetObjectArray.push(cylinderStaticObject);
+    addObject(TargetObjectArray, cylinderStaticObject);
     return cylinderStaticObject;
 }
 
@@ -815,7 +807,7 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
         this.cone.rot = GetEulerAngleFromVec3(this.segment.getDirectionNormalized());
     };
     newStaticObject.pos = OneVec3.CloneVec3();
-    TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -887,8 +879,7 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, slice, 
     newStaticObject.pos = CreateVec3(pos.x, pos.y, pos.z);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale, scale, scale);
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -949,8 +940,7 @@ var CreateGizmo = function(gl, TargetObjectArray, pos, rot, scale)
     newStaticObject.pos = pos.CloneVec3();
     newStaticObject.rot = rot.CloneVec3();
     newStaticObject.scale = scale.CloneVec3();
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     newStaticObject.isDisablePipeLineChange = true;
     return newStaticObject;
 }
@@ -995,8 +985,7 @@ var CreateCoordinateXZObject = function(gl, TargetObjectArray, camera)
     newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     newStaticObject.isDisablePipeLineChange = true;
     return newStaticObject;
 }
@@ -1023,8 +1012,7 @@ var CreateCoordinateYObject = function(gl, TargetObjectArray)
     newStaticObject.pos = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     newStaticObject.isDisablePipeLineChange = true;
     return newStaticObject;
 }
@@ -1078,8 +1066,7 @@ var CreateUIQuad = function(gl, TargetObjectArray, x, y, width, height, texture)
     newStaticObject.pos = CreateVec3(0, 0, 0.0);
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
-    if (TargetObjectArray)
-        TargetObjectArray.push(uiStaticObject);
+    addObject(TargetObjectArray, uiStaticObject);
     return uiStaticObject;
 }
 
@@ -1137,8 +1124,7 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     newStaticObject.texture = texture;
-    if (TargetObjectArray)
-        TargetObjectArray.push(newStaticObject);
+    addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 

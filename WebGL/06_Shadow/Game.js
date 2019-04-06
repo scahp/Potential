@@ -1,3 +1,4 @@
+var gizmo = null;
 var quad = null;
 var ambientLight = null;
 var dirLight = null;
@@ -12,6 +13,7 @@ var ConeA = null;
 var CylinderA = null;
 var BillboardQuadA = null;
 var SphereA = null;
+var shadowMapDebugQuad = null;
 const pointLightPos = CreateVec3(-10.0, 100.0, -50.0);
 const pointLightRadius = 500.0;
 const spotLightPos = CreateVec3(0.0, 60.0, 5.0);
@@ -53,7 +55,7 @@ jGame.prototype.Setup = function()
     updateCamera(gl, 0);
 
     // Origin Point Gizmo
-    var gizmo = CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
+    gizmo = CreateGizmo(gl, StaticObjectArray, CreateVec3(0.0, 0,0, 0.0), CreateVec3(0.0, 0,0, 0.0), OneVec3);
     gizmo.skipShadowMapGeneration = true;
 
     var lightColor = CreateVec3(1.0, 1.0, 1.0);
@@ -115,9 +117,9 @@ jGame.prototype.Setup = function()
         , CreateVec4(1.0, 0.0, 1.0, 1.0), colorOnlyShader, mainCamera);
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
         , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), CreateVec4(0.8, 0.0, 0.0, 1.0), colorOnlyShader);
-
+    
     // Create frameBuffer to render at offscreen
-    CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
+    shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
 }
 
 jGame.prototype.Update = function(deltaTime)
@@ -174,5 +176,23 @@ jGame.prototype.Update = function(deltaTime)
 
 jGame.prototype.Teardown = function()
 {
+    removeObject(gizmo);
+    removeObject(quad);
+    removeObject(CubeA);
+    removeObject(CubeB);
+    removeObject(CapsuleA);
+    removeObject(ConeA);
+    removeObject(CylinderA);
+    removeObject(TriangleA);
+    removeObject(QuadA);
+    removeObject(BillboardQuadA);
+    removeObject(SphereA);
+    removeObject(SphereA);
+    removeObject(shadowMapDebugQuad);
 
+    removeObject(dirLight);
+    removeObject(pointLight);
+    removeObject(spotLight);
+
+    addObject(mainCamera);
 }

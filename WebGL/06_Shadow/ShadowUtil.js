@@ -173,8 +173,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         obj.pos = pos.CloneVec3();
         obj.rot = rot.CloneVec3();
         obj.scale = scale.CloneVec3();
-        if (TargetObjectArray)
-            TargetObjectArray.push(obj);
+        addObject(TargetObjectArray, obj);
         //obj.hide = true;
 
         this.debugObject.edge = obj;
@@ -190,8 +189,7 @@ var GenerateVertexAdjacencyInfo = function(vertices, faces, isCreateDebugObject 
         attribNormal.push(createAttribParameter('Pos', 3, new Float32Array(this.normalVers), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
         attribNormal.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(0.0, 1.0, 0.0, 1.0), elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
         var normalObj = createStaticObject(gl, CreateBaseColorOnlyShaderFile(), attribNormal, null, 0, elementCount, gl.LINES, false, true);
-        if (TargetObjectArray)
-            TargetObjectArray.push(normalObj);
+        addObject(TargetObjectArray, normalObj);
         //obj.hide = true;
         
         this.debugObject.normal = normalObj;
@@ -417,8 +415,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             edgeAttrib.push(createAttribParameter('Pos', 3, new Float32Array(this.edgeVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
             edgeAttrib.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(0.0, 0.0, 1.0, 1.0), elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
             var edgeObj = createStaticObject(gl, CreateBaseColorOnlyShaderFile(), edgeAttrib, null, 0, elementCount, gl.LINES, false, true);
-            if (TargetObjectArray)
-                TargetObjectArray.push(edgeObj);
+            addObject(TargetObjectArray, edgeObj);
             this.debugObject.edge = edgeObj;
         }
         
@@ -429,8 +426,7 @@ var GenerateShadowVolumeInfo = function(adjacencyInfo, isTwoSide, isCreateDebugO
             quadAttrib.push(createAttribParameter('Pos', 4, new Float32Array(this.quadVerts), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
             quadAttrib.push(createAttribParameter('Color', 4, GenerateColor(CreateVec4(0.0, 1.0, 0.0, 0.3), elementCount), gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
             var quadObj = createStaticObject(gl, CreateBaseInfinityFarShaderFile(), quadAttrib, null, 0, elementCount, gl.TRIANGLES, false, true);
-            if (TargetObjectArray)
-                TargetObjectArray.push(quadObj);
+            addObject(TargetObjectArray, quadObj);
             this.debugObject.quad = quadObj;
             this.isDisablePipeLineChange = true;
         }

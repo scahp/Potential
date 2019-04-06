@@ -245,7 +245,7 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
         , lights:{all:[], directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
         , ambient:null, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom
         , frustumPlanes:frustumPlanes, checkIsInFrustomWithDirection:checkIsInFrustomWithDirection, isPerspectiveMatrix:isPerspectiveMatrix};
-    Cameras.push(newCamera);
+    addObject(Cameras, newCamera);
     return newCamera;
 }
 

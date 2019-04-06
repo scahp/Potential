@@ -254,3 +254,25 @@ var drawStaticTransparentObjects = function(camera, pipeLineHashCode, lightIndex
             obj.drawFunc(camera, pipeLineHashCode, lightIndex);
     }
 }
+
+var addObject = function(TargetObjectArray, obj)
+{
+    if (TargetObjectArray && obj)
+    {
+        obj.ownerObjectArray = TargetObjectArray;
+        TargetObjectArray.push(obj);
+    }
+}
+
+var removeObject = function(obj)
+{
+    if (obj && obj.ownerObjectArray)
+    {
+        const index = obj.ownerObjectArray.findIndex(function(item) {return item === obj})
+        if (index > -1)
+        {
+            obj.ownerObjectArray.splice(index, 1);
+            obj = null;
+        }
+    }
+}

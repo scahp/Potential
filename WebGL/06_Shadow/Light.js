@@ -24,7 +24,7 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
 
         var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
         DirectionalLight.__proto__ = newStaticObject;
-        debugObjectDesc.TargetObjectArray.push(newStaticObject);
+        addObject(debugObjectDesc.TargetObjectArray, newStaticObject);
     }
 
     DirectionalLight.type = "Directional";
@@ -47,7 +47,7 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
         }
     };
     DirectionalLight.directionalShadowMap = CreateDirectionalShadowMap(gl, DirectionalLight);
-    TargetArray.push(DirectionalLight);
+    addObject(TargetArray, DirectionalLight);
     return DirectionalLight;
 }
 
@@ -73,7 +73,7 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
         sphere.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = newStaticObject;
-        debugObjectDesc.TargetObjectArray.push(newStaticObject);
+        addObject(debugObjectDesc.TargetObjectArray, newStaticObject);
     }
 
     PointLight.type = "Point";
@@ -92,7 +92,7 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
             this.__proto__.billboardObject.hide = isHide;
     };
     PointLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, PointLight);
-    TargetArray.push(PointLight);
+    addObject(TargetArray, PointLight);
     return PointLight;
 }
 
@@ -136,7 +136,7 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
         penumbraCone.isDisablePipeLineChange = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
         SpotLight.__proto__ = newStaticObject;
-        debugObjectDesc.TargetObjectArray.push(newStaticObject);
+        addObject(debugObjectDesc.TargetObjectArray, newStaticObject);
     }
 
     SpotLight.type = "Spot";
@@ -161,7 +161,7 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
             this.__proto__.billboardObject.hide = isHide;
     };
     SpotLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, SpotLight);
-    TargetArray.push(SpotLight);
+    addObject(TargetArray, SpotLight);
     return SpotLight;
 }
 
