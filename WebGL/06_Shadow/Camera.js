@@ -134,15 +134,16 @@ var updateCamera = function(gl, cameraIndex)
 
 var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugStaticObject, isPerspectiveMatrix = true)
 {
-    // var t1 = pos.CloneVec3().Sub(target).GetNormalize();
-    // var t2_right = new jVec3();
-    // CrossProduct3(t2_right, up, t1);
-    // t2_right = t2_right.GetNormalize();
-    // var t3_up = new jVec3();
-    // CrossProduct3(t3_up, t1, t2_right);
-    // t3_up = t3_up.GetNormalize()
+    var toTarget = target.CloneVec3().Sub(pos);
+    var toUp = up.CloneVec3().Sub(pos);
 
-    // up = t3_up.CloneVec3().Add(pos);
+    var rightVec = new jVec3();
+    CrossProduct3(rightVec, toTarget, toUp);
+    CrossProduct3(up, rightVec, toTarget);
+    CrossProduct3(target, up, rightVec);
+
+    up.Add(pos);
+    target.Add(pos);
     
     var debugStaticObject = [];
     var debugStaticObject2 = [];
