@@ -63,18 +63,18 @@ jGame.prototype.Setup = function()
 
     // Create lights
     dirLight = CreateDirectionalLight(gl, LightArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
-        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:"sun.png", TargetObjectArray:TransparentStaticObjectArray});
+        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:"image/sun.png", TargetObjectArray:TransparentStaticObjectArray});
     dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
     mainCamera.addLight(dirLight);
 
     pointLight = CreatePointLight(gl, LightArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"bulb.png", TargetObjectArray:TransparentStaticObjectArray});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"image/bulb.png", TargetObjectArray:TransparentStaticObjectArray});
     pointLight.setHideDebugInfo(!document.getElementById('ShowPointLightInfo').checked);
     mainCamera.addLight(pointLight);
 
     spotLight = CreateSpotLight(gl, LightArray, spotLightPos, CreateVec3(-1.0, -1.0, -0.4).GetNormalize()
         , CreateVec3(0.0, 1.0, 0.0), spotLightRadius, penumbraRadian, umbraRadian, diffuseLightIntensity, specularLightIntensity, 256
-        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"spot.png", TargetObjectArray:TransparentStaticObjectArray});
+        , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"image/spot.png", TargetObjectArray:TransparentStaticObjectArray});
     spotLight.setHideDebugInfo(!document.getElementById('ShowSpotLightInfo').checked);    
     
     const matRotate = CreateRotationAxisMat4(CreateVec3(0.0, 1.0, 0.0), 0.01);
