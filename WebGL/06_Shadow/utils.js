@@ -184,11 +184,10 @@ var CraeteFramebuffer = function(gl, width, height)
 
 var setMatrixToUniformLocation = function(gl, pipeline, locationName, matrix)
 {
-    matrix.Transpose();
     var matrixArray = matrix.m[0].concat(matrix.m[1],matrix.m[2],matrix.m[3]);
     var matrixLoc = gl.getUniformLocation(pipeline, locationName);
     if (matrixLoc)
-        gl.uniformMatrix4fv(matrixLoc, false, new Float32Array(matrixArray));
+        gl.uniformMatrix4fv(matrixLoc, true, new Float32Array(matrixArray));
 }
 
 var setVec3ToUniformLocation = function(gl, pipeline, locationName, value)
