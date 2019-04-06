@@ -240,3 +240,17 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
         , collided:false, hide:false, twoSide:isTwoside, setPipeLine:setPipeLine, isDisablePipeLineChange:isDisablePipeLineChange};
 }
+
+var drawStaticTransparentObjects = function(camera, pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)
+{
+    for(var i = 0;i<TransparentStaticObjectArray.length;++i)
+    {
+        var obj = TransparentStaticObjectArray[i];
+
+        if (drawShadowCasterOnly && !obj.shadowVolume)
+            continue;
+
+        if (obj.drawFunc)
+            obj.drawFunc(camera, pipeLineHashCode, lightIndex);
+    }
+}
