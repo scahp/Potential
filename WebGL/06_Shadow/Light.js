@@ -173,7 +173,7 @@ var setAmbientLight = function(gl, pipeLine, light)
 
 var setDirectionalLight = function(gl, pipeLine, light)
 {
-    const structName = 'DirectionalLight[' + light.index + ']';
+    const structName = 'DirectionalLight[' + light.internalIndex + ']';
 
     setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'LightDirection', light.direction);
     setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Color', light.lightColor);
@@ -184,7 +184,7 @@ var setDirectionalLight = function(gl, pipeLine, light)
 
 var setPointLight = function(gl, pipeLine, light)
 {
-    const structName = 'PointLight[' + light.index + ']';
+    const structName = 'PointLight[' + light.internalIndex + ']';
 
     setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'LightPos', light.pos);
     setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Color', light.lightColor);
@@ -196,7 +196,7 @@ var setPointLight = function(gl, pipeLine, light)
 
 var setSpotLight = function(gl, pipeLine, light)
 {
-    const structName = 'SpotLight[' + light.index + ']';
+    const structName = 'SpotLight[' + light.internalIndex + ']';
 
     setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'LightPos', light.pos);
     setVec3ToUniformLocation(gl, pipeLine, structName + '.' + 'Direction', light.lightDirection);

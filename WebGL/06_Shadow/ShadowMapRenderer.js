@@ -93,7 +93,7 @@ var RenderWithShadowMap = function(camera)
     gl.clearColor(0.5, 0.5, 0.5, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    var drawLightWithOmniShadowMap = function(light, index)
+    var drawLightWithOmniShadowMap = function(light)
     {
         gl.blendFunc(gl.ONE, gl.ONE);
 
@@ -103,7 +103,7 @@ var RenderWithShadowMap = function(camera)
     
             obj.textureCubeMap = light.omniShadowMap.depthCubeMap;
             if (obj.drawFunc)
-                obj.drawFunc(camera, defaultPipeLineHashCode, index);
+                obj.drawFunc(camera, defaultPipeLineHashCode, light.index);
             obj.textureCubeMap = null;
         }
     }
@@ -133,11 +133,11 @@ var RenderWithShadowMap = function(camera)
 
     // 2.2 Point Light
     for(var i=0;i<camera.lights.pointLights.length;++i)
-        drawLightWithOmniShadowMap(camera.lights.pointLights[i], camera.lights.directionalLights.length + i);
+        drawLightWithOmniShadowMap(camera.lights.pointLights[i]);
 
     // 2.3 Spot Light
     for(var i=0;i<camera.lights.spotLights.length;++i)
-        drawLightWithOmniShadowMap(camera.lights.spotLights[i], camera.lights.directionalLights.length + camera.lights.pointLights.length + i);
+        drawLightWithOmniShadowMap(camera.lights.spotLights[i]);
 
     // 3. Transparent object render
     gl.enable(gl.BLEND);

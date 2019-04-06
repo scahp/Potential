@@ -163,19 +163,22 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
 
     var addLight = function(light)
     {
+        light.index = this.lights.all.length;
+        this.lights.all.push(light);
+
         if (light.type == "Directional")
         {
-            light.index = this.lights.directionalLights.length;
+            light.internalIndex = this.lights.directionalLights.length;
             this.lights.directionalLights.push(light);
         }
         else if (light.type == "Point")
         {
-            light.index = this.lights.pointLights.length;
+            light.internalIndex = this.lights.pointLights.length;
             this.lights.pointLights.push(light);
         }
         else if (light.type == "Spot")
         {
-            light.index = this.lights.spotLights.length;
+            light.internalIndex = this.lights.spotLights.length;
             this.lights.spotLights.push(light);
         }
         else
@@ -186,28 +189,14 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
 
     var getLightByIndex = function(index)
     {
-        if (index >= 0)
-        {
-            if (this.directionalLights.length > index)
-                return this.directionalLights[index];
-
-            index -= this.directionalLights.length;
-
-            if (this.pointLights.length > index)
-                return this.pointLights[index];
-
-            index -= this.pointLights.length;
-
-            if (this.spotLights.length > index)
-                return this.spotLights[index];
-        }
-
+        if (index >= 0 && this.all.length > index)
+            return this.all[index];
         return null;
     }
 
     var getNumOfLights = function()
     {
-        return this.lights.directionalLights.length + this.lights.pointLights.length + this.lights.spotLights.length;
+        return this.lights.all.length;
     }
 
     var checkIsInFrustom = function(pos, radius)
@@ -248,7 +237,7 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
 
     var newCamera = {matView:null, matProjection:null, pos:pos, target:target, up:up
         , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
-        , lights:{directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
+        , lights:{all:[], directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
         , ambient:null, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom
         , frustumPlanes:frustumPlanes, checkIsInFrustomWithDirection:checkIsInFrustomWithDirection, isPerspectiveMatrix:isPerspectiveMatrix};
     Cameras.push(newCamera);
