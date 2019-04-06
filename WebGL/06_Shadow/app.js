@@ -12,26 +12,8 @@ var ShowDebugInfoOfDirectionalLight = false;
 var ShowDebugInfoOfSphereLight = false;
 var ShowDebugInfoOfSpotLight = false;
 
-var mainCamera = null;
-
 const shadow_width = 1024.0;
 const shadow_height = 1024.0;
-
-var SwitchShadowMode = function(mode)
-{
-    if (mode == 'ShadowVolume')
-    {
-        SetShadowVolumeRenderer(jWebGL.renderer);
-        var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
-        div_segmentAgainstPlane.style.display = 'block';
-    }
-    else if (mode == 'ShadowMap')
-    {
-        SetShadowMapRenderer(jWebGL.renderer);
-        var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
-        div_segmentAgainstPlane.style.display = 'none';
-    }
-}
 
 var Init = function()
 {

@@ -99,5 +99,17 @@ var OnCheckBoxShowSpotLightInfo = function(e)
 
 var OnChangedShadowMode = function(e)
 {
-    SwitchShadowMode(e.value);
+    const mode = e.value;
+    if (mode == 'ShadowVolume')
+    {
+        SetShadowVolumeRenderer(jWebGL.renderer);
+        var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
+        div_segmentAgainstPlane.style.display = 'block';
+    }
+    else if (mode == 'ShadowMap')
+    {
+        SetShadowMapRenderer(jWebGL.renderer);
+        var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
+        div_segmentAgainstPlane.style.display = 'none';
+    }
 }

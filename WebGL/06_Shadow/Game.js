@@ -1,3 +1,4 @@
+var mainCamera = null;
 var gizmo = null;
 var quad = null;
 var ambientLight = null;
