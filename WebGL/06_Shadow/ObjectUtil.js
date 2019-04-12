@@ -74,6 +74,13 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
             setMatrixToUniformLocation(gl, pipeline, "ShadowVP", CloneMat4(this.matShadowVP));
         setVec3ToUniformLocation(gl, pipeline, "Eye", camera.pos);
         setIntToUniformLocation(gl, pipeline, "Collided", this.collided);
+
+        var pixelSizeLoc = gl.getUniformLocation(pipeline, 'ShadowMapSize');
+        if (pixelSizeLoc)
+        {
+            var pixelSize = [1.0 / shadow_width, 1.0 / shadow_height];
+            gl.uniform2fv(pixelSizeLoc, pixelSize);
+        }
     }
 
     var setRenderProperty = function()

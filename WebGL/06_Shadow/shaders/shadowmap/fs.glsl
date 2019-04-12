@@ -20,11 +20,42 @@ uniform vec3 Eye;
 uniform int Collided;
 uniform samplerCube tex_object;
 uniform sampler2D shadow_object;
+uniform vec2 ShadowMapSize;
 
-varying vec4 ShadowPos_;
+varying vec3 ShadowPos_;
 varying vec3 Pos_;
 varying vec4 Color_;
 varying vec3 Normal_;
+
+bool isShadowing(vec3 pos)
+{
+    const float shadowBias = 0.005;
+    if (pos.x >= 0.0 && pos.x <= 1.0 && pos.y >= 0.0 && pos.y <= 1.0 && pos.z >= 0.0 && pos.z <= 1.0)
+        return (pos.z >= texture2D(shadow_object, pos.xy).r + shadowBias);
+
+    return false;
+}
+
+float isShadowingPCF(vec3 pos)
+{
+    vec2 PCFKernel[5];
+    PCFKernel[0] = vec2(0.0, 0.0);
+    PCFKernel[1] = vec2(0.0, ShadowMapSize.y);
+    PCFKernel[2] = vec2(0.0, -ShadowMapSize.y);
+    PCFKernel[3] = vec2(ShadowMapSize.x, 0.0);
+    PCFKernel[4] = vec2(-ShadowMapSize.x, 0.0);
+
+    float result = 0.0;
+    const float weight = 0.2;
+    for(int i=0;i<5;++i)
+    {
+        vec3 currentPos =  pos + vec3(PCFKernel[i], 0.0);
+        if (!isShadowing(currentPos))
+            result += weight;
+    }
+
+    return result;
+}
 
 void main()
 {
@@ -46,10 +77,9 @@ void main()
         if (i >= NumOfDirectionalLight)
             break;
         
-        if (ShadowPos_.x >= 0.0 && ShadowPos_.x <= 1.0 && ShadowPos_.y >= 0.0 && ShadowPos_.y <= 1.0 && ShadowPos_.z >= 0.0 && ShadowPos_.z <= 1.0)
-            shadow = (ShadowPos_.z >= texture2D(shadow_object, ShadowPos_.xy).r + 0.005);
-        if (!shadow)
-            finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir);
+        float shadowRate = isShadowingPCF(ShadowPos_);
+        if (shadowRate > 0.0)
+            finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
     }
 
     for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
