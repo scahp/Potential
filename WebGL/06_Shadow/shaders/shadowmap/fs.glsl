@@ -37,7 +37,7 @@ out vec4 color;
 
 bool isShadowing(vec3 pos)
 {
-    const float shadowBias = 0.005;
+    const float shadowBias = 0.01;
     if (pos.x >= 0.0 && pos.x <= 1.0 && pos.y >= 0.0 && pos.y <= 1.0 && pos.z >= 0.0 && pos.z <= 1.0)
         return (pos.z >= texture(shadow_object, pos.xy).r + shadowBias);
 
@@ -70,7 +70,7 @@ float isShadowingPCF(vec3 pos)
 
 bool isShadowing(vec3 pos, vec3 lightPos)
 {
-    float depthBias = 0.99;
+    float depthBias = 0.98;
     vec3 lightDir = pos - lightPos;
     float dist = dot(lightDir, lightDir) * depthBias;
 
@@ -80,7 +80,7 @@ bool isShadowing(vec3 pos, vec3 lightPos)
 
 float isShadowingPCF(vec3 pos, vec3 lightPos)
 {
-    float depthBias = 0.99;
+    float depthBias = 0.98;
     vec3 lightDir = pos - lightPos;
     float dist = dot(lightDir, lightDir) * depthBias;
 
