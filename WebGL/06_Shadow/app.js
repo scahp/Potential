@@ -83,8 +83,7 @@ jWebGL.prototype.Init = function()
         OnChangedShadowMode({value:"ShadowVolume"});
     else if (document.getElementById("ShadowMap").checked)
         OnChangedShadowMode({value:"ShadowMap"});
-    SetShadowVolumeRenderer(renderer);
-    
+
     var lastTime = performance.now();
     var loopCount = 0;
     var loop = function()
