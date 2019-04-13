@@ -147,3 +147,105 @@ float DecodeFloat(vec4 color)
     const vec4 bitShift = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1.0);
     return dot(color, bitShift);
 }
+
+struct TexArrayUV
+{
+  int index;
+  float u;
+  float v;
+};
+
+TexArrayUV convert_xyz_to_cube_uv(vec3 direction)
+{
+    TexArrayUV result;
+
+    float x = direction.x;
+    float y = direction.y;
+    float z = direction.z;
+
+    float absX = abs(x);
+    float absY = abs(y);
+    float absZ = abs(z);
+
+    bool isXPositive = x > 0.0 ? true : false;
+    bool isYPositive = y > 0.0 ? true : false;
+    bool isZPositive = z > 0.0 ? true : false;
+
+    float maxAxis;
+    float uc;
+    float vc;
+
+    if (absX >= absY && absX >= absZ)
+    {
+        // POSITIVE X
+        if (isXPositive) 
+        {
+            // u (0 to 1) goes from +z to -z
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absX;
+            uc = -z;
+            vc = y;
+            result.index = 0;
+        }
+        else    // NEGATIVE X
+        {
+            // u (0 to 1) goes from -z to +z
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absX;
+            uc = z;
+            vc = y;
+            result.index = 1;
+        }
+    }
+
+    if (absY >= absX && absY >= absZ)
+    {
+        // POSITIVE Y
+        if (isYPositive) 
+        {
+            // u (0 to 1) goes from -x to +x
+            // v (0 to 1) goes from +z to -z
+            maxAxis = absY;
+            uc = x;
+            vc = -z;
+            result.index = 2;
+        }
+        else // NEGATIVE Y
+        {
+            // u (0 to 1) goes from -x to +x
+            // v (0 to 1) goes from -z to +z
+            maxAxis = absY;
+            uc = x;
+            vc = z;
+            result.index = 3;
+        }
+    }
+
+    if (absZ >= absX && absZ >= absY)
+    {
+        // POSITIVE Z
+        if (isZPositive) 
+        {
+            // u (0 to 1) goes from -x to +x
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absZ;
+            uc = x;
+            vc = y;
+            result.index = 4;
+        }
+        else // NEGATIVE Z
+        {
+            // u (0 to 1) goes from +x to -x
+            // v (0 to 1) goes from -y to +y
+            maxAxis = absZ;
+            uc = -x;
+            vc = y;
+            result.index = 5;
+        }
+    }
+
+    // Convert range from -1 to 1 to 0 to 1
+    result.u = -(0.5 * (uc / maxAxis + 1.0));
+    result.v = 0.5 * (vc / maxAxis + 1.0);
+    return result;
+}

@@ -25,6 +25,7 @@ const spherePosX = 65.0;
 const spherePosY = 35.0;
 const spherePosZ = 10.0;
 const sphereRadius = 30.0;
+var CubeTest = null;
 
 var jGame = function(gl)
 {
@@ -119,6 +120,11 @@ jGame.prototype.Setup = function()
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
         , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), CreateVec4(0.8, 0.0, 0.0, 1.0), colorOnlyShader);
     
+    CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
+        , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
+    if (CubeTest)
+        CubeTest.isDisablePipeLineChange = true;
+
     // Create frameBuffer to render at offscreen
     shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
 }
@@ -173,6 +179,9 @@ jGame.prototype.Update = function(deltaTime)
         if (TransparentStaticObjectArray[i].updateFunc)
             TransparentStaticObjectArray[i].updateFunc();
     }
+
+    if (CubeTest)
+        CubeTest.updateFunc();
 }
 
 jGame.prototype.Teardown = function()

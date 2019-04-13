@@ -12,8 +12,9 @@ var ShowDebugInfoOfDirectionalLight = false;
 var ShowDebugInfoOfSphereLight = false;
 var ShowDebugInfoOfSpotLight = false;
 
-const shadow_width = 256.0;
-const shadow_height = 256.0;
+const shadow_width = 512.0;
+const shadow_height = 512.0;
+const pcf_size = 4;
 
 var Init = function()
 {

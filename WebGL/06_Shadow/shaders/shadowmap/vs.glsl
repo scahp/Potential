@@ -1,20 +1,22 @@
+#version 300 es
+
 #include "common.glsl"
 
 precision highp float;
 
-attribute vec3 Pos;
-attribute vec4 Color;
-attribute vec3 Normal;
+layout(location = 0) in vec3 Pos;
+layout(location = 1) in vec4 Color;
+layout(location = 2) in vec3 Normal;
 
 uniform mat4 MVP;
 uniform mat4 MV;
 uniform mat4 M;
 uniform mat4 ShadowVP;
 
-varying vec3 ShadowPos_;
-varying vec3 Pos_;
-varying vec4 Color_;
-varying vec3 Normal_;
+out vec3 ShadowPos_;
+out vec3 Pos_;
+out vec4 Color_;
+out vec3 Normal_;
 
 void main()
 {

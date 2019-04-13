@@ -102,9 +102,11 @@ var RenderWithShadowMap = function(camera)
             var obj = StaticObjectArray[i];
     
             obj.textureCubeMap = light.omniShadowMap.depthCubeMap;
+            obj.texture2DArray = light.omniShadowMap.texture2DArray;
             if (obj.drawFunc)
                 obj.drawFunc(camera, defaultPipeLineHashCode, light.index);
             obj.textureCubeMap = null;
+            obj.texture2DArray = null;
         }
     }
 
@@ -147,6 +149,9 @@ var RenderWithShadowMap = function(camera)
     gl.colorMask(true, true, true, true);
     gl.disable(gl.STENCIL_TEST);
     drawStaticTransparentObjects(camera, defaultPipeLineHashCode, -1);
+
+    if (CubeTest)
+        CubeTest.drawFunc(camera, null, camera.lights.pointLights[0].index);
 
     gl.disable(gl.BLEND);
 }

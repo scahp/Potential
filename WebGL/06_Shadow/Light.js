@@ -91,7 +91,7 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
         if (this.__proto__.hasOwnProperty('billboardObject'))
             this.__proto__.billboardObject.hide = isHide;
     };
-    PointLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, PointLight);
+    PointLight.omniShadowMap = CreateOmniDirectionalShadowMap2(gl, PointLight);
     addObject(TargetArray, PointLight);
     return PointLight;
 }
@@ -160,7 +160,7 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
         if (this.__proto__.hasOwnProperty('billboardObject'))
             this.__proto__.billboardObject.hide = isHide;
     };
-    SpotLight.omniShadowMap = CreateOmniDirectionalShadowMap(gl, SpotLight);
+    SpotLight.omniShadowMap = CreateOmniDirectionalShadowMap2(gl, SpotLight);
     addObject(TargetArray, SpotLight);
     return SpotLight;
 }

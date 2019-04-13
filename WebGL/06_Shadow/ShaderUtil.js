@@ -46,6 +46,14 @@ var CreateCubeMapShaderFile = function()
     return {vs:vs, fs:fs};
 }
 
+var CreateTexArrayCubeMapShaderFile = function()
+{
+    const vs = "shaders/shadowmap/vs_texarray_cubemap.glsl";
+    const fs = "shaders/shadowmap/fs_texarray_cubemap.glsl";
+
+    return {vs:vs, fs:fs};
+}
+
 var CreateShadowMapShaderFile = function()
 {
     const vs = "shaders/shadowmap/vs_shadowMap.glsl";

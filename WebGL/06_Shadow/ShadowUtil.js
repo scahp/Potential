@@ -565,3 +565,54 @@ var CreateOmniDirectionalShadowMap = function(gl, light)
 
     return {depthCubeMap:depthCubeMap, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras};
 }
+
+var CreateOmniDirectionalShadowMap2 = function(gl, light)
+{
+    const texture2DArray = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture2DArray);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, gl.R32F, shadow_width, shadow_height, 6, 0, gl.RED, gl.FLOAT, null);
+
+    var framebuffers = [];
+    var renderbuffers = [];
+
+    for(var i=0;i<6;++i)
+    {
+        var depthMapFBO = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+        gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture2DArray, 0, i);
+
+        var rbo = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, shadow_width, shadow_height);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+        {
+            var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+            alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+            return null;
+        }
+
+        framebuffers.push(depthMapFBO);
+        renderbuffers.push(rbo);
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    var cameras = [];
+    const lightPos = light.pos;
+
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(-1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+
+    for(var i=0;i<cameras.length;++i)
+        cameras[i].addLight(light);
+
+    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras};
+}

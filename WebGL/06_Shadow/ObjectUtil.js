@@ -109,6 +109,8 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
         if (this.textureCubeMap)
             gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.textureCubeMap);
+        if (this.texture2DArray)
+            gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture2DArray);
         
         if (this.textureShadowMap)
         {
@@ -116,6 +118,8 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
             setIntToUniformLocation(gl, pipeline, 'shadow_object', 1);
             gl.bindTexture(gl.TEXTURE_2D, this.textureShadowMap);
         }
+
+        setFloatToUniformLocation(gl, pipeline, 'PCF_Size', pcf_size);
     }
 
     var drawFunc = function(camera, pipeLineHashCode, lightIndex)
