@@ -86,8 +86,9 @@ var RenderWithShadowVolume = function(camera)
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
 
+    camera.ambient = ambientLight;
     drawStaticOpaqueObjects(ambientPipeLineHashCode, -1);
-
+    camera.ambient = null;
     //////////////////////////////////////////////////////////////////
     // 2. Stencil volume update & rendering (z-fail)
     const numOfLights = camera.getNumOfLights();
