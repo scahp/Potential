@@ -109,7 +109,7 @@ float isShadowingPCF(vec3 pos, vec3 lightPos)
             continue;
 
         if (texture(tex_object, vec3(temp.u, temp.v, temp.index)).r > dist)
-            sumOfWeight += weight*2.0;
+            sumOfWeight += weight;
       }
     }
 
