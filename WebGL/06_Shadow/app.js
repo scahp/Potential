@@ -14,8 +14,8 @@ var ShowDebugInfoOfSpotLight = false;
 
 const shadow_width = 512.0;
 const shadow_height = 512.0;
-var pcf_size_directional = 4;
-var pcf_size_omnidirectional = 6;
+var pcf_size_directional = 1;
+var pcf_size_omnidirectional = 1;
 
 var Init = function()
 {
