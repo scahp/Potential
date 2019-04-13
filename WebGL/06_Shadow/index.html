@@ -42,8 +42,8 @@
                 Mouse drag with click : Camera rotation <br><br>
             </div>
             <div>
-                    <input type="radio" name="ShadowMode" value="ShadowVolume" checked="checked" onclick="OnChangedShadowMode(this)"> ShadowVolume<br>
-                    <input type="radio" name="ShadowMode" value="ShadowMap" onclick="OnChangedShadowMode(this)"> ShadowMap<br>
+                    <input id="ShadowVolume" type="radio" name="ShadowMode" value="ShadowVolume" onclick="OnChangedShadowMode(this)"> ShadowVolume<br>
+                    <input id="ShadowMap" type="radio" name="ShadowMode" value="ShadowMap" checked="checked" onclick="OnChangedShadowMode(this)"> ShadowMap<br>
             </div>
             <div id="div-ShadowVolume">
                 <div>
@@ -57,6 +57,12 @@
                 <div>
                     <label>ShowSilhouette-SpotLight</label>
                     <input type="checkbox" id="ShowSilhouetteSpotLight" value="true" onclick="OnCheckBoxShowSilhouetteSpotLight(this)">
+                </div>
+            </div>
+            <div id="div-ShadowMap">
+                <div>
+                    <label>Percentage Closer Filtering(PCF)</label>
+                    <input type="checkbox" id="PCF" value="true" checked onclick="OnCheckBoxPCF(this)">
                 </div>
             </div>
             <div>

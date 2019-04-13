@@ -103,13 +103,34 @@ var OnChangedShadowMode = function(e)
     if (mode == 'ShadowVolume')
     {
         SetShadowVolumeRenderer(jWebGL.renderer);
-        var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
-        div_segmentAgainstPlane.style.display = 'block';
+        var div_ShadowVolume = document.getElementById('div-ShadowVolume');
+        div_ShadowVolume.style.display = 'block';
+
+        var div_ShadowMap = document.getElementById('div-ShadowMap');
+        div_ShadowMap.style.display = 'none';
     }
     else if (mode == 'ShadowMap')
     {
         SetShadowMapRenderer(jWebGL.renderer);
-        var div_segmentAgainstPlane = document.getElementById('div-ShadowVolume');
-        div_segmentAgainstPlane.style.display = 'none';
+        var div_ShadowVolume = document.getElementById('div-ShadowVolume');
+        div_ShadowVolume.style.display = 'none';
+
+        var div_ShadowMap = document.getElementById('div-ShadowMap');
+        div_ShadowMap.style.display = 'block';
     }
+}
+
+var OnCheckBoxPCF = function(e)
+{
+    console.log(e.checked);
+    if (e.checked)
+    {
+        pcf_size_directional = 4;
+        pcf_size_omnidirectional = 6;
+    }   
+    else
+    {
+        pcf_size_directional = 1;
+        pcf_size_omnidirectional = 1;
+    } 
 }

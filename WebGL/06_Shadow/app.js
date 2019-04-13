@@ -14,7 +14,8 @@ var ShowDebugInfoOfSpotLight = false;
 
 const shadow_width = 512.0;
 const shadow_height = 512.0;
-const pcf_size = 4;
+var pcf_size_directional = 4;
+var pcf_size_omnidirectional = 6;
 
 var Init = function()
 {
@@ -77,7 +78,11 @@ jWebGL.prototype.Init = function()
     var renderer = this.renderer;
     renderer.Setup();
     game.Setup();
-    SetShadowVolumeRenderer(renderer);
+    
+    if (document.getElementById("ShadowVolume").checked)
+        OnChangedShadowMode({value:"ShadowVolume"});
+    else if (document.getElementById("ShadowMap").checked)
+        OnChangedShadowMode({value:"ShadowMap"});
 
     var lastTime = performance.now();
     var loopCount = 0;

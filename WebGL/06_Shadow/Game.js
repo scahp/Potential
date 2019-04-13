@@ -106,7 +106,7 @@ jGame.prototype.Setup = function()
     CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
         , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
     CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
-        , CreateVec4(1.0, 0.0, 0.0, 1.0), colorOnlyShader);
+        , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
     ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
         , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
     CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
@@ -123,7 +123,10 @@ jGame.prototype.Setup = function()
     CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
         , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
     if (CubeTest)
+    {
         CubeTest.isDisablePipeLineChange = true;
+        CubeTest.hide = true;
+    }
 
     // Create frameBuffer to render at offscreen
     shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());

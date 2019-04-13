@@ -119,7 +119,8 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
             gl.bindTexture(gl.TEXTURE_2D, this.textureShadowMap);
         }
 
-        setFloatToUniformLocation(gl, pipeline, 'PCF_Size', pcf_size);
+        setFloatToUniformLocation(gl, pipeline, 'PCF_Size_Directional', pcf_size_directional);
+        setFloatToUniformLocation(gl, pipeline, 'PCF_Size_OmniDirectional', pcf_size_omnidirectional);
     }
 
     var drawFunc = function(camera, pipeLineHashCode, lightIndex)

@@ -25,7 +25,8 @@ uniform int Collided;
 uniform sampler2DArray tex_object;
 uniform sampler2D shadow_object;
 uniform vec2 ShadowMapSize;
-uniform float PCF_Size;
+uniform float PCF_Size_Directional;
+uniform float PCF_Size_OmniDirectional;
 
 in vec3 ShadowPos_;
 in vec3 Pos_;
@@ -46,10 +47,10 @@ bool isShadowing(vec3 pos)
 float isShadowingPCF(vec3 pos)
 {
     float result = 0.0;
-    float weight = 1.0 / (PCF_Size * PCF_Size);
+    float weight = 1.0 / (PCF_Size_Directional * PCF_Size_Directional);
 
-    float filterStart = -(PCF_Size / 2.0 - 0.5);
-    float filterEnd = (PCF_Size / 2.0 - 0.5);
+    float filterStart = -(PCF_Size_Directional / 2.0 - 0.5);
+    float filterEnd = (PCF_Size_Directional / 2.0 - 0.5);
 
     for(float i=filterStart;i<=filterEnd;i += 1.0)
     {
@@ -86,10 +87,10 @@ float isShadowingPCF(vec3 pos, vec3 lightPos)
     TexArrayUV result = convert_xyz_to_cube_uv(normalize(lightDir));
 
     float sumOfWeight = 0.0;
-    float weight = 1.0 / (PCF_Size * PCF_Size);
+    float weight = 1.0 / (PCF_Size_OmniDirectional * PCF_Size_OmniDirectional);
 
-    float filterStart = -(PCF_Size / 2.0 - 0.5);
-    float filterEnd = (PCF_Size / 2.0 - 0.5);
+    float filterStart = -(PCF_Size_OmniDirectional / 2.0 - 0.5);
+    float filterEnd = (PCF_Size_OmniDirectional / 2.0 - 0.5);
 
     for(float i=filterStart;i<=filterEnd;i += 1.0)
     {
@@ -98,8 +99,17 @@ float isShadowingPCF(vec3 pos, vec3 lightPos)
         float xOffset = ShadowMapSize.x * j;
         float yOffset = ShadowMapSize.y * i;
 
-        if (texture(tex_object, vec3(result.u + xOffset, result.v + yOffset, result.index)).r > dist)
-            sumOfWeight += weight;
+        TexArrayUV temp = result;
+        temp.u += xOffset;
+        temp.v += yOffset;
+        temp = MakeValidArrayUIOffset(temp);
+        temp = MakeValidArrayUIOffset(temp);
+
+        if ((temp.u > 1.0) || (temp.u < 0.0) || (temp.v < 0.0) || (temp.v > 1.0))
+            continue;
+
+        if (texture(tex_object, vec3(temp.u, temp.v, temp.index)).r > dist)
+            sumOfWeight += weight*2.0;
       }
     }
 
@@ -121,14 +131,24 @@ void main()
     if (UseAmbientLight != 0)
         finalColor += GetAmbientLight(AmbientLight);
 
+    const bool pcf = true;
+
     for(int i=0;i<MAX_NUM_OF_DIRECTIONAL_LIGHT;++i)
     {
         if (i >= NumOfDirectionalLight)
             break;
         
-        float shadowRate = isShadowingPCF(ShadowPos_);
-        if (shadowRate > 0.0)
-            finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
+        if (pcf)
+        {
+            float shadowRate = isShadowingPCF(ShadowPos_);
+            if (shadowRate > 0.0)
+                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
+        }
+        else
+        {
+            if (!isShadowing(ShadowPos_))
+                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir);
+        }
     }
 
     for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
@@ -136,9 +156,17 @@ void main()
         if (i >= NumOfPointLight)
             break;
         
-        float shadowRate = isShadowingPCF(Pos_, PointLight[i].LightPos);
-        if (shadowRate > 0.0)
-            finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
+        if (pcf)
+        {
+            float shadowRate = isShadowingPCF(Pos_, PointLight[i].LightPos);
+            if (shadowRate > 0.0)
+                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
+        }
+        else
+        {
+            if (!isShadowing(Pos_, PointLight[i].LightPos))
+                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir);
+        }
     }
     
     for(int i=0;i<MAX_NUM_OF_SPOT_LIGHT;++i)
@@ -146,9 +174,17 @@ void main()
         if (i >= NumOfSpotLight)
             break;
 
-        float shadowRate = isShadowingPCF(Pos_, SpotLight[i].LightPos);
-        if (shadowRate > 0.0)
-            finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * shadowRate;
+        if (pcf)
+        {
+            float shadowRate = isShadowingPCF(Pos_, SpotLight[i].LightPos);
+            if (shadowRate > 0.0)
+                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * shadowRate;
+        }
+        else
+        {
+            if (!isShadowing(Pos_, SpotLight[i].LightPos))
+                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir);
+        }
     }
 
     color = vec4(finalColor * diffuse, Color_.w);
