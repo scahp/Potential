@@ -155,7 +155,7 @@ struct TexArrayUV
   float v;
 };
 
-TexArrayUV convert_xyz_to_cube_uv(vec3 direction)
+TexArrayUV convert_xyz_to_texarray_uv(vec3 direction)
 {
     TexArrayUV result;
 
@@ -250,166 +250,168 @@ TexArrayUV convert_xyz_to_cube_uv(vec3 direction)
     return result;
 }
 
-TexArrayUV MakeValidArrayUIOffset(TexArrayUV uv)
+TexArrayUV MakeTexArrayUV(TexArrayUV uv)
 {
-    if (uv.index == 0)            // Positive X
+    for(int i=0;i<2;++i)        // to cover uv is out of range simultaneously. loop over 2 times.
     {
-        if (uv.u > 1.0)
+        if (uv.index == 0)            // Positive X
         {
-            uv.u = 1.0 - uv.u;
-            uv.index = 5;
+            if (uv.u > 1.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.index = 4;
+            }
+            else if (uv.u < 0.0)
+            {
+                uv.u = 1.0 + uv.u;
+                uv.index = 5;
+            }            
+            else if (uv.v > 1.0)
+            {
+                float t = uv.u;
+                uv.u = uv.v - 1.0;
+                uv.v = 1.0 - t;
+                uv.index = 2;
+            }
+            else if (uv.v < 0.0)
+            {
+                float t = uv.u;
+                uv.u = -uv.v;
+                uv.v = t;
+                uv.index = 3;
+            }
         }
-        else if (uv.u < 0.0)
+        else if (uv.index == 1)       // Negative X
         {
-            uv.u = 1.0 + uv.u;
-            uv.index = 4;
-        }            
-        else if (uv.v > 1.0)
-        {
-            float t = uv.u;
-            uv.u = uv.v - 1.0;
-            uv.v = 1.0 - t;
-            uv.index = 2;
+            if (uv.u > 1.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.index = 5;
+            }
+            else if (uv.u < 0.0)
+            {
+                uv.u = 1.0 + uv.u;
+                uv.index = 4;
+            }            
+            else if (uv.v > 1.0)
+            {
+                float t = uv.u;
+                uv.u = 2.0 - uv.v;
+                uv.v = t;
+                uv.index = 2;
+            }
+            else if (uv.v < 0.0)
+            {
+                float t = uv.u;
+                uv.u = 1.0 + uv.v;
+                uv.v = 1.0 - t;
+                uv.index = 3;
+            }
         }
-        else if (uv.v < 0.0)
+        else if (uv.index == 2)       // Positive Y
         {
-            float t = uv.u;
-            uv.u = -uv.v;
-            uv.v = t;
-            uv.index = 3;
+            if (uv.u > 1.0)
+            {
+                float t = uv.u;
+                uv.u = uv.v;
+                uv.v = 2.0 - t;
+                uv.index = 1;
+            }
+            else if (uv.u < 0.0)
+            {
+                float t = uv.u;
+                uv.u = 1.0 - uv.v;
+                uv.v = 1.0 + t;
+                uv.index = 0;
+            }            
+            else if (uv.v > 1.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.v = 2.0 - uv.v;
+                uv.index = 5;
+            }
+            else if (uv.v < 0.0)
+            {
+                uv.v = 1.0 + uv.v;
+                uv.index = 4;
+            }
+        }
+        else if (uv.index == 3)       // Negative Y
+        {
+            if (uv.u > 1.0)
+            {
+                float t = uv.u;
+                uv.u = 1.0 - uv.v;
+                uv.v = 1.0 - t;
+                uv.index = 1;
+            }
+            else if (uv.u < 0.0)
+            {
+                float t = uv.u;
+                uv.u = uv.v;
+                uv.v = -t;
+                uv.index = 0;
+            }            
+            else if (uv.v > 1.0)
+            {
+                uv.v = 1.0 - uv.v;
+                uv.index = 4;
+            }
+            else if (uv.v < 0.0)
+            {
+                uv.u = 1.0-uv.u;
+                uv.v = -uv.v;
+                uv.index = 5;
+            }
+        }
+        else if (uv.index == 4)       // Positive Z
+        {
+            if (uv.u > 1.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.index = 1;
+            }
+            else if (uv.u < 0.0)
+            {
+                uv.u = 1.0 + uv.u;
+                uv.index = 0;
+            }            
+            else if (uv.v > 1.0)
+            {
+                uv.v = uv.v - 1.0;
+                uv.index = 2;
+            }
+            else if (uv.v < 0.0)
+            {
+                uv.v = 1.0 + uv.v;
+                uv.index = 3;
+            }
+        }
+        else if (uv.index == 5)       // Negative Z
+        {
+            if (uv.u > 1.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.index = 0;
+            }
+            else if (uv.u < 0.0)
+            {
+                uv.u = 1.0 + uv.u;
+                uv.index = 1;
+            }            
+            else if (uv.v > 1.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.v = 2.0 - uv.v;
+                uv.index = 2;
+            }
+            else if (uv.v < 0.0)
+            {
+                uv.u = 1.0 - uv.u;
+                uv.v = -uv.v;
+                uv.index = 3;
+            }
         }
     }
-    else if (uv.index == 1)       // Negative X
-    {
-        if (uv.u > 1.0)
-        {
-            uv.u = 1.0 - uv.u;
-            uv.index = 4;
-        }
-        else if (uv.u < 0.0)
-        {
-            uv.u = 1.0 + uv.u;
-            uv.index = 5;
-        }            
-        else if (uv.v > 1.0)
-        {
-            float t = uv.u;
-            uv.u = 2.0 - uv.v;
-            uv.v = t;
-            uv.index = 2;
-        }
-        else if (uv.v < 0.0)
-        {
-            float t = uv.u;
-            uv.u = 1.0 + uv.v;
-            uv.v = 1.0 - t;
-            uv.index = 3;
-        }
-    }
-    else if (uv.index == 2)       // Positive Y
-    {
-        if (uv.u > 1.0)
-        {
-            float t = uv.u;
-            uv.u = uv.v;
-            uv.v = 2.0 - t;
-            uv.index = 1;
-        }
-        else if (uv.u < 0.0)
-        {
-            float t = uv.u;
-            uv.u = 1.0 - uv.v;
-            uv.v = 1.0 + t;
-            uv.index = 0;
-        }            
-        else if (uv.v > 1.0)
-        {
-            uv.u = 1.0 - uv.u;
-            uv.v = 2.0 - uv.v;
-            uv.index = 5;
-        }
-        else if (uv.v < 0.0)
-        {
-            uv.v = 1.0 + uv.v;
-            uv.index = 4;
-        }
-    }
-    else if (uv.index == 3)       // Negative Y
-    {
-        if (uv.u > 1.0)
-        {
-            float t = uv.u;
-            uv.u = 1.0 - uv.v;
-            uv.v = 1.0 - t;
-            uv.index = 1;
-        }
-        else if (uv.u < 0.0)
-        {
-            float t = uv.u;
-            uv.u = uv.v;
-            uv.v = -t;
-            uv.index = 0;
-        }            
-        else if (uv.v > 1.0)
-        {
-            uv.v = 1.0 - uv.v;
-            uv.index = 4;
-        }
-        else if (uv.v < 0.0)
-        {
-            uv.u = 1.0-uv.u;
-            uv.v = -uv.v;
-            uv.index = 5;
-        }
-    }
-    else if (uv.index == 4)       // Positive Z
-    {
-        if (uv.u > 1.0)
-        {
-            uv.u = 1.0 - uv.u;
-            uv.index = 0;
-        }
-        else if (uv.u < 0.0)
-        {
-            uv.u = 1.0 + uv.u;
-            uv.index = 1;
-        }            
-        else if (uv.v > 1.0)
-        {
-            uv.v = uv.v - 1.0;
-            uv.index = 2;
-        }
-        else if (uv.v < 0.0)
-        {
-            uv.v = 1.0 + uv.v;
-            uv.index = 3;
-        }
-    }
-    else if (uv.index == 5)       // Negative Z
-    {
-        if (uv.u > 1.0)
-        {
-            uv.u = 1.0 - uv.u;
-            uv.index = 1;
-        }
-        else if (uv.u < 0.0)
-        {
-            uv.u = 1.0 + uv.u;
-            uv.index = 0;
-        }            
-        else if (uv.v > 1.0)
-        {
-            uv.u = 1.0 - uv.u;
-            uv.v = 2.0 - uv.v;
-            uv.index = 2;
-        }
-        else if (uv.v < 0.0)
-        {
-            uv.u = 1.0-uv.u;
-            uv.v = -uv.v;
-            uv.index = 3;
-        }
-    }
-
     return uv;
 }

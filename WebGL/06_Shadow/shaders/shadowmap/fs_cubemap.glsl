@@ -14,7 +14,7 @@ out vec4 color;
 
 void main()
 {
-    TexArrayUV result = convert_xyz_to_cube_uv(normalize(Normal_));
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(Normal_));
     color = vec4(texture(tex_object, vec3(result.u, result.v, result.index)).rrr, 1.0);
 
     //gl_FragColor = textureCube(tex_object, normalize(Normal_));

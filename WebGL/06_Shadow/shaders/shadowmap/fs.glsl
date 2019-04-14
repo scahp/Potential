@@ -74,7 +74,7 @@ bool isShadowing(vec3 pos, vec3 lightPos)
     vec3 lightDir = pos - lightPos;
     float dist = dot(lightDir, lightDir) * depthBias;
 
-    TexArrayUV result = convert_xyz_to_cube_uv(normalize(lightDir));
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(lightDir));
     return (texture(tex_object, vec3(result.u, result.v, result.index)).r <= dist);
 }
 
@@ -84,7 +84,7 @@ float isShadowingPCF(vec3 pos, vec3 lightPos)
     vec3 lightDir = pos - lightPos;
     float dist = dot(lightDir, lightDir) * depthBias;
 
-    TexArrayUV result = convert_xyz_to_cube_uv(normalize(lightDir));
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(lightDir));
 
     float sumOfWeight = 0.0;
     float weight = 1.0 / (PCF_Size_OmniDirectional * PCF_Size_OmniDirectional);
@@ -102,8 +102,7 @@ float isShadowingPCF(vec3 pos, vec3 lightPos)
         TexArrayUV temp = result;
         temp.u += xOffset;
         temp.v += yOffset;
-        temp = MakeValidArrayUIOffset(temp);
-        temp = MakeValidArrayUIOffset(temp);
+        temp = MakeTexArrayUV(temp);
 
         if ((temp.u > 1.0) || (temp.u < 0.0) || (temp.v < 0.0) || (temp.v > 1.0))
             continue;
