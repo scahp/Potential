@@ -52,8 +52,9 @@ jGame.prototype.Setup = function()
     var gl = this.gl;
 
     // Create Cameras
-    const mainCameraPos = CreateVec3(85, 119, -102);
-    mainCamera = CreateCamera(gl, mainCameraPos, mainCameraPos.CloneVec3().Add(CreateVec3(-1.0, -1.0, 1.0)), mainCameraPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false);
+    const mainCameraPos = CreateVec3(-121, 116, -262);
+    const mainCameraTarget = CreateVec3(-120, 114, -259);
+    mainCamera = CreateCamera(gl, mainCameraPos, mainCameraTarget, mainCameraPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false);
     updateCamera(gl, 0);
 
     // Origin Point Gizmo
@@ -66,7 +67,7 @@ jGame.prototype.Setup = function()
     var specularPow = 64.0;
 
     // Create lights
-    dirLight = CreateDirectionalLight(gl, LightArray, CreateVec3(-1.0, -1.0, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
+    dirLight = CreateDirectionalLight(gl, LightArray, CreateVec3(-1.0, -0.7, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
         , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:"image/sun.png", TargetObjectArray:TransparentStaticObjectArray});
     dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
     mainCamera.addLight(dirLight);
@@ -105,7 +106,7 @@ jGame.prototype.Setup = function()
         , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
     CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
         , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
-    CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 20, 10, 20, 1.0
+    CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 40, 10, 20, 1.0
         , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
     ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
         , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);

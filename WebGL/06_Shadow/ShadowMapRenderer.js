@@ -116,6 +116,7 @@ var RenderWithShadowMap = function(camera)
     camera.ambient = ambientLight;
 
     var matShadowVP = CloneMat4(dirLight.directionalShadowMap.camera.matProjection).Mul(dirLight.directionalShadowMap.camera.matView);
+    var matShadowV = CloneMat4(dirLight.directionalShadowMap.camera.matView);
 
     if (camera.lights.directionalLights.length > 0)
     {
@@ -125,9 +126,11 @@ var RenderWithShadowMap = function(camera)
     
             obj.textureShadowMap = dirLight.directionalShadowMap.framebuffer.tbo;
             obj.matShadowVP = matShadowVP;
+            obj.matShadowV = matShadowV;
             if (obj.drawFunc)
                 obj.drawFunc(camera, defaultPipeLineHashCode, 0);
             obj.textureShadowMap = null;
+            obj.matShadowV = null;
             obj.matShadowVP = null;
         }
     }

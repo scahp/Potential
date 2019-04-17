@@ -47,6 +47,10 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
         }
     };
     DirectionalLight.directionalShadowMap = CreateDirectionalShadowMap(gl, DirectionalLight);
+    DirectionalLight.getCamera = function()
+    {
+        return this.directionalShadowMap.camera;
+    }
     addObject(TargetArray, DirectionalLight);
     return DirectionalLight;
 }

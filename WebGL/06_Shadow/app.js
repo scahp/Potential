@@ -84,6 +84,8 @@ jWebGL.prototype.Init = function()
     else if (document.getElementById("ShadowMap").checked)
         OnChangedShadowMode({value:"ShadowMap"});
 
+    OnCheckBoxPCF(document.getElementById("PCF"));
+
     var lastTime = performance.now();
     var loopCount = 0;
     var loop = function()

@@ -485,7 +485,7 @@ var CreateShadowVolume = function(ownerObject, vertices, faces, targetObjectArra
 var CreateDirectionalShadowMap = function(gl, dirLight)
 {
     var framebuffer = CraeteFramebuffer(gl, shadow_width, shadow_height);
-    var eye = ZeroVec3.CloneVec3().Add(dirLight.direction.CloneVec3().Neg().Mul(200.0));
+    var eye = ZeroVec3.CloneVec3().Add(dirLight.direction.CloneVec3().Neg().Mul(550.0));
     var target = ZeroVec3.CloneVec3();
 
     var rightVec = new jVec3();
@@ -495,7 +495,7 @@ var CreateDirectionalShadowMap = function(gl, dirLight)
     CrossProduct3(upVec, rightVec, dirLight.direction);
     upVec = upVec.GetNormalize();
 
-    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 10.0, 500.0, false, false);
+    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 450.0, 900.0, false, false);
 
     var getDepthMap = function()
     {

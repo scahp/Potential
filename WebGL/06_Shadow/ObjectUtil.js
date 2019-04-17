@@ -72,6 +72,8 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         setMatrixToUniformLocation(gl, pipeline, "VP", matVP);
         if (this.matShadowVP)
             setMatrixToUniformLocation(gl, pipeline, "ShadowVP", CloneMat4(this.matShadowVP));
+        if (this.matShadowV)
+            setMatrixToUniformLocation(gl, pipeline, "ShadowV", CloneMat4(this.matShadowV));
         setVec3ToUniformLocation(gl, pipeline, "Eye", camera.pos);
         setIntToUniformLocation(gl, pipeline, "Collided", this.collided);
 
@@ -167,6 +169,13 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
             {
                 setDirectionalLight(gl, pipeLine, light);
                 numOfDirectionalLight = 1;
+
+                var camera = light.getCamera();
+                if (camera)
+                {
+                    setFloatToUniformLocation(gl, pipeLine, 'LightZNear', camera.near);
+                    setFloatToUniformLocation(gl, pipeLine, 'LightZFar', camera.far);
+                }
             }
             else if (light.type == "Point")
             {
