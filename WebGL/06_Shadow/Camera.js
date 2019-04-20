@@ -126,8 +126,8 @@ var updateCamera = function(gl, cameraIndex)
         // todo : this is only for shadowmap tutorial, it should be removed
         //const width = gl.canvas.width;
         //const height = gl.canvas.height;
-        const width = 130.0;
-        const height = 130.0;
+        const width = 200.0;
+        const height = 200.0;
         camera.matProjection = CreateOrthogonalMatrix(width, height, camera.far, camera.near);
     }
 }
@@ -138,9 +138,9 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
     var toUp = up.CloneVec3().Sub(pos);
 
     var rightVec = new jVec3();
-    CrossProduct3(rightVec, toTarget, toUp);
-    CrossProduct3(up, rightVec, toTarget);
-    CrossProduct3(target, up, rightVec);
+    CrossProduct3(rightVec, toTarget.GetNormalize(), toUp.GetNormalize());
+    CrossProduct3(up, rightVec.GetNormalize(), toTarget.GetNormalize());
+    CrossProduct3(target, up.GetNormalize(), rightVec.GetNormalize());
 
     up.Add(pos);
     target.Add(pos);

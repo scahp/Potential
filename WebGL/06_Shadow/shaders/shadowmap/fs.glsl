@@ -29,6 +29,12 @@ uniform float PCF_Size_Directional;
 uniform float PCF_Size_OmniDirectional;
 uniform float LightZFar;
 uniform float LightZNear;
+uniform float PointLightZFar;
+uniform float PointLightZNear;
+uniform float SpotLightZFar;
+uniform float SpotLightZNear;
+uniform mat4 ShadowVP;
+uniform mat4 ShadowV;
 
 in vec3 ShadowPos_;
 in vec3 ShadowCameraPos_;
@@ -71,27 +77,7 @@ float isShadowingPCF(vec3 pos)
     return result;
 }
 
-#define SEARCH_RADIUS 30.0
 
-vec2 SearchRegionRadiusUV(float zShadowCS)         // Z Shadow Camera Space
-{
-    return SEARCH_RADIUS * vec2(ShadowMapSize.x, ShadowMapSize.y) * ((zShadowCS - LightZNear) / zShadowCS);
-}
-
-vec2 PenumbraRadiusUV(float zReceiver, float zBlocker)
-{
-    return SEARCH_RADIUS * vec2(ShadowMapSize.x, ShadowMapSize.y) * ((zReceiver - zBlocker) / zBlocker);
-}
-
-vec2 ProjectToLightUV(vec2 sizeUV, float zShadowCS)
-{
-    return sizeUV * (LightZNear / zShadowCS);
-}
-
-float ReverseNDC(float z)       // from 0.0 ~ 1.0 to zNear ~ zFar
-{
-    return LightZNear * LightZFar / (LightZFar - z * (LightZFar - LightZNear));
-}
 
 #define BLOCKER_SEARCH_STEP_COUNT 3.0
 #define PCF_FILTER_STEP_COUNT 7.0
@@ -100,10 +86,37 @@ float ReverseNDC(float z)       // from 0.0 ~ 1.0 to zNear ~ zFar
 #define PCF_DIM (PCF_FILTER_STEP_COUNT * 2.0 + 1.0)
 #define PCF_COUNT (PCF_DIM * PCF_DIM)
 
+#define SHADOW_BIAS 0.02
+
+#define SEARCH_RADIUS 5.0
+#define LIGHTZNEAR (LightZNear)
+//#define TMP vec2(1.0/130.0, 1.0/130.0)
+#define TMP vec2(ShadowMapSize.x, ShadowMapSize.y)
+
+vec2 SearchRegionRadiusUV(float zShadowCS)         // Z Shadow Camera Space
+{
+    return SEARCH_RADIUS * TMP * ((zShadowCS - LIGHTZNEAR) / zShadowCS);
+}
+
+vec2 PenumbraRadiusUV(float zReceiver, float zBlocker)
+{
+    return SEARCH_RADIUS * TMP * ((zReceiver - zBlocker) / zBlocker);
+}
+
+vec2 ProjectToLightUV(vec2 sizeUV, float zShadowCS)
+{
+    return sizeUV * (LIGHTZNEAR / zShadowCS);
+}
+
+float ReverseNDC(float z)       // from 0.0 ~ 1.0 to zNear ~ zFar
+{
+    return LIGHTZNEAR * LightZFar / (LightZFar - z * (LightZFar - LIGHTZNEAR));
+}
+
 void FindBlocker(out float accumBlockerDepth, out float numBlockers, vec3 pos, vec2 searchRegionRadiusUV)
 {
-    const float shadowBias = 0.05;
     vec2 stepUV = searchRegionRadiusUV / BLOCKER_SEARCH_STEP_COUNT;
+    //float stepUV = LIGHT_SIZE_UV * ( pos.z - NEAR_PLANE ) / pos.z;
 	for(float x = -BLOCKER_SEARCH_STEP_COUNT; x <= BLOCKER_SEARCH_STEP_COUNT; ++x)
     {
 		for(float y = -BLOCKER_SEARCH_STEP_COUNT; y <= BLOCKER_SEARCH_STEP_COUNT; ++y)
@@ -113,7 +126,7 @@ void FindBlocker(out float accumBlockerDepth, out float numBlockers, vec3 pos, v
             if (depthPos.x >= 0.0 && depthPos.x <= 1.0 && depthPos.y >= 0.0 && depthPos.y <= 1.0 && depthPos.z >= 0.0 && depthPos.z <= 1.0)
             {
                 float shadowMapDepth = texture(shadow_object, depthPos.xy).r;
-                if (pos.z >= shadowMapDepth + shadowBias)
+                if (pos.z >= shadowMapDepth + SHADOW_BIAS)
                 {
                     accumBlockerDepth += shadowMapDepth;
                     ++numBlockers;
@@ -123,18 +136,18 @@ void FindBlocker(out float accumBlockerDepth, out float numBlockers, vec3 pos, v
     }
 }
 
-float isShadowingPCSS(vec3 pos)
+float isShadowingPCSS(vec3 pos, float shadowCameraDepth)
 {
     bool isInShadowMap = (pos.x >= 0.0 && pos.x <= 1.0 && pos.y >= 0.0 && pos.y <= 1.0 && pos.z >= 0.0 && pos.z <= 1.0);
     if (!isInShadowMap)
         return 1.0;
 
-    float temp = -ShadowCameraPos_.z;
-
+    float temp = shadowCameraDepth;
     // 1. Blocker Search
     float accumBlockerDepth = 0.0;
     float numBlockers = 0.0;
-    vec2 searchRegionRadiusUV = SearchRegionRadiusUV(temp);
+    vec2 searchRegionRadiusUV = SearchRegionRadiusUV(shadowCameraDepth);
+
     FindBlocker(accumBlockerDepth, numBlockers, pos, searchRegionRadiusUV);
 
     if (numBlockers == 0.0)
@@ -144,15 +157,24 @@ float isShadowingPCSS(vec3 pos)
 
     // 2. Penumbra size
     float avgBlockerDepth = accumBlockerDepth / numBlockers;
-    float avgBlockerDepthWorld = ReverseNDC(avgBlockerDepth);
-    vec2 penumbraRadiusUV = PenumbraRadiusUV(temp, avgBlockerDepthWorld);
-    vec2 filterRadiusUV = ProjectToLightUV(penumbraRadiusUV, temp);
+    vec2 penumbraRadiusUV = PenumbraRadiusUV(pos.z, avgBlockerDepth);
+    //penumbraRadiusUV.x = 0.5;
+    //penumbraRadiusUV.y = 0.5;
+
+    // if (pos.z < 0.5)
+    //     return -1.0;
+
+    // if (avgBlockerDepth < 0.15)
+    //     return -1.0;
+
+    // if (penumbraRadiusUV.x < 0.01)
+    //     return -1.0;
+    penumbraRadiusUV = min(searchRegionRadiusUV, penumbraRadiusUV);
 
     // // 3. Filtering
-    const float shadowBias = 0.05;
     float sum = 0.0;
     float pcf_count = 0.0;
-    vec2 stepUV = filterRadiusUV / PCF_FILTER_STEP_COUNT;
+    vec2 stepUV = penumbraRadiusUV / PCF_FILTER_STEP_COUNT;
     for (float x = -PCF_FILTER_STEP_COUNT; x <= PCF_FILTER_STEP_COUNT; ++x)
 	{
 		for (float y = -PCF_FILTER_STEP_COUNT; y <= PCF_FILTER_STEP_COUNT; ++y)
@@ -162,15 +184,13 @@ float isShadowingPCSS(vec3 pos)
             if (depthPos.x >= 0.0 && depthPos.x <= 1.0 && depthPos.y >= 0.0 && depthPos.y <= 1.0 && depthPos.z >= 0.0 && depthPos.z <= 1.0)
             {
                 float shadowMapDepth = texture(shadow_object, depthPos.xy).r;
-                if (pos.z >= shadowMapDepth + shadowBias)
-                {
+                if (pos.z >= shadowMapDepth + SHADOW_BIAS)
                     pcf_count++;
-                }
             }
         }
     }
 
-    return 1.0 - pcf_count / PCF_COUNT;
+    return 1.0 - (pcf_count / PCF_COUNT);
 }
 
 bool isShadowing(vec3 pos, vec3 lightPos)
@@ -220,10 +240,233 @@ float isShadowingPCF(vec3 pos, vec3 lightPos)
     return sumOfWeight;
 }
 
+void FindBlocker2(out float accumBlockerDepth, out float numBlockers, TexArrayUV pos, float dist, vec2 searchRegionRadiusUV)
+{
+    vec2 stepUV = searchRegionRadiusUV / BLOCKER_SEARCH_STEP_COUNT;
+	for(float x = -BLOCKER_SEARCH_STEP_COUNT; x <= BLOCKER_SEARCH_STEP_COUNT; ++x)
+    {
+		for(float y = -BLOCKER_SEARCH_STEP_COUNT; y <= BLOCKER_SEARCH_STEP_COUNT; ++y)
+        {
+            vec2 offset = vec2(x, y) * stepUV;
+            TexArrayUV temp;
+            temp.u = pos.u + offset.x;
+            temp.v = pos.v + offset.y;
+            temp.index = pos.index;
+            temp = MakeTexArrayUV(temp);
+
+            if ((temp.u > 1.0) || (temp.u < 0.0) || (temp.v < 0.0) || (temp.v > 1.0))
+                continue;
+
+            float shadowValue = sqrt(texture(tex_object, vec3(temp.u, temp.v, temp.index)).r);
+            if (shadowValue < dist)
+            {
+                accumBlockerDepth += shadowValue;
+                ++numBlockers;
+            }
+        }
+    }
+}
+
+#define SEARCH_RADIUS2 100.0
+
+vec2 SearchRegionRadiusUV2(float zShadowCS)         // Z Shadow Camera Space
+{
+    return SEARCH_RADIUS2 * vec2(ShadowMapSize.x, ShadowMapSize.y) * ((zShadowCS - PointLightZNear) / zShadowCS);
+}
+
+vec2 PenumbraRadiusUV2(float zReceiver, float zBlocker)
+{
+    return SEARCH_RADIUS2 * 2.0 * vec2(ShadowMapSize.x, ShadowMapSize.y) * ((zReceiver - zBlocker) / zBlocker);
+}
+
+vec2 ProjectToLightUV2(vec2 sizeUV, float zShadowCS)
+{
+    return sizeUV * (PointLightZNear / zShadowCS);
+}
+
+float ReverseNDC2(float z)       // from 0.0 ~ 1.0 to zNear ~ zFar
+{
+    return PointLightZNear * PointLightZFar / (PointLightZFar - z * (PointLightZFar - PointLightZNear));
+}
+
+float isShadowingPCSS2(vec3 pos, vec3 lightPos)
+{
+    float depthBias = 0.98;
+    vec3 lightDir = pos - lightPos;
+    float dist = sqrt(dot(lightDir, lightDir)) * depthBias;
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(lightDir));
+
+    float temp = dist;
+
+    if (temp > PointLightZFar)
+        return 0.0;
+
+    // 1. Blocker Search
+    float accumBlockerDepth = 0.0;
+    float numBlockers = 0.0;
+    vec2 searchRegionRadiusUV = SearchRegionRadiusUV2(temp);
+
+    // if (searchRegionRadiusUV.x >= 0.0 && searchRegionRadiusUV.x <= 1.0)
+    //     return -1.0;
+
+    FindBlocker2(accumBlockerDepth, numBlockers, result, dist, searchRegionRadiusUV);
+
+    if (numBlockers == 0.0)
+        return 1.0;
+    else if (numBlockers >= BLOCKER_SEARCH_COUNT)
+        return 0.0;
+
+    // 2. Penumbra size
+    float avgBlockerDepthWorld = accumBlockerDepth / numBlockers;
+    // if (avgBlockerDepthWorld < 80.0)
+    //     return -1.0;
+    //float avgBlockerDepthWorld = ReverseNDC2(avgBlockerDepth);
+    vec2 penumbraRadiusUV = PenumbraRadiusUV2(temp, avgBlockerDepthWorld);
+    vec2 filterRadiusUV = ProjectToLightUV2(penumbraRadiusUV, temp);
+
+    //if (0.000001 > filterRadiusUV.x && filterRadiusUV.x >= 0.0)
+    //    return -1.0;
+
+ //filterRadiusUV = vec2(ShadowMapSize.x, ShadowMapSize.y) * 10.0;
+
+    // // 3. Filtering
+    float sum = 0.0;
+    float pcf_count = 0.0;
+    vec2 stepUV = filterRadiusUV / PCF_FILTER_STEP_COUNT;
+    for (float x = -PCF_FILTER_STEP_COUNT; x <= PCF_FILTER_STEP_COUNT; ++x)
+	{
+		for (float y = -PCF_FILTER_STEP_COUNT; y <= PCF_FILTER_STEP_COUNT; ++y)
+		{
+            vec2 offset = vec2(x, y) * stepUV;
+            TexArrayUV temp;
+            temp.u = result.u + offset.x;
+            temp.v = result.v + offset.y;
+            temp.index = result.index;
+            temp = MakeTexArrayUV(temp);
+
+            if ((temp.u > 1.0) || (temp.u < 0.0) || (temp.v < 0.0) || (temp.v > 1.0))
+                continue;
+
+            float shadowValue = sqrt(texture(tex_object, vec3(temp.u, temp.v, temp.index)).r);
+            if (shadowValue > dist)
+            {
+                pcf_count++;
+            }
+        }
+    }
+
+    return pcf_count / PCF_COUNT;
+}
+
+#define SEARCH_RADIUS3 100.0
+
+vec2 SearchRegionRadiusUV3(float zShadowCS)         // Z Shadow Camera Space
+{
+    return SEARCH_RADIUS3 * vec2(ShadowMapSize.x, ShadowMapSize.y) * ((zShadowCS - SpotLightZNear) / zShadowCS);
+}
+
+vec2 PenumbraRadiusUV3(float zReceiver, float zBlocker)
+{
+    return SEARCH_RADIUS3 * 2.0 * vec2(ShadowMapSize.x, ShadowMapSize.y) * ((zReceiver - zBlocker) / zBlocker);
+}
+
+vec2 ProjectToLightUV3(vec2 sizeUV, float zShadowCS)
+{
+    return sizeUV * (SpotLightZNear / zShadowCS);
+}
+
+float ReverseNDC3(float z)       // from 0.0 ~ 1.0 to zNear ~ zFar
+{
+    return SpotLightZNear * SpotLightZFar / (SpotLightZFar - z * (SpotLightZFar - SpotLightZNear));
+}
+
+float isShadowingPCSS3(vec3 pos, vec3 lightPos)
+{
+    float depthBias = 0.98;
+    vec3 lightDir = pos - lightPos;
+    float dist = sqrt(dot(lightDir, lightDir)) * depthBias;
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(lightDir));
+
+    float temp = dist;
+
+    if (temp > SpotLightZFar)
+        return 0.0;
+
+    // 1. Blocker Search
+    float accumBlockerDepth = 0.0;
+    float numBlockers = 0.0;
+    vec2 searchRegionRadiusUV = SearchRegionRadiusUV3(temp);
+
+    // if (searchRegionRadiusUV.x >= 0.0 && searchRegionRadiusUV.x <= 1.0)
+    //     return -1.0;
+
+    FindBlocker2(accumBlockerDepth, numBlockers, result, dist, searchRegionRadiusUV);
+
+    if (numBlockers == 0.0)
+        return 1.0;
+    else if (numBlockers >= BLOCKER_SEARCH_COUNT)
+        return 0.0;
+
+    // 2. Penumbra size
+    float avgBlockerDepthWorld = accumBlockerDepth / numBlockers;
+    // if (avgBlockerDepthWorld < 80.0)
+    //     return -1.0;
+    //float avgBlockerDepthWorld = ReverseNDC3(avgBlockerDepth);
+    vec2 penumbraRadiusUV = PenumbraRadiusUV3(temp, avgBlockerDepthWorld);
+    vec2 filterRadiusUV = ProjectToLightUV3(penumbraRadiusUV, temp);
+
+    //if (0.000001 > filterRadiusUV.x && filterRadiusUV.x >= 0.0)
+    //    return -1.0;
+
+ //filterRadiusUV = vec2(ShadowMapSize.x, ShadowMapSize.y) * 10.0;
+
+    // // 3. Filtering
+    float sum = 0.0;
+    float pcf_count = 0.0;
+    vec2 stepUV = filterRadiusUV / PCF_FILTER_STEP_COUNT;
+    for (float x = -PCF_FILTER_STEP_COUNT; x <= PCF_FILTER_STEP_COUNT; ++x)
+	{
+		for (float y = -PCF_FILTER_STEP_COUNT; y <= PCF_FILTER_STEP_COUNT; ++y)
+		{
+            vec2 offset = vec2(x, y) * stepUV;
+            TexArrayUV temp;
+            temp.u = result.u + offset.x;
+            temp.v = result.v + offset.y;
+            temp.index = result.index;
+            temp = MakeTexArrayUV(temp);
+
+            if ((temp.u > 1.0) || (temp.u < 0.0) || (temp.v < 0.0) || (temp.v > 1.0))
+                continue;
+
+            float shadowValue = sqrt(texture(tex_object, vec3(temp.u, temp.v, temp.index)).r);
+            if (shadowValue > dist)
+            {
+                pcf_count++;
+            }
+        }
+    }
+
+    return pcf_count / PCF_COUNT;
+}
+
 void main()
 {
     vec3 normal = normalize(Normal_);
     vec3 viewDir = normalize(Eye - Pos_);
+
+    vec4 shadowPos = (ShadowVP * vec4(Pos_, 1.0));
+    shadowPos /= shadowPos.w;
+    vec3 ShadowPos = shadowPos.xyz * 0.5 + 0.5;        // Transform NDC space coordinate from [-1.0 ~ 1.0] into [0.0 ~ 1.0].
+
+    // mat4 ttt = mat4(-1.0, 0.0, 0.0, 0.0
+    //             , 0.0, 0.0, 1.0, 0.0
+    //             , 0.0, 1.0, 0.0, -90.0
+    //             , 0.0, 0.0, 0.0, 1.0);
+    // ttt = transpose(ttt);
+    //vec4 shadowCameraPos = (ttt * vec4(0.0, 90.0, 0.0, 1.0));    
+    
+    //vec4 shadowCameraPos = (ShadowV * vec4(0.0, 90.0, 0.0, 1.0));    
+    vec4 shadowCameraPos = (ShadowV * vec4(Pos_, 1.0));    
 
     vec3 diffuse = Color_.xyz;
     if (Collided != 0)
@@ -244,54 +487,64 @@ void main()
         
         if (pcf)
         {
-            //float shadowRate = isShadowingPCF(ShadowPos_);
-            float shadowRate = isShadowingPCSS(ShadowPos_);            
-            if (shadowRate > 0.0)
-                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
-            //finalColor.xyz = -ShadowCameraPos_.zzz / LightZFar;
+            float depth = -shadowCameraPos.z;
+            //if (depth >= 0.0 && depth <= 90.0)
+            {
+                //float shadowRate = isShadowingPCF(ShadowPos_);
+                float shadowRate = isShadowingPCSS(ShadowPos, depth);
+                if (shadowRate > 0.0)
+                    finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
+                if (shadowRate == -1.0)
+                    finalColor.y += 1.0;
+                //finalColor.xyz = -ShadowCameraPos_.zzz / LightZFar;
+            }
         }
         else
         {
-            if (!isShadowing(ShadowPos_))
+            if (!isShadowing(ShadowPos))
                 finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir);
         }
     }
 
-    for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
-    {
-        if (i >= NumOfPointLight)
-            break;
+    // for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
+    // {
+    //     if (i >= NumOfPointLight)
+    //         break;
         
-        if (pcf)
-        {
-            float shadowRate = isShadowingPCF(Pos_, PointLight[i].LightPos);
-            if (shadowRate > 0.0)
-                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
-        }
-        else
-        {
-            if (!isShadowing(Pos_, PointLight[i].LightPos))
-                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir);
-        }
-    }
+    //     if (pcf)
+    //     {
+    //         //float shadowRate = isShadowingPCF(Pos_, PointLight[i].LightPos);
+    //         float shadowRate = isShadowingPCSS2(Pos_, PointLight[i].LightPos);
+    //         if (shadowRate > 0.0)
+    //             finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
+    //         if (shadowRate == -1.0)
+    //             finalColor.x += 1.0;
+    //     }
+    //     else
+    //     {
+    //         if (!isShadowing(Pos_, PointLight[i].LightPos))
+    //             finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir);
+    //     }
+    // }
     
-    for(int i=0;i<MAX_NUM_OF_SPOT_LIGHT;++i)
-    {
-        if (i >= NumOfSpotLight)
-            break;
+    // for(int i=0;i<MAX_NUM_OF_SPOT_LIGHT;++i)
+    // {
+    //     if (i >= NumOfSpotLight)
+    //         break;
 
-        if (pcf)
-        {
-            float shadowRate = isShadowingPCF(Pos_, SpotLight[i].LightPos);
-            if (shadowRate > 0.0)
-                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * shadowRate;
-        }
-        else
-        {
-            if (!isShadowing(Pos_, SpotLight[i].LightPos))
-                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir);
-        }
-    }
+    //     if (pcf)
+    //     {
+    //         //float shadowRate = isShadowingPCF(Pos_, SpotLight[i].LightPos);
+    //         float shadowRate = isShadowingPCSS3(Pos_, SpotLight[i].LightPos);
+    //         if (shadowRate > 0.0)
+    //             finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * shadowRate;
+    //     }
+    //     else
+    //     {
+    //         if (!isShadowing(Pos_, SpotLight[i].LightPos))
+    //             finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir);
+    //     }
+    // }
 
     color = vec4(finalColor * diffuse, Color_.w);
 }

@@ -71,7 +71,11 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         setMatrixToUniformLocation(gl, pipeline, "M", matM);
         setMatrixToUniformLocation(gl, pipeline, "VP", matVP);
         if (this.matShadowVP)
+        {
+            var t = CreateVec3(0.0, 0.0, 0.0).Transform(this.matShadowV);
+
             setMatrixToUniformLocation(gl, pipeline, "ShadowVP", CloneMat4(this.matShadowVP));
+        }
         if (this.matShadowV)
             setMatrixToUniformLocation(gl, pipeline, "ShadowV", CloneMat4(this.matShadowV));
         setVec3ToUniformLocation(gl, pipeline, "Eye", camera.pos);
@@ -181,11 +185,17 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
             {
                 setPointLight(gl, pipeLine, light);
                 numOfPointLight = 1;
+
+                setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', light.getNear());
+                setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', light.getFar());
             }
             else if (light.type == "Spot")
             {
                 setSpotLight(gl, pipeLine, light);
                 numOfSpotLight = 1;
+
+                setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', light.getNear());
+                setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
             }
         }
         

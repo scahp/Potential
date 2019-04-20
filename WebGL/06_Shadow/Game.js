@@ -18,13 +18,13 @@ var shadowMapDebugQuad = null;
 const pointLightPos = CreateVec3(-10.0, 100.0, -50.0);
 const pointLightRadius = 500.0;
 const spotLightPos = CreateVec3(0.0, 60.0, 5.0);
-const umbraRadian = 0.6;
-const penumbraRadian = 0.5;
-const spotLightRadius = 132.0;
+const umbraRadian = 1.0;
+const penumbraRadian = 0.7;
+const spotLightRadius = 500.0;
 const spherePosX = 65.0;
 const spherePosY = 35.0;
 const spherePosZ = 10.0;
-const sphereRadius = 30.0;
+const sphereRadius = 10.0;
 var CubeTest = null;
 
 var jGame = function(gl)
@@ -52,8 +52,8 @@ jGame.prototype.Setup = function()
     var gl = this.gl;
 
     // Create Cameras
-    const mainCameraPos = CreateVec3(-121, 116, -262);
-    const mainCameraTarget = CreateVec3(-120, 114, -259);
+    const mainCameraPos = CreateVec3(44.98, 82.39, -145.37);
+    const mainCameraTarget = CreateVec3(45.03, 81.77, -144.58);
     mainCamera = CreateCamera(gl, mainCameraPos, mainCameraTarget, mainCameraPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false);
     updateCamera(gl, 0);
 
@@ -67,12 +67,12 @@ jGame.prototype.Setup = function()
     var specularPow = 64.0;
 
     // Create lights
-    dirLight = CreateDirectionalLight(gl, LightArray, CreateVec3(-1.0, -0.7, -1.0), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
-        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 90.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:"image/sun.png", TargetObjectArray:TransparentStaticObjectArray});
+    dirLight = CreateDirectionalLight(gl, LightArray, CreateVec3(0.7, -1.0, -0.7), lightColor, diffuseLightIntensity, specularLightIntensity, specularPow
+        , {debugObject:true, pos:CreateVec3(0.0, 90.0, 100.0), size:CreateVec3(10.0, 10.0, 10.0), length:20.0, targetCamera:mainCamera, texture:"image/sun.png", TargetObjectArray:TransparentStaticObjectArray});
     dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
     mainCamera.addLight(dirLight);
 
-    pointLight = CreatePointLight(gl, LightArray, pointLightPos, CreateVec3(1.0, 0.0, 0.0), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
+    pointLight = CreatePointLight(gl, LightArray, pointLightPos, CreateVec3(1.0, 0.7, 0.7), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"image/bulb.png", TargetObjectArray:TransparentStaticObjectArray});
     pointLight.setHideDebugInfo(!document.getElementById('ShowPointLightInfo').checked);
     mainCamera.addLight(pointLight);
@@ -102,27 +102,27 @@ jGame.prototype.Setup = function()
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
 
-    CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
-        , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
-    CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
-        , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
-    CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 40, 10, 20, 1.0
-        , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
-    ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
-        , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
-    CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
-        , CreateVec4(0.0, 0.0, 1.0, 1.0), colorOnlyShader);
-    TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
-        , CreateVec4(0.5, 0.1, 1.0, 1.0), colorOnlyShader);
-    QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-        , CreateVec4(0.0, 0.0, 1.0, 1.0), colorOnlyShader);
-    BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
-        , CreateVec4(1.0, 0.0, 1.0, 1.0), colorOnlyShader, mainCamera);
-    SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
+    // CubeA = CreateCube(gl, StaticObjectArray, CreateVec3(-60.0, 55.0, -20.0), OneVec3, CreateVec3(50, 50, 50)
+    //     , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
+    // CubeB = CreateCube(gl, StaticObjectArray, CreateVec3(-65.0, 35.0, 10.0), OneVec3, CreateVec3(50, 50, 50)
+    //     , CreateVec4(0.7, 0.7, 0.7, 1.0), colorOnlyShader);
+    // CapsuleA = CreateCapsule(gl, StaticObjectArray, CreateVec3(30.0, 30.0, -80.0), 40, 10, 20, 1.0
+    //    , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
+    // ConeA = CreateCone(gl, StaticObjectArray, CreateVec3(0.0, 50.0, 60.0), 40, 20, 15, OneVec3
+    //     , CreateVec4(1.0, 1.0, 0.0, 1.0), colorOnlyShader);
+    // CylinderA = CreateCylinder(gl, StaticObjectArray, CreateVec3(-30.0, 60.0, -60.0), 20, 10, 20, OneVec3
+    //     , CreateVec4(0.0, 0.0, 1.0, 1.0), colorOnlyShader);
+    // TriangleA = CreateTriangle(gl, StaticObjectArray, CreateVec3(60.0, 100.0, 20.0), OneVec3, CreateVec3(40.0, 40.0, 40.0)
+    //     , CreateVec4(0.5, 0.1, 1.0, 1.0), colorOnlyShader);
+    // QuadA = CreateQuad(gl, StaticObjectArray, CreateVec3(-20.0, 80.0, 40.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+    //     , CreateVec4(0.0, 0.0, 1.0, 1.0), colorOnlyShader);
+    // BillboardQuadA = CreateBillboardQuad(gl, StaticObjectArray, CreateVec3(0.0, 60.0, 80.0), OneVec3, CreateVec3(20.0, 20.0, 20.0)
+    //     , CreateVec4(1.0, 0.0, 1.0, 1.0), colorOnlyShader, mainCamera);
+    SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(0.0, 0.0, 0.0)
         , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), CreateVec4(0.8, 0.0, 0.0, 1.0), colorOnlyShader);
     
-    CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
-        , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
+    // CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
+    //     , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
     if (CubeTest)
     {
         CubeTest.isDisablePipeLineChange = true;
@@ -133,9 +133,31 @@ jGame.prototype.Setup = function()
     shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
 }
 
+var tPos = 5.0;
+var tDelta = 1.0;
+var tDir = 1.0;
+
 jGame.prototype.Update = function(deltaTime)
 {
     var gl = this.gl;
+
+    if (tDir > 0.0)
+    {
+        tPos += tDelta;
+        if (tPos >= 80.0)
+            tDir = -1.0;
+    }
+    else
+    {
+        tPos -= tDelta;
+        if (tPos <= 5.0)
+            tDir = 1.0;
+    }
+
+    //tPos = 50.0;
+
+    if (SphereA)
+        SphereA.pos = CreateVec3(0.0, tPos, 0.0);
 
     var customUpdateForPrimitives = function()
     {

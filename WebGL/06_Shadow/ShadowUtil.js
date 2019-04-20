@@ -482,20 +482,29 @@ var CreateShadowVolume = function(ownerObject, vertices, faces, targetObjectArra
     }
 }
 
-var CreateDirectionalShadowMap = function(gl, dirLight)
+var CreateDirectionalShadowMap = function(gl, dirLight, pos)
 {
     var framebuffer = CraeteFramebuffer(gl, shadow_width, shadow_height);
-    var eye = ZeroVec3.CloneVec3().Add(dirLight.direction.CloneVec3().Neg().Mul(550.0));
-    var target = ZeroVec3.CloneVec3();
+    // var eye = dirLight.direction.CloneVec3().Mul(-100.0);
+    // var target = ZeroVec3.CloneVec3();
+    var eye = ZeroVec3.CloneVec3();
+    var target = dirLight.direction.CloneVec3().Mul(1.0);
 
-    var rightVec = new jVec3();
-    CrossProduct3(rightVec, target.CloneVec3().Sub(eye).GetNormalize(), CreateVec3(0.0, 1.0, 0.0));
+    // var rightVec = new jVec3();
+    // CrossProduct3(rightVec, target.CloneVec3().Sub(eye).GetNormalize(), CreateVec3(0.0, 1.0, 0.0));
+    // rightVec = rightVec.GetNormalize();
 
+    // var upVec = new jVec3();
+    // CrossProduct3(upVec, rightVec, target.CloneVec3().Sub(eye).GetNormalize());
+    // upVec = upVec.GetNormalize();
     var upVec = new jVec3();
-    CrossProduct3(upVec, rightVec, dirLight.direction);
-    upVec = upVec.GetNormalize();
+    upVec = CreateVec3(0.0, 0.0, 1.0);
 
-    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 450.0, 900.0, false, false);
+    eye.Add(pos);
+    target.Add(pos);
+    upVec.Add(pos);
+
+    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 10.0, 300.0, false, false);
 
     var getDepthMap = function()
     {
@@ -604,15 +613,18 @@ var CreateOmniDirectionalShadowMap2 = function(gl, light)
     var cameras = [];
     const lightPos = light.pos;
 
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(-1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
-    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false));
+    const near = 10.0;
+    const far = 500.0;
+
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), near, far, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(-1.0, 0.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), near, far, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), DegreeToRadian(45), near, far, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, -1.0, 0.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), DegreeToRadian(45), near, far, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, 1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), near, far, false));
+    cameras.push(CreateCamera(gl, lightPos.CloneVec3(), lightPos.CloneVec3().Add(CreateVec3(0.0, 0.0, -1.0)), lightPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), near, far, false));
 
     for(var i=0;i<cameras.length;++i)
         cameras[i].addLight(light);
 
-    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras};
+    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras, near:near, far:far};
 }

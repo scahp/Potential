@@ -46,7 +46,7 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
             this.__proto__.billboardObject.hide = isHide;
         }
     };
-    DirectionalLight.directionalShadowMap = CreateDirectionalShadowMap(gl, DirectionalLight);
+    DirectionalLight.directionalShadowMap = CreateDirectionalShadowMap(gl, DirectionalLight, debugObjectDesc.pos.CloneVec3());
     DirectionalLight.getCamera = function()
     {
         return this.directionalShadowMap.camera;
@@ -96,6 +96,14 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
             this.__proto__.billboardObject.hide = isHide;
     };
     PointLight.omniShadowMap = CreateOmniDirectionalShadowMap2(gl, PointLight);
+    PointLight.getNear = function()
+    {
+        return this.omniShadowMap.near;
+    }
+    PointLight.getFar = function()
+    {
+        return this.omniShadowMap.far;
+    }
     addObject(TargetArray, PointLight);
     return PointLight;
 }
@@ -165,6 +173,14 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
             this.__proto__.billboardObject.hide = isHide;
     };
     SpotLight.omniShadowMap = CreateOmniDirectionalShadowMap2(gl, SpotLight);
+    SpotLight.getNear = function()
+    {
+        return this.omniShadowMap.near;
+    }
+    SpotLight.getFar = function()
+    {
+        return this.omniShadowMap.far;
+    }
     addObject(TargetArray, SpotLight);
     return SpotLight;
 }
