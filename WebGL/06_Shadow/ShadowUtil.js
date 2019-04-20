@@ -504,7 +504,7 @@ var CreateDirectionalShadowMap = function(gl, dirLight, pos)
     target.Add(pos);
     upVec.Add(pos);
 
-    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 10.0, 300.0, false, false);
+    var camera = CreateCamera(gl, eye, target, upVec, DegreeToRadian(45), 10.0, 600.0, false, false);
 
     var getDepthMap = function()
     {

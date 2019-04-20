@@ -120,17 +120,13 @@ var OnChangedShadowMode = function(e)
     }
 }
 
-var OnCheckBoxPCF = function(e)
+var OnChangedShadowMapType = function(e)
 {
-    console.log(e.checked);
-    if (e.checked)
-    {
-        pcf_size_directional = 4;
-        pcf_size_omnidirectional = 6;
-    }   
-    else
-    {
-        pcf_size_directional = 1;
-        pcf_size_omnidirectional = 1;
-    } 
+    const mode = e.value;
+    if (mode == 'Default')
+        ShadowmapType = 0;
+    else if (mode == 'PCF')
+        ShadowmapType = 1;
+    else if (mode == 'PCSS')
+        ShadowmapType = 2;
 }

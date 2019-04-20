@@ -14,8 +14,8 @@ var ShowDebugInfoOfSpotLight = false;
 
 const shadow_width = 512.0;
 const shadow_height = 512.0;
-var pcf_size_directional = 1;
-var pcf_size_omnidirectional = 1;
+var pcf_size_directional = 4;
+var pcf_size_omnidirectional = 4;
 
 var Init = function()
 {
@@ -84,7 +84,12 @@ jWebGL.prototype.Init = function()
     else if (document.getElementById("ShadowMap").checked)
         OnChangedShadowMode({value:"ShadowMap"});
 
-    OnCheckBoxPCF(document.getElementById("PCF"));
+    if (document.getElementById("Default").checked)
+        OnChangedShadowMapType({value:"Default"});
+    else if (document.getElementById("PCF").checked)
+        OnChangedShadowMapType({value:"PCF"});
+    else if (document.getElementById("PCSS").checked)
+        OnChangedShadowMapType({value:"PCSS"});
 
     var lastTime = performance.now();
     var loopCount = 0;

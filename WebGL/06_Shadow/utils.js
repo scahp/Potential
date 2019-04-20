@@ -57,6 +57,7 @@ function LoadTextResource(url, asynchronous, callback)
 }
 
 var commonCode = null;
+var shadowCode = null;
 function CreateProgram(gl, vsFilename, fgFilename)
 {
     var vsCode;
@@ -70,15 +71,25 @@ function CreateProgram(gl, vsFilename, fgFilename)
         });
     }
 
+    if (!shadowCode)
+    {
+        LoadTextResource("shaders/shadow.glsl", false, function(result)
+        {
+            shadowCode = result;
+        });
+    }
+
     LoadTextResource(vsFilename, false, function(result)
     {
         vsCode = result;
+        vsCode = vsCode.replace('#include "shadow.glsl"', shadowCode);
         vsCode = vsCode.replace('#include "common.glsl"', commonCode);
     });
 
     LoadTextResource(fgFilename, false, function(result)
     {
         fsCode = result;
+        fsCode = fsCode.replace('#include "shadow.glsl"', shadowCode);
         fsCode = fsCode.replace('#include "common.glsl"', commonCode);
     });
 

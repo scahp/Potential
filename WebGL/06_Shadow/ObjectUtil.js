@@ -108,7 +108,7 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         }
 
         const pipeline = this.pipeLineInfo.pipeLine;
-        setIntToUniformLocation(gl, pipeline, 'tex_object', 0);
+        setIntToUniformLocation(gl, pipeline, 'shadow_object_array', 0);
 
         gl.activeTexture(gl.TEXTURE0);
         if (this.texture)
@@ -198,6 +198,8 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
                 setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
             }
         }
+
+        setIntToUniformLocation(gl, pipeLine, 'ShadowmapType', ShadowmapType);
         
         // if (camera.lights)
         // {

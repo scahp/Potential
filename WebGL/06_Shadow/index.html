@@ -25,6 +25,12 @@
             padding: 0;
             position: absolute;
         }
+        #div-ShadowType {
+            background-color: rgb(236, 57, 57);
+        }
+        #div-ShadowMap {
+            background-color: rgba(55.0, 55.0, 255.0, 0.7);
+        }
     </style>
 </head>
 
@@ -41,7 +47,7 @@
                 WASD : Camera movement <br>
                 Mouse drag with click : Camera rotation <br><br>
             </div>
-            <div>
+            <div id="div-ShadowType">
                     <input id="ShadowVolume" type="radio" name="ShadowMode" value="ShadowVolume" onclick="OnChangedShadowMode(this)"> ShadowVolume<br>
                     <input id="ShadowMap" type="radio" name="ShadowMode" value="ShadowMap" checked="checked" onclick="OnChangedShadowMode(this)"> ShadowMap<br>
             </div>
@@ -61,13 +67,14 @@
             </div>
             <div id="div-ShadowMap">
                 <div>
-                    <label>Percentage Closer Filtering(PCF)</label>
-                    <input type="checkbox" id="PCF" value="true" checked="checked" onclick="OnCheckBoxPCF(this)">
+                    <input id="Default" type="radio" name="ShadowMapType" value="Default" onclick="OnChangedShadowMapType(this)"> Default<br>
+                    <input id="PCF" type="radio" name="ShadowMapType" value="PCF" onclick="OnChangedShadowMapType(this)"> Percentage Closer Filtering(PCF)<br>
+                    <input id="PCSS" type="radio" name="ShadowMapType" value="PCSS" checked="checked" onclick="OnChangedShadowMapType(this)"> Percentage Closer Soft Shadow(PCSS)<br>
                 </div>
             </div>
             <div>
                 <label>ShowDirectionalLightInfo</label>
-                <input type="checkbox" id="ShowDirectionalLightInfo" value="true" checked="checked" onclick="OnCheckBoxShowDirectionalLightInfo(this)">
+                <input type="checkbox" id="ShowDirectionalLightInfo" value="true" onclick="OnCheckBoxShowDirectionalLightInfo(this)">
             </div>
             <div>
                 <label>ShowPointLightInfo</label>
