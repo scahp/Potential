@@ -26,10 +26,16 @@
             position: absolute;
         }
         #div-ShadowType {
-            background-color: rgb(236, 57, 57);
+            background-color: rgba(0.0, 0.0, 0.0, 0.7);
+            color: white;
         }
         #div-ShadowMap {
-            background-color: rgba(55.0, 55.0, 255.0, 0.7);
+            background-color: rgba(125.0, 0.0, 0.0, 0.5);
+            color: white;
+        }
+        #div-ShadowVolume {
+            background-color: rgba(0.0, 125.0, 0.0, 0.5);
+            color: white;
         }
     </style>
 </head>
@@ -70,6 +76,10 @@
                     <input id="Default" type="radio" name="ShadowMapType" value="Default" onclick="OnChangedShadowMapType(this)"> Default<br>
                     <input id="PCF" type="radio" name="ShadowMapType" value="PCF" onclick="OnChangedShadowMapType(this)"> Percentage Closer Filtering(PCF)<br>
                     <input id="PCSS" type="radio" name="ShadowMapType" value="PCSS" checked="checked" onclick="OnChangedShadowMapType(this)"> Percentage Closer Soft Shadow(PCSS)<br>
+                </div>
+                <div>
+                        <label>UsePoissonSample</label>
+                        <input type="checkbox" id="UsePoissonSample" value="true" checked="checked" onclick="OnUsePoissonSample(this)">
                 </div>
             </div>
             <div>

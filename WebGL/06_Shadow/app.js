@@ -91,6 +91,8 @@ jWebGL.prototype.Init = function()
     else if (document.getElementById("PCSS").checked)
         OnChangedShadowMapType({value:"PCSS"});
 
+    UsePoissonSample = document.getElementById("UsePoissonSample").checked;
+
     var lastTime = performance.now();
     var loopCount = 0;
     var loop = function()

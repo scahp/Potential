@@ -27,6 +27,7 @@ const spherePosZ = 10.0;
 const sphereRadius = 30.0;
 var CubeTest = null;
 var ShadowmapType = 0;
+var UsePoissonSample = 1;
 
 var jGame = function(gl)
 {
@@ -53,8 +54,8 @@ jGame.prototype.Setup = function()
     var gl = this.gl;
 
     // Create Cameras
-    const mainCameraPos = CreateVec3(68.0, 145.3, -219.4);
-    const mainCameraTarget = CreateVec3(67.7, 144.7, -218.7);
+    const mainCameraPos = CreateVec3(76.33, 173.37, -265.88);
+    const mainCameraTarget = CreateVec3(76.1, 172.88, -265.03);
     mainCamera = CreateCamera(gl, mainCameraPos, mainCameraTarget, mainCameraPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false);
     updateCamera(gl, 0);
 
@@ -73,7 +74,7 @@ jGame.prototype.Setup = function()
     dirLight.setHideDebugInfo(!document.getElementById('ShowDirectionalLightInfo').checked);
     mainCamera.addLight(dirLight);
 
-    pointLight = CreatePointLight(gl, LightArray, CreateVec3(10.0, 100.0, 10.0), CreateVec3(1.0, 0.7, 0.7), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
+    pointLight = CreatePointLight(gl, LightArray, CreateVec3(10.0, 100.0, 10.0), CreateVec3(2.0, 0.7, 0.7), pointLightRadius, diffuseLightIntensity, specularLightIntensity, 256
         , {debugObject:true, pos:null, size:CreateVec3(10.0, 10.0, 10.0), length:null, targetCamera:mainCamera, texture:"image/bulb.png", TargetObjectArray:TransparentStaticObjectArray});
     pointLight.setHideDebugInfo(!document.getElementById('ShowPointLightInfo').checked);
     mainCamera.addLight(pointLight);
@@ -133,10 +134,6 @@ jGame.prototype.Setup = function()
     // Create frameBuffer to render at offscreen
     shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
 }
-
-var tPos = 5.0;
-var tDelta = 1.0;
-var tDir = 1.0;
 
 jGame.prototype.Update = function(deltaTime)
 {

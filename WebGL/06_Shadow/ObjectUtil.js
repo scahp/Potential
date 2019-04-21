@@ -200,6 +200,7 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         }
 
         setIntToUniformLocation(gl, pipeLine, 'ShadowmapType', ShadowmapType);
+        setIntToUniformLocation(gl, pipeLine, 'UsePoissonSample', UsePoissonSample);        
         
         // if (camera.lights)
         // {

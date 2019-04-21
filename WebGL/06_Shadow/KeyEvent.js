@@ -130,3 +130,13 @@ var OnChangedShadowMapType = function(e)
     else if (mode == 'PCSS')
         ShadowmapType = 2;
 }
+
+var OnUsePoissonSample = function(e)
+{
+    console.log(e.checked);
+
+    if (e.checked)
+        UsePoissonSample = 1;
+    else
+        UsePoissonSample = 0;
+}
