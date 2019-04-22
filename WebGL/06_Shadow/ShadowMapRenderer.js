@@ -82,7 +82,26 @@ var RenderWithShadowMap = function(camera)
 {
     var gl = this.gl;
 
-    const defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMapShaderFile()).hashCode;
+    var defaultPipeLineHashCode = null;
+    switch (ShadowmapType)
+    {
+        case 1:     // PCF
+            if (UsePoissonSample)
+                defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_PCF_PoissonSample_ShaderFile()).hashCode;
+            else
+                defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_PCF_ShaderFile()).hashCode;
+        break;
+        case 2:     // PCSS
+            if (UsePoissonSample)
+                defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_PCSS_PoissonSample_ShaderFile()).hashCode;
+            else
+                defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_PCSS_ShaderFile()).hashCode;
+        break;
+        default:
+            defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMapShaderFile()).hashCode;
+        break;
+    }
+    
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.enable(gl.DEPTH_TEST);

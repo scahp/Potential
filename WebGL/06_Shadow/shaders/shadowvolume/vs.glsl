@@ -1,6 +1,6 @@
 #include "common.glsl"
 
-precision highp float;
+precision mediump float;
 
 attribute vec3 Pos;
 attribute vec4 Color;

@@ -1,6 +1,6 @@
 #include "common.glsl"
 
-precision highp float;
+precision mediump float;
 
 varying vec4 Color_;
 

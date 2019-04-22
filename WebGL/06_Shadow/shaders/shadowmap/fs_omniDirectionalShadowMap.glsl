@@ -1,6 +1,6 @@
 #include "common.glsl"
 
-precision highp float;
+precision mediump float;
 
 #define MAX_NUM_OF_POINT_LIGHT 3
 #define MAX_NUM_OF_SPOT_LIGHT 3

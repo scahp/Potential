@@ -2,8 +2,8 @@
 
 #include "common.glsl"
 
-precision highp float;
-precision highp sampler2DArray;
+precision mediump float;
+precision mediump sampler2DArray;
 
 in vec3 Normal_;
 

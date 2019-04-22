@@ -1,9 +1,11 @@
 #version 300 es
 
+#preprocessor
+
 #include "shadow.glsl"
 
-precision highp float;
-precision highp sampler2DArray;
+precision mediump float;
+precision mediump sampler2DArray;
 
 #define MAX_NUM_OF_DIRECTIONAL_LIGHT 1
 #define MAX_NUM_OF_POINT_LIGHT 3
@@ -13,7 +15,6 @@ uniform int UseAmbientLight;
 uniform int NumOfDirectionalLight;
 uniform int NumOfPointLight;
 uniform int NumOfSpotLight;
-uniform int ShadowmapType;        // 0 : default, 1 : PCF, 2: PCSS
 
 uniform jAmbientLight AmbientLight;
 uniform jDirectionalLight DirectionalLight[MAX_NUM_OF_DIRECTIONAL_LIGHT];
@@ -33,7 +34,6 @@ uniform float PointLightZNear;
 uniform float SpotLightZNear;
 uniform mat4 ShadowVP;
 uniform mat4 ShadowV;
-uniform int UsePoissonSample;
 
 in vec3 ShadowPos_;
 in vec3 ShadowCameraPos_;
@@ -64,77 +64,84 @@ void main()
     if (UseAmbientLight != 0)
         finalColor += GetAmbientLight(AmbientLight);
 
-    if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
         InitPoissonSamples(ShadowPos.xy);
+#endif
 
     for(int i=0;i<MAX_NUM_OF_DIRECTIONAL_LIGHT;++i)
     {
         if (i >= NumOfDirectionalLight)
             break;
         
-        if (ShadowmapType == 2)
+#if defined(USE_PCSS)
         {
             float shadowRate = 0.0;
-            if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
                 shadowRate = PCSS_PoissonSample(ShadowPos, -shadowCameraPos.z, shadow_object, LightZNear, ShadowMapSize);
-            else
+#else // USE_POISSON_SAMPLE
                 shadowRate = PCSS(ShadowPos, -shadowCameraPos.z, shadow_object, LightZNear, ShadowMapSize);
+#endif // USE_POISSON_SAMPLE
 
             if (shadowRate > 0.0)
                 finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
 
         }
-        else if (ShadowmapType == 1)
+#elif defined(USE_PCF)
         {
             float shadowRate = 0.0;
-            if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
                 shadowRate = PCF_PoissonSample(ShadowPos, vec2(PCF_Size_Directional, PCF_Size_Directional) * ShadowMapSize, shadow_object);
-            else
+#else // USE_POISSON_SAMPLE
                 shadowRate = PCF(ShadowPos, vec2(PCF_Size_Directional, PCF_Size_Directional) * ShadowMapSize, shadow_object);
+#endif // USE_POISSON_SAMPLE
 
             if (shadowRate > 0.0)
                 finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * shadowRate;
         }
-        else
+#else
         {
             if (!IsShadowing(ShadowPos, shadow_object))
                 finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir);
         }
+#endif
     }
 
     for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
     {
         if (i >= NumOfPointLight)
             break;
-        
-        if (ShadowmapType == 2)
+
+#if defined(USE_PCSS)
         {
             float shadowRate = 0.0;
-            if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
                 shadowRate = PCSS_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_array);
-            else
+#else // USE_POISSON_SAMPLE
                 shadowRate = PCSS_OmniDirectional(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_array);
+#endif // USE_POISSON_SAMPLE
 
             if (shadowRate > 0.0)
                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
         }
-        else if (ShadowmapType == 1)
+#elif defined(USE_PCF)
         {
             vec2 radiusSquredUV = vec2(PCF_Size_OmniDirectional, PCF_Size_OmniDirectional) * ShadowMapSize;
             float shadowRate = 0.0;
-            if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
                 shadowRate = PCF_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, radiusSquredUV, shadow_object_array);
-            else
+#else
                 shadowRate = PCF_OmniDirectional(Pos_, PointLight[i].LightPos, radiusSquredUV, shadow_object_array);
+#endif
 
             if (shadowRate > 0.0)
                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
         }
-        else
+#else
         {
             if (!IsShadowing(Pos_, PointLight[i].LightPos, shadow_object_array))
                 finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir);
         }
+#endif
     }
     
     for(int i=0;i<MAX_NUM_OF_SPOT_LIGHT;++i)
@@ -142,34 +149,37 @@ void main()
         if (i >= NumOfSpotLight)
             break;
 
-        if (ShadowmapType == 2)
+#if defined(USE_PCSS)
         {
             float shadowRate = 0.0;
-            if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
                 shadowRate = PCSS_OmniDirectional_PoissonSample(Pos_, SpotLight[i].LightPos, SpotLightZNear, ShadowMapSize, shadow_object_array);
-            else
+#else // USE_POISSON_SAMPLE
                 shadowRate = PCSS_OmniDirectional(Pos_, SpotLight[i].LightPos, SpotLightZNear, ShadowMapSize, shadow_object_array);
+#endif // USE_POISSON_SAMPLE
 
             if (shadowRate > 0.0)
                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * shadowRate;
         }
-        else if (ShadowmapType == 1)
+#elif defined(USE_PCF)
         {
             vec2 radiusSquredUV = vec2(PCF_Size_OmniDirectional, PCF_Size_OmniDirectional) * ShadowMapSize;
             float shadowRate = 0.0;
-            if (UsePoissonSample > 0)
+#if defined(USE_POISSON_SAMPLE)
                 shadowRate = PCF_OmniDirectional_PoissonSample(Pos_, SpotLight[i].LightPos, radiusSquredUV, shadow_object_array);
-            else
+#else // USE_POISSON_SAMPLE
                 shadowRate = PCF_OmniDirectional(Pos_, SpotLight[i].LightPos, radiusSquredUV, shadow_object_array);
+#endif // USE_POISSON_SAMPLE
 
             if (shadowRate > 0.0)
                 finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * shadowRate;
         }
-        else
+#else
         {
             if (!IsShadowing(Pos_, SpotLight[i].LightPos, shadow_object_array))
                 finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir);
         }
+#endif
     }
 
     color = vec4(finalColor * diffuse, Color_.w);

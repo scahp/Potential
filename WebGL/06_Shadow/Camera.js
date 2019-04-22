@@ -106,8 +106,8 @@ var moveShift = function(value, cameraIndex)
     camera.target.Add(rightVec);
     camera.up.Add(rightVec);
 
-    console.log('(pos : ' + camera.pos.x + ',' + camera.pos.y + ',' + camera.pos.z + ')(' + 'target : ' + camera.target.x + ',' + camera.target.y + ',' + camera.target.z + ')('
-     + 'up : ' + camera.up.x + ',' + camera.up.y + ',' + camera.up.z + ')');
+    //console.log('(pos : ' + camera.pos.x + ',' + camera.pos.y + ',' + camera.pos.z + ')(' + 'target : ' + camera.target.x + ',' + camera.target.y + ',' + camera.target.z + ')('
+    // + 'up : ' + camera.up.x + ',' + camera.up.y + ',' + camera.up.z + ')');
 }
 
 var updateCamera = function(gl, cameraIndex)

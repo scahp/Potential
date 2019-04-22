@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 struct jAmbientLight
 {
