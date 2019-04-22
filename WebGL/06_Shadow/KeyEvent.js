@@ -140,3 +140,16 @@ var OnUsePoissonSample = function(e)
     else
         UsePoissonSample = 0;
 }
+
+var OnShowDirectionalLightMap = function(e)
+{
+    //console.log(e.checked);
+
+    if (shadowMapDebugQuad)
+    {
+        if (e.checked)
+            shadowMapDebugQuad.hide = false;
+        else
+            shadowMapDebugQuad.hide = true;
+    }
+}

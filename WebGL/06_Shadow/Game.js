@@ -28,6 +28,7 @@ const sphereRadius = 30.0;
 var CubeTest = null;
 var ShadowmapType = 0;
 var UsePoissonSample = 1;
+var ShowDirectionalLightMap = 0;
 
 var jGame = function(gl)
 {
@@ -133,6 +134,7 @@ jGame.prototype.Setup = function()
 
     // Create frameBuffer to render at offscreen
     shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
+    shadowMapDebugQuad.hide = !document.getElementById("ShowDirectionalLightMap").checked;
 }
 
 jGame.prototype.Update = function(deltaTime)
