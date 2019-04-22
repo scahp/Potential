@@ -35,8 +35,8 @@ uniform float SpotLightZNear;
 uniform mat4 ShadowVP;
 uniform mat4 ShadowV;
 
-in vec3 ShadowPos_;
-in vec3 ShadowCameraPos_;
+// in vec3 ShadowPos_;
+// in vec3 ShadowCameraPos_;
 in vec3 Pos_;
 in vec4 Color_;
 in vec3 Normal_;
