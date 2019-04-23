@@ -127,8 +127,8 @@ jGame.prototype.Setup = function()
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
         , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), CreateVec4(0.8, 0.0, 0.0, 1.0), colorOnlyShader);
     
-    CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
-        , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
+    // CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
+    //     , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
     if (CubeTest)
     {
         CubeTest.isDisablePipeLineChange = true;
