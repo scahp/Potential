@@ -111,17 +111,24 @@ void main()
         if (i >= NumOfPointLight)
             break;
 
+        vec3 toLight = PointLight[i].LightPos - Pos_;
+        float distFromLightSqrt = dot(toLight, toLight);
+
+        if (distFromLightSqrt > (PointLight[i].MaxDistance * PointLight[i].MaxDistance))
+            continue;
+
 #if defined(USE_PCSS)
         {
+
             float shadowRate = 0.0;
 #if defined(USE_POISSON_SAMPLE)
-                shadowRate = PCSS_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_array);
+            shadowRate = PCSS_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_array);
 #else // USE_POISSON_SAMPLE
-                shadowRate = PCSS_OmniDirectional(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_array);
+            shadowRate = PCSS_OmniDirectional(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_array);
 #endif // USE_POISSON_SAMPLE
 
             if (shadowRate > 0.0)
-               finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
+                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * shadowRate;
         }
 #elif defined(USE_PCF)
         {
@@ -148,6 +155,12 @@ void main()
     {
         if (i >= NumOfSpotLight)
             break;
+
+        vec3 toLight = SpotLight[i].LightPos - Pos_;
+        float distFromLightSqrt = dot(toLight, toLight);
+
+        if (distFromLightSqrt > (PointLight[i].MaxDistance * PointLight[i].MaxDistance))
+            continue;
 
 #if defined(USE_PCSS)
         {
