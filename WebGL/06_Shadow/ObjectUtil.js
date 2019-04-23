@@ -108,21 +108,35 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         }
 
         const pipeline = this.pipeLineInfo.pipeLine;
-        setIntToUniformLocation(gl, pipeline, 'shadow_object_array', 0);
+        setIntToUniformLocation(gl, pipeline, 'shadow_object_point_array', 0);
 
         gl.activeTexture(gl.TEXTURE0);
         if (this.texture)
             gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        if (this.textureCubeMap)
+        else if (this.textureCubeMap)
             gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.textureCubeMap);
-        if (this.texture2DArray)
+        else if (this.texture2DArray)
             gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture2DArray);
+        else
+            gl.bindTexture(gl.TEXTURE_2D, nullTexture);
         
+        setIntToUniformLocation(gl, pipeline, 'shadow_object_spot_array', 1);
+
+        gl.activeTexture(gl.TEXTURE1);
+        if (this.spotLightTexture2DArray)
+            gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.spotLightTexture2DArray);
+        else
+            gl.bindTexture(gl.TEXTURE_2D, nullTexture);
+
+        gl.activeTexture(gl.TEXTURE2);
+        setIntToUniformLocation(gl, pipeline, 'shadow_object', 2);
         if (this.textureShadowMap)
         {
-            gl.activeTexture(gl.TEXTURE1);
-            setIntToUniformLocation(gl, pipeline, 'shadow_object', 1);
             gl.bindTexture(gl.TEXTURE_2D, this.textureShadowMap);
+        }
+        else
+        {
+            gl.bindTexture(gl.TEXTURE_2D, nullTexture);
         }
 
         setFloatToUniformLocation(gl, pipeline, 'PCF_Size_Directional', pcf_size_directional);
@@ -166,64 +180,82 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         var numOfSpotLight = 0;
 
         // Each light should be used one in a render pass.
-        const light = camera.lights.getLightByIndex(lightIndex);
-        if (light)
+        if (lightIndex != 9999)
         {
-            if (light.type == "Directional")
+            const light = camera.lights.getLightByIndex(lightIndex);
+            if (light)
             {
-                setDirectionalLight(gl, pipeLine, light);
-                numOfDirectionalLight = 1;
-
-                var camera = light.getCamera();
-                if (camera)
+                if (light.type == "Directional")
                 {
-                    setFloatToUniformLocation(gl, pipeLine, 'LightZNear', camera.near);
-                    setFloatToUniformLocation(gl, pipeLine, 'LightZFar', camera.far);
+                    setDirectionalLight(gl, pipeLine, light);
+                    numOfDirectionalLight = 1;
+
+                    var camera = light.getCamera();
+                    if (camera)
+                    {
+                        setFloatToUniformLocation(gl, pipeLine, 'LightZNear', camera.near);
+                        setFloatToUniformLocation(gl, pipeLine, 'LightZFar', camera.far);
+                    }
+                }
+                else if (light.type == "Point")
+                {
+                    setPointLight(gl, pipeLine, light);
+                    numOfPointLight = 1;
+
+                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', light.getNear());
+                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', light.getFar());
+                }
+                else if (light.type == "Spot")
+                {
+                    setSpotLight(gl, pipeLine, light);
+                    numOfSpotLight = 1;
+
+                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', light.getNear());
+                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
                 }
             }
-            else if (light.type == "Point")
+        }
+        else
+        {
+            if (camera.lights)
             {
-                setPointLight(gl, pipeLine, light);
-                numOfPointLight = 1;
+                numOfDirectionalLight = camera.lights.directionalLights.length;
+                numOfPointLight = camera.lights.pointLights.length;
+                numOfSpotLight = camera.lights.spotLights.length;
 
-                setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', light.getNear());
-                setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', light.getFar());
-            }
-            else if (light.type == "Spot")
-            {
-                setSpotLight(gl, pipeLine, light);
-                numOfSpotLight = 1;
+                for(var i=0;i<camera.lights.directionalLights.length;++i)
+                {
+                    const light = camera.lights.directionalLights[i];
+                    lightDir = light.direction.CloneVec3();
+                    setDirectionalLight(gl, this.pipeLineInfo.pipeLine, light);
 
-                setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', light.getNear());
-                setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
+                    var lightCamera = light.getCamera();
+                    if (lightCamera)
+                    {
+                        setFloatToUniformLocation(gl, pipeLine, 'LightZNear', lightCamera.near);
+                        setFloatToUniformLocation(gl, pipeLine, 'LightZFar', lightCamera.far);
+                    }
+                }
+
+                for(var i=0;i<camera.lights.pointLights.length;++i)
+                {
+                    const light = camera.lights.pointLights[i];
+                    setPointLight(gl, this.pipeLineInfo.pipeLine, light);
+
+                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', light.getNear());
+                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', light.getFar());
+                }
+
+                for(var i=0;i<camera.lights.spotLights.length;++i)
+                {
+                    const light = camera.lights.spotLights[i];
+                    setSpotLight(gl, this.pipeLineInfo.pipeLine, light);
+
+                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', light.getNear());
+                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
+                }
             }
         }
-
-        // if (camera.lights)
-        // {
-        //     numOfDirectionalLight = camera.lights.directionalLights.length;
-        //     numOfPointLight = camera.lights.pointLights.length;
-        //     numOfSpotLight = camera.lights.spotLights.length;
-
-        //      for(var i=0;i<camera.lights.directionalLights.length;++i)
-        //     {
-        //         const light = camera.lights.directionalLights[i];
-        //         lightDir = light.direction.CloneVec3();
-        //         setDirectionalLight(this.pipeLineInfo.pipeLine, light);
-        //     }
-
-        //     for(var i=0;i<camera.lights.pointLights.length;++i)
-        //     {
-        //         const light = camera.lights.pointLights[i];
-        //         setPointLight(this.pipeLineInfo.pipeLine, light);
-        //     }
-
-        //     for(var i=0;i<camera.lights.spotLights.length;++i)
-        //     {
-        //         const light = camera.lights.spotLights[i];
-        //         setSpotLight(this.pipeLineInfo.pipeLine, light);
-        //     }
-        // }
 
         setIntToUniformLocation(gl, pipeLine, 'NumOfDirectionalLight', numOfDirectionalLight);
         setIntToUniformLocation(gl, pipeLine, 'NumOfPointLight', numOfPointLight);

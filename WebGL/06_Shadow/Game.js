@@ -29,6 +29,7 @@ var CubeTest = null;
 var ShadowmapType = 0;
 var UsePoissonSample = 1;
 var ShowDirectionalLightMap = 0;
+var nullTexture = null;
 
 var jGame = function(gl)
 {
@@ -53,6 +54,12 @@ jGame.prototype.processKeyEvents = function()
 jGame.prototype.Setup = function()
 {
     var gl = this.gl;
+
+    nullTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, nullTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 2, 2, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
     // Create Cameras
     const mainCameraPos = CreateVec3(76.33, 173.37, -265.88);
@@ -133,8 +140,11 @@ jGame.prototype.Setup = function()
     }
 
     // Create frameBuffer to render at offscreen
-    shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
-    shadowMapDebugQuad.hide = !document.getElementById("ShowDirectionalLightMap").checked;
+    if (dirLight)
+    {
+        shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
+        shadowMapDebugQuad.hide = !document.getElementById("ShowDirectionalLightMap").checked;
+    }
 }
 
 jGame.prototype.Update = function(deltaTime)

@@ -40,11 +40,14 @@ var GenerateShadowMap = function(camera)
                 if (obj.drawFunc)
                     obj.drawFunc(camera, omniShadowMapPipeLineHashCode, 0);
             }
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         }
     }
 
     // 1. ShadowMap pass
     // 1.1 Directional Light ShadowMap Generation
+    if (dirLight)
     {
         gl.bindFramebuffer(gl.FRAMEBUFFER, dirLight.directionalShadowMap.framebuffer.fbo);
         
@@ -112,56 +115,44 @@ var RenderWithShadowMap = function(camera)
     gl.clearColor(0.5, 0.5, 0.5, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    var drawLightWithOmniShadowMap = function(light)
-    {
-        gl.blendFunc(gl.ONE, gl.ONE);
-
-        for(var i = 0;i<StaticObjectArray.length;++i)
-        {
-            var obj = StaticObjectArray[i];
-    
-            obj.textureCubeMap = light.omniShadowMap.depthCubeMap;
-            obj.texture2DArray = light.omniShadowMap.texture2DArray;
-            if (obj.drawFunc)
-                obj.drawFunc(camera, defaultPipeLineHashCode, light.index);
-            obj.textureCubeMap = null;
-            obj.texture2DArray = null;
-        }
-    }
-
     // 2. Light pass
-    // 2.1 Directional Light
     gl.blendFunc(gl.ONE, gl.ZERO);
     camera.ambient = ambientLight;
 
-    var matShadowVP = CloneMat4(dirLight.directionalShadowMap.camera.matProjection).Mul(dirLight.directionalShadowMap.camera.matView);
-    var matShadowV = CloneMat4(dirLight.directionalShadowMap.camera.matView);
-
-    if (camera.lights.directionalLights.length > 0)
-    {
-        for(var i = 0;i<StaticObjectArray.length;++i)
-        {
-            var obj = StaticObjectArray[i];
+    var matShadowVP = null;
+    if (dirLight)
+        matShadowVP = CloneMat4(dirLight.directionalShadowMap.camera.matProjection).Mul(dirLight.directionalShadowMap.camera.matView);
     
+    var matShadowV = null;
+    if (dirLight)
+        matShadowV = CloneMat4(dirLight.directionalShadowMap.camera.matView);
+
+    for(var i = 0;i<StaticObjectArray.length;++i)
+    {
+        var obj = StaticObjectArray[i];
+
+        if (dirLight)
             obj.textureShadowMap = dirLight.directionalShadowMap.framebuffer.tbo;
-            obj.matShadowVP = matShadowVP;
-            obj.matShadowV = matShadowV;
-            if (obj.drawFunc)
-                obj.drawFunc(camera, defaultPipeLineHashCode, 0);
+        else
             obj.textureShadowMap = null;
-            obj.matShadowV = null;
-            obj.matShadowVP = null;
-        }
+        obj.matShadowVP = matShadowVP;
+        obj.matShadowV = matShadowV;
+        if (camera.lights.pointLights.length > 0)
+            obj.texture2DArray = camera.lights.pointLights[0].omniShadowMap.texture2DArray;
+        else
+            obj.texture2DArray = null;
+        if (camera.lights.spotLights.length > 0)
+            obj.spotLightTexture2DArray = camera.lights.spotLights[0].omniShadowMap.texture2DArray;
+        else
+            obj.spotLightTexture2DArray = null;
+        if (obj.drawFunc)
+            obj.drawFunc(camera, defaultPipeLineHashCode, 9999);
+        obj.textureShadowMap = null;
+        obj.matShadowV = null;
+        obj.matShadowVP = null;
+        obj.texture2DArray = null;
     }
     camera.ambient = null;
-
-    // 2.2 Point Light
-    for(var i=0;i<camera.lights.pointLights.length;++i)
-        drawLightWithOmniShadowMap(camera.lights.pointLights[i]);
-
-    // 2.3 Spot Light
-    for(var i=0;i<camera.lights.spotLights.length;++i)
-        drawLightWithOmniShadowMap(camera.lights.spotLights[i]);
 
     // 3. Transparent object render
     gl.enable(gl.BLEND);
@@ -172,7 +163,7 @@ var RenderWithShadowMap = function(camera)
     gl.disable(gl.STENCIL_TEST);
     drawStaticTransparentObjects(camera, defaultPipeLineHashCode, -1);
 
-    if (CubeTest)
+    if (CubeTest && camera.lights.pointLights.length)
         CubeTest.drawFunc(camera, null, camera.lights.pointLights[0].index);
 
     gl.disable(gl.BLEND);
