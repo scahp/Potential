@@ -55,11 +55,7 @@ jGame.prototype.Setup = function()
 {
     var gl = this.gl;
 
-    nullTexture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, nullTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 2, 2, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    nullTexture = createNullTexture(gl);
 
     // Create Cameras
     const mainCameraPos = CreateVec3(76.33, 173.37, -265.88);
@@ -131,12 +127,12 @@ jGame.prototype.Setup = function()
     SphereA = CreateSphere(gl, StaticObjectArray, CreateVec3(spherePosX, spherePosY, spherePosZ)
         , 1.0, 20, CreateVec3(sphereRadius, sphereRadius, sphereRadius), CreateVec4(0.8, 0.0, 0.0, 1.0), colorOnlyShader);
     
-    // CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
-    //     , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
+    CubeTest = CreateCube(gl, null, pointLight.pos, OneVec3, CreateVec3(25, 25, 25)
+        , CreateVec4(0.7, 0.7, 0.7, 1.0), CreateTexArrayCubeMapShaderFile());
     if (CubeTest)
     {
         CubeTest.isDisablePipeLineChange = true;
-        CubeTest.hide = true;
+        //CubeTest.hide = true;
     }
 
     // Create frameBuffer to render at offscreen

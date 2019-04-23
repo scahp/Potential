@@ -223,3 +223,14 @@ var setFloatToUniformLocation = function(gl, pipeline, locationName, value)
     if (loc)
         gl.uniform1f(loc, value);
 }
+
+var createNullTexture = function(gl)
+{
+    var nullTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, nullTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 2, 2, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    return nullTex;
+}
