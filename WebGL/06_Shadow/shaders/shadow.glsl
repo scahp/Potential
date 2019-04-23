@@ -50,7 +50,7 @@ void InitPoissonSamples( const in vec2 randomSeed ) {
 //////////////////////////////////////////////////////////////////////
 // Dirctional Light Shadow
 #define SHADOW_BIAS_DIRECTIONAL 0.02
-#define SEARCH_RADIUS_DIRECTIONAL 5.0
+#define SEARCH_RADIUS_DIRECTIONAL 10.0
 bool IsInShadowMapSpace(vec2 clipPos)
 {
     return (clipPos.x >= 0.0 && clipPos.x <= 1.0 && clipPos.y >= 0.0 && clipPos.y <= 1.0);
