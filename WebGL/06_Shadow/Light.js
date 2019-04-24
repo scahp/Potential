@@ -51,6 +51,32 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
     {
         return this.directionalShadowMap.camera;
     }
+    DirectionalLight.getShadowMap = function()
+    {
+        return this.directionalShadowMap.framebuffer.tbo;
+    }
+    DirectionalLight.getShadowVP = function()
+    {
+        return CloneMat4(this.directionalShadowMap.camera.matProjection).Mul(this.directionalShadowMap.camera.matView);;
+    }
+    DirectionalLight.getShadowV = function()
+    {
+        return CloneMat4(this.directionalShadowMap.camera.matView);;
+    }
+    DirectionalLight.bindLight = function(gl, pipeLine, materialArray)
+    {
+        setDirectionalLight(gl, pipeLine, this);
+
+        var camera = this.getCamera();
+        if (camera)
+        {
+            setFloatToUniformLocation(gl, pipeLine, 'LightZNear', camera.near);
+            setFloatToUniformLocation(gl, pipeLine, 'LightZFar', camera.far);
+        }
+        setMatrixToUniformLocation(gl, pipeLine, "ShadowVP", this.getShadowVP());
+        setMatrixToUniformLocation(gl, pipeLine, "ShadowV", this.getShadowV());
+        materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D, this.getShadowMap(), "shadow_object"));
+    }
     addObject(TargetArray, DirectionalLight);
     return DirectionalLight;
 }
@@ -103,6 +129,18 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
     PointLight.getFar = function()
     {
         return this.omniShadowMap.far;
+    }
+    PointLight.getShadowMap = function()
+    {
+        return this.omniShadowMap.texture2DArray;
+    }
+    PointLight.bindLight = function(gl, pipeLine, materialArray)
+    {
+        setPointLight(gl, pipeLine, this);
+
+        setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', this.getNear());
+        setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', this.getFar());
+        materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D_ARRAY, this.getShadowMap(), "shadow_object_point_array"));
     }
     addObject(TargetArray, PointLight);
     return PointLight;
@@ -180,6 +218,17 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
     SpotLight.getFar = function()
     {
         return this.omniShadowMap.far;
+    }
+    SpotLight.getShadowMap = function()
+    {
+        return this.omniShadowMap.texture2DArray;
+    }
+    SpotLight.bindLight = function(gl, pipeLine, materialArray)
+    {
+        setSpotLight(gl, pipeLine, this);
+        setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', this.getNear());
+        setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', this.getFar());
+        materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D_ARRAY, this.getShadowMap(), "shadow_object_spot_array"));
     }
     addObject(TargetArray, SpotLight);
     return SpotLight;

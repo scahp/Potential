@@ -117,42 +117,12 @@ var RenderWithShadowMap = function(camera)
 
     // 2. Light pass
     gl.blendFunc(gl.ONE, gl.ZERO);
-    camera.ambient = ambientLight;
-
-    var matShadowVP = null;
-    if (dirLight)
-        matShadowVP = CloneMat4(dirLight.directionalShadowMap.camera.matProjection).Mul(dirLight.directionalShadowMap.camera.matView);
-    
-    var matShadowV = null;
-    if (dirLight)
-        matShadowV = CloneMat4(dirLight.directionalShadowMap.camera.matView);
-
     for(var i = 0;i<StaticObjectArray.length;++i)
     {
         var obj = StaticObjectArray[i];
-
-        if (dirLight)
-            obj.textureShadowMap = dirLight.directionalShadowMap.framebuffer.tbo;
-        else
-            obj.textureShadowMap = null;
-        obj.matShadowVP = matShadowVP;
-        obj.matShadowV = matShadowV;
-        if (camera.lights.pointLights.length > 0)
-            obj.texture2DArray = camera.lights.pointLights[0].omniShadowMap.texture2DArray;
-        else
-            obj.texture2DArray = null;
-        if (camera.lights.spotLights.length > 0)
-            obj.spotLightTexture2DArray = camera.lights.spotLights[0].omniShadowMap.texture2DArray;
-        else
-            obj.spotLightTexture2DArray = null;
         if (obj.drawFunc)
-            obj.drawFunc(camera, defaultPipeLineHashCode, 9999);
-        obj.textureShadowMap = null;
-        obj.matShadowV = null;
-        obj.matShadowVP = null;
-        obj.texture2DArray = null;
+            obj.drawFunc(camera, defaultPipeLineHashCode);
     }
-    camera.ambient = null;
 
     // 3. Transparent object render
     gl.enable(gl.BLEND);

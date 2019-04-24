@@ -243,7 +243,7 @@ var CreateCamera = function(gl, pos, target, up, fovRad, near, far, createDebugS
     var newCamera = {matView:null, matProjection:null, pos:pos, target:target, up:up
         , debugStaticObject:debugStaticObject, debugStaticObject2:debugStaticObject2, fovRad:fovRad, near:near, far:far
         , lights:{all:[], directionalLights:[], pointLights:[], spotLights:[], getLightByIndex:getLightByIndex}, addLight:addLight
-        , ambient:null, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom
+        , ambient:null, UseAmbient:true, index:Cameras.length, getNumOfLights:getNumOfLights, checkIsInFrustom:checkIsInFrustom
         , frustumPlanes:frustumPlanes, checkIsInFrustomWithDirection:checkIsInFrustomWithDirection, isPerspectiveMatrix:isPerspectiveMatrix};
     addObject(Cameras, newCamera);
     return newCamera;
