@@ -129,6 +129,8 @@ var OnChangedShadowMapType = function(e)
         ShadowmapType = 1;
     else if (mode == 'PCSS')
         ShadowmapType = 2;
+    else if (mode == 'VSM')
+        ShadowmapType = 3;
 }
 
 var OnUsePoissonSample = function(e)

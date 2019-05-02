@@ -9,8 +9,15 @@ var SetShadowMapRenderer = function(renderer)
 var GenerateShadowMap = function(camera)
 {
     var gl = this.gl;
-    const shadowMapPipeLineHashCode =  LoadPipeline(CreateShadowMapShaderFile()).hashCode;
+    var shadowMapPipeLineHashCode = null;
+    if (ShadowmapType == 3)     // VSM
+        shadowMapPipeLineHashCode =  LoadPipeline(CreateVarianceShadowMapShaderFile()).hashCode;
+    else
+        shadowMapPipeLineHashCode =  LoadPipeline(CreateShadowMapShaderFile()).hashCode;
+    
     const omniShadowMapPipeLineHashCode = LoadPipeline(CreateOmniDirectionalShadowMapShaderFile()).hashCode;
+    const blurPipeLineHashCode = LoadPipeline(CreateFullscreenBlurShaderFile()).hashCode;
+    const blurOmniDirectionalPipeLineHashCode = LoadPipeline(CreateFullscreenBlurOmnidirectionalShaderFile()).hashCode;
 
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -56,7 +63,11 @@ var GenerateShadowMap = function(camera)
 
         gl.viewport(0, 0, shadow_width, shadow_height);
         
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        var maxDist = 0.0;
+        if (ShadowmapType == 3)     // VSM
+            maxDist = dirLight.directionalShadowMap.camera.far * 2.0;
+
+        gl.clearColor(maxDist, maxDist*maxDist, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         for(var i = 0;i<StaticObjectArray.length;++i)
@@ -68,16 +79,120 @@ var GenerateShadowMap = function(camera)
                 obj.drawFunc(dirLight.directionalShadowMap.camera, shadowMapPipeLineHashCode, 0);
         }
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // 1.2 Point Light ShadowMap Generation
+        for(var i=0;i<camera.lights.pointLights.length;++i)
+            drawOmniShadowMap(camera.lights.pointLights[i].omniShadowMap);
+
+        // 1.3 Spot Light ShadowMap Generation
+        for(var i=0;i<camera.lights.spotLights.length;++i)
+            drawOmniShadowMap(camera.lights.spotLights[i].omniShadowMap);
+
+
+        if (ShadowmapType == 3)     // VSM
+        {
+            /////////////////////////////////////////////////
+            // Blur
+
+            fullscreenQuadBlur.textureArray = null;
+
+            //////////////////////
+            // Directional Shadow
+            fullscreenQuadBlur.maxDist = dirLight.directionalShadowMap.camera.far * 2.0;
+
+            // vertical
+            gl.bindFramebuffer(gl.FRAMEBUFFER, vsmShadowMapBlurFrameBuffer.fbo);
+            gl.viewport(0, 0, shadow_width, shadow_height);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            fullscreenQuadBlur.vertical = true;
+            fullscreenQuadBlur.texture = dirLight.directionalShadowMap.getDepthMap();
+            fullscreenQuadBlur.drawFunc(null, blurPipeLineHashCode);
+            // 원본 텍스쳐 -> 임시 텍스쳐
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+            // horizontal
+            gl.bindFramebuffer(gl.FRAMEBUFFER, dirLight.directionalShadowMap.framebuffer.fbo);
+            gl.viewport(0, 0, shadow_width, shadow_height);
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            fullscreenQuadBlur.vertical = false;
+            fullscreenQuadBlur.texture = vsmShadowMapBlurFrameBuffer.tbo;
+            fullscreenQuadBlur.drawFunc(null, blurPipeLineHashCode);
+            // 임시 텍스쳐 -> 원본 텍스쳐
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            //////////////////////
+
+            //////////////////////
+            // Point Light OmniDirectional Shadow
+
+            fullscreenQuadBlur.texture = null;
+
+            // vertical
+            for(var i=0;i<vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers.length;++i)
+            {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers[i]);
+                gl.viewport(0, 0, shadow_width, shadow_height);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                fullscreenQuadBlur.vertical = true;
+                fullscreenQuadBlur.textureArray = pointLight.getShadowMap();
+                fullscreenQuadBlur.texIndex = i;
+                fullscreenQuadBlur.drawFunc(null, blurOmniDirectionalPipeLineHashCode);                
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+
+            // horizontal
+            for(var i=0;i<pointLight.omniShadowMap.framebuffers.length;++i)
+            {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, pointLight.omniShadowMap.framebuffers[i]);
+                gl.viewport(0, 0, shadow_width, shadow_height);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                fullscreenQuadBlur.vertical = false;
+                fullscreenQuadBlur.textureArray = vsmOmniDirectionalShadowMapBlurFrameBuffer.texture2DArray;
+                fullscreenQuadBlur.texIndex = i;
+                fullscreenQuadBlur.drawFunc(null, blurOmniDirectionalPipeLineHashCode);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+            ////////////////////
+
+            //////////////////////
+            // Spot Light OmniDirectional Shadow
+
+            fullscreenQuadBlur.texture = null;
+
+            // vertical
+            for(var i=0;i<vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers.length;++i)
+            {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers[i]);
+                gl.viewport(0, 0, shadow_width, shadow_height);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                fullscreenQuadBlur.vertical = true;
+                fullscreenQuadBlur.textureArray = spotLight.getShadowMap();
+                fullscreenQuadBlur.texIndex = i;
+                fullscreenQuadBlur.drawFunc(null, blurOmniDirectionalPipeLineHashCode);                
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+
+            // horizontal
+            for(var i=0;i<spotLight.omniShadowMap.framebuffers.length;++i)
+            {
+                gl.bindFramebuffer(gl.FRAMEBUFFER, spotLight.omniShadowMap.framebuffers[i]);
+                gl.viewport(0, 0, shadow_width, shadow_height);
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+                fullscreenQuadBlur.vertical = false;
+                fullscreenQuadBlur.textureArray = vsmOmniDirectionalShadowMapBlurFrameBuffer.texture2DArray;
+                fullscreenQuadBlur.texIndex = i;
+                fullscreenQuadBlur.drawFunc(null, blurOmniDirectionalPipeLineHashCode);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            }
+            ////////////////////
+        }
     }
     
-    // 1.2 Point Light ShadowMap Generation
-    for(var i=0;i<camera.lights.pointLights.length;++i)
-        drawOmniShadowMap(camera.lights.pointLights[i].omniShadowMap);
-
-    // 1.3 Spot Light ShadowMap Generation
-    for(var i=0;i<camera.lights.spotLights.length;++i)
-        drawOmniShadowMap(camera.lights.spotLights[i].omniShadowMap);
-
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 }
 
@@ -100,6 +215,9 @@ var RenderWithShadowMap = function(camera)
             else
                 defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_PCSS_ShaderFile()).hashCode;
         break;
+        case 3:     // VSM
+            defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_VarianceShadowMap_ShaderFile()).hashCode;
+        break;
         default:
             defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMapShaderFile()).hashCode;
         break;
@@ -117,42 +235,12 @@ var RenderWithShadowMap = function(camera)
 
     // 2. Light pass
     gl.blendFunc(gl.ONE, gl.ZERO);
-    camera.ambient = ambientLight;
-
-    var matShadowVP = null;
-    if (dirLight)
-        matShadowVP = CloneMat4(dirLight.directionalShadowMap.camera.matProjection).Mul(dirLight.directionalShadowMap.camera.matView);
-    
-    var matShadowV = null;
-    if (dirLight)
-        matShadowV = CloneMat4(dirLight.directionalShadowMap.camera.matView);
-
     for(var i = 0;i<StaticObjectArray.length;++i)
     {
         var obj = StaticObjectArray[i];
-
-        if (dirLight)
-            obj.textureShadowMap = dirLight.directionalShadowMap.framebuffer.tbo;
-        else
-            obj.textureShadowMap = null;
-        obj.matShadowVP = matShadowVP;
-        obj.matShadowV = matShadowV;
-        if (camera.lights.pointLights.length > 0)
-            obj.texture2DArray = camera.lights.pointLights[0].omniShadowMap.texture2DArray;
-        else
-            obj.texture2DArray = null;
-        if (camera.lights.spotLights.length > 0)
-            obj.spotLightTexture2DArray = camera.lights.spotLights[0].omniShadowMap.texture2DArray;
-        else
-            obj.spotLightTexture2DArray = null;
         if (obj.drawFunc)
-            obj.drawFunc(camera, defaultPipeLineHashCode, 9999);
-        obj.textureShadowMap = null;
-        obj.matShadowV = null;
-        obj.matShadowVP = null;
-        obj.texture2DArray = null;
+            obj.drawFunc(camera, defaultPipeLineHashCode);
     }
-    camera.ambient = null;
 
     // 3. Transparent object render
     gl.enable(gl.BLEND);
@@ -164,7 +252,10 @@ var RenderWithShadowMap = function(camera)
     drawStaticTransparentObjects(camera, defaultPipeLineHashCode, -1);
 
     if (CubeTest && camera.lights.pointLights.length)
+    {
+        CubeTest.textureArray = camera.lights.pointLights[0].getShadowMap();
         CubeTest.drawFunc(camera, null, camera.lights.pointLights[0].index);
+    }
 
     gl.disable(gl.BLEND);
 }

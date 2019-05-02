@@ -952,7 +952,8 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     newStaticObject.texture = texture;
-    addObject(TargetObjectArray, newStaticObject);
+    if (TargetObjectArray)
+        addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
 }
 
@@ -978,3 +979,54 @@ var CreateBillboardQuadTexture = function(gl, TargetObjectArray, pos, size, scal
     return quad;
 }
 
+var CreateFullScreenQuad = function(gl, TargetObjectArray, texture)
+{
+    var vertices = [0.0, 1.0, 2.0, 3.0];
+
+    var elementCount = vertices.length;
+    var attrib0 = createAttribParameter('VertID', 1, vertices, gl.DYNAMIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT, 0);
+    var newStaticObject = createStaticObject(gl, CreateFullscreenBlurShaderFile(), [attrib0], null, 0, elementCount, gl.TRIANGLE_STRIP);
+
+    var uiStaticObject = { vertical:true, maxDist:0.0, texIndex:0.0 };
+    uiStaticObject.__proto__ = newStaticObject;
+    uiStaticObject.setRenderProperty = function()
+    {
+        if (this.__proto__.setRenderProperty)
+            this.__proto__.setRenderProperty();
+
+        var program = this.pipeLineInfo.pipeLine;
+
+        var pixelSizeLoc = gl.getUniformLocation(program, 'PixelSize');
+        if (pixelSizeLoc)
+        {
+            var pixelSize = [1.0 / gl.canvas.width, 1.0 / gl.canvas.height];
+            gl.uniform2fv(pixelSizeLoc, pixelSize);
+        }
+    
+        var verticalLoc = gl.getUniformLocation(program, 'Vertical');
+        if (verticalLoc)
+        {
+            gl.uniform1f(verticalLoc, this.vertical);
+        }
+
+        var maxDistLoc = gl.getUniformLocation(program, 'MaxDist');
+        if (maxDistLoc)
+        {
+            gl.uniform1f(maxDistLoc, this.maxDist);
+        }
+
+        var texIndexLoc = gl.getUniformLocation(program, 'TexIndex');
+        if (texIndexLoc)
+        {
+            gl.uniform1f(texIndexLoc, this.texIndex);
+        }
+    };
+
+    newStaticObject.texture = texture;
+    newStaticObject.pos = CreateVec3(0, 0, 0.0);
+    newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+    newStaticObject.scale = CreateVec3(1.0, 1.0, 1.0);
+    if (TargetObjectArray)
+        addObject(TargetObjectArray, uiStaticObject);
+    return uiStaticObject;
+}

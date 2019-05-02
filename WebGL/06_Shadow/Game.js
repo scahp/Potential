@@ -30,6 +30,9 @@ var ShadowmapType = 0;
 var UsePoissonSample = 1;
 var ShowDirectionalLightMap = 0;
 var nullTexture = null;
+var vsmShadowMapBlurFrameBuffer = null;
+var vsmOmniDirectionalShadowMapBlurFrameBuffer = null;
+var fullscreenQuadBlur = null;
 
 var jGame = function(gl)
 {
@@ -58,8 +61,10 @@ jGame.prototype.Setup = function()
     nullTexture = createNullTexture(gl);
 
     // Create Cameras
-    const mainCameraPos = CreateVec3(76.33, 173.37, -265.88);
-    const mainCameraTarget = CreateVec3(76.1, 172.88, -265.03);
+    const mainCameraPos = CreateVec3(172.66, 166.47, -180.63);
+    const mainCameraTarget = CreateVec3(171.96, 166.02, -180.05);
+    // const mainCameraPos = CreateVec3(38.16, 44.40, 67.83);
+    // const mainCameraTarget = CreateVec3(20.0,0.0,50.0);
     mainCamera = CreateCamera(gl, mainCameraPos, mainCameraTarget, mainCameraPos.CloneVec3().Add(CreateVec3(0.0, 1.0, 0.0)), DegreeToRadian(45), 10.0, 500.0, false);
     updateCamera(gl, 0);
 
@@ -138,7 +143,13 @@ jGame.prototype.Setup = function()
     // Create frameBuffer to render at offscreen
     if (dirLight)
     {
-        shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300, dirLight.directionalShadowMap.getDepthMap());
+        vsmShadowMapBlurFrameBuffer = CraeteFramebufferRG(gl, shadow_width, shadow_height);
+        vsmOmniDirectionalShadowMapBlurFrameBuffer = CraeteFramebufferRGForOmniDirectionalShadowMap(gl, shadow_width, shadow_height);
+        fullscreenQuadBlur = CreateFullScreenQuad(gl, null, null);
+
+        shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300
+            //, vsmShadowMapBlurFrameBuffer.tbo);
+            , dirLight.directionalShadowMap.getDepthMap());
         shadowMapDebugQuad.hide = !document.getElementById("ShowDirectionalLightMap").checked;
     }
 }

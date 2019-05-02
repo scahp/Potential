@@ -1,3 +1,8 @@
+var CreateMaterialProperty = function(textureType, texture, locationName, filterMin = null, filterMag = null)
+{
+    return { textureType:textureType, texture:texture, locationName:locationName, filter:{mag:filterMag, min:filterMin} };
+}
+
 var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, cameraIndex, vertexCount, primitiveType, isTwoside = false, isDisablePipeLineChange = false)
 {
     const pipeLineInfo = LoadPipeline(shaderInfo);
@@ -70,14 +75,6 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         setMatrixToUniformLocation(gl, pipeline, "MV", matMV);
         setMatrixToUniformLocation(gl, pipeline, "M", matM);
         setMatrixToUniformLocation(gl, pipeline, "VP", matVP);
-        if (this.matShadowVP)
-        {
-            var t = CreateVec3(0.0, 0.0, 0.0).Transform(this.matShadowV);
-
-            setMatrixToUniformLocation(gl, pipeline, "ShadowVP", CloneMat4(this.matShadowVP));
-        }
-        if (this.matShadowV)
-            setMatrixToUniformLocation(gl, pipeline, "ShadowV", CloneMat4(this.matShadowV));
         setVec3ToUniformLocation(gl, pipeline, "Eye", camera.pos);
         setIntToUniformLocation(gl, pipeline, "Collided", this.collided);
 
@@ -108,42 +105,52 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         }
 
         const pipeline = this.pipeLineInfo.pipeLine;
-        setIntToUniformLocation(gl, pipeline, 'shadow_object_point_array', 0);
-
-        gl.activeTexture(gl.TEXTURE0);
-        if (this.texture)
-            gl.bindTexture(gl.TEXTURE_2D, this.texture);
-        else if (this.textureCubeMap)
-            gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.textureCubeMap);
-        else if (this.texture2DArray)
-            gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.texture2DArray);
-        else
-            gl.bindTexture(gl.TEXTURE_2D, nullTexture);
-        
-        setIntToUniformLocation(gl, pipeline, 'shadow_object_spot_array', 1);
-
-        gl.activeTexture(gl.TEXTURE1);
-        if (this.spotLightTexture2DArray)
-            gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.spotLightTexture2DArray);
-        else
-            gl.bindTexture(gl.TEXTURE_2D, nullTexture);
-
-        gl.activeTexture(gl.TEXTURE2);
-        setIntToUniformLocation(gl, pipeline, 'shadow_object', 2);
-        if (this.textureShadowMap)
-        {
-            gl.bindTexture(gl.TEXTURE_2D, this.textureShadowMap);
-        }
-        else
-        {
-            gl.bindTexture(gl.TEXTURE_2D, nullTexture);
-        }
 
         setFloatToUniformLocation(gl, pipeline, 'PCF_Size_Directional', pcf_size_directional);
         setFloatToUniformLocation(gl, pipeline, 'PCF_Size_OmniDirectional', pcf_size_omnidirectional);
     }
 
-    var drawFunc = function(camera, pipeLineHashCode, lightIndex)
+    var setMaterialProperty = function(materialArray)
+    {
+        if (!materialArray)
+            return;
+
+        const pipeline = this.pipeLineInfo.pipeLine;
+
+        for(var i=0;i<materialArray.length;++i)
+        {
+            const material = materialArray[i];
+            setIntToUniformLocation(gl, pipeline, material.locationName, i);
+            gl.activeTexture(gl.TEXTURE0 + i);
+            var textureType = gl.TEXTURE_2D;
+            if (material.texture)
+            {
+                gl.bindTexture(material.textureType, material.texture);
+                if (material.textureType)
+                    textureType = material.textureType;
+            }
+            else
+            {
+                gl.bindTexture(gl.TEXTURE_2D, nullTexture);
+            }
+
+            if (material.filter.mag)
+                gl.texParameteri(textureType, gl.TEXTURE_MAG_FILTER, material.filter.mag);
+            else
+               gl.texParameteri(textureType, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+            if (material.filter.min)
+                gl.texParameteri(textureType, gl.TEXTURE_MIN_FILTER, material.filter.min);
+            else
+               gl.texParameteri(textureType, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+            gl.texParameteri(textureType, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(textureType, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        }
+    }
+
+    var drawFunc = function(camera, pipeLineHashCode, lightIndex = -1)
     {
         if (this.hide)
             return;
@@ -163,103 +170,63 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
     
         if (this.setRenderProperty)
             this.setRenderProperty();
-    
-        if (this.setCameraProperty)
-            this.setCameraProperty(camera);
-    
-        var useAmbientLight = 0;
-        if (camera.ambient)
-        {
-            setAmbientLight(gl, pipeLine, camera.ambient);
-            useAmbientLight = 1;
-        }
-        setIntToUniformLocation(gl, pipeLine, "UseAmbientLight", useAmbientLight);
 
-        var numOfDirectionalLight = 0;
-        var numOfPointLight = 0;
-        var numOfSpotLight = 0;
-
-        // Each light should be used one in a render pass.
-        if (lightIndex != 9999)
+        var materialArray = [];
+        materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D, this.texture, "tex_object"));
+        materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D_ARRAY, this.textureArray, "tex_object_array"));
+    
+        if (camera)
         {
-            const light = camera.lights.getLightByIndex(lightIndex);
-            if (light)
+            if (this.setCameraProperty)
+                this.setCameraProperty(camera);
+
+            var useAmbientLight = 0;
+            if (camera.UseAmbient && camera.ambient)
             {
-                if (light.type == "Directional")
-                {
-                    setDirectionalLight(gl, pipeLine, light);
-                    numOfDirectionalLight = 1;
+                setAmbientLight(gl, pipeLine, camera.ambient);
+                useAmbientLight = 1;
+            }
+            setIntToUniformLocation(gl, pipeLine, "UseAmbientLight", useAmbientLight);
 
-                    var camera = light.getCamera();
-                    if (camera)
-                    {
-                        setFloatToUniformLocation(gl, pipeLine, 'LightZNear', camera.near);
-                        setFloatToUniformLocation(gl, pipeLine, 'LightZFar', camera.far);
-                    }
-                }
-                else if (light.type == "Point")
-                {
-                    setPointLight(gl, pipeLine, light);
-                    numOfPointLight = 1;
+            var numOfDirectionalLight = 0;
+            var numOfPointLight = 0;
+            var numOfSpotLight = 0;
 
-                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', light.getNear());
-                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', light.getFar());
-                }
-                else if (light.type == "Spot")
+            // if light index were valid, each light should be used one in a render pass.
+            if (lightIndex == -1)
+            {
+                if (camera.lights)
                 {
-                    setSpotLight(gl, pipeLine, light);
-                    numOfSpotLight = 1;
+                    numOfDirectionalLight = camera.lights.directionalLights.length;
+                    numOfPointLight = camera.lights.pointLights.length;
+                    numOfSpotLight = camera.lights.spotLights.length;
 
-                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', light.getNear());
-                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
+                    for(var i=0;i<camera.lights.all.length;++i)
+                        camera.lights.all[i].bindLight(gl, pipeLine, materialArray);
                 }
             }
-        }
-        else
-        {
-            if (camera.lights)
+            else
             {
-                numOfDirectionalLight = camera.lights.directionalLights.length;
-                numOfPointLight = camera.lights.pointLights.length;
-                numOfSpotLight = camera.lights.spotLights.length;
-
-                for(var i=0;i<camera.lights.directionalLights.length;++i)
+                const light = camera.lights.getLightByIndex(lightIndex);
+                if (light)
                 {
-                    const light = camera.lights.directionalLights[i];
-                    lightDir = light.direction.CloneVec3();
-                    setDirectionalLight(gl, this.pipeLineInfo.pipeLine, light);
-
-                    var lightCamera = light.getCamera();
-                    if (lightCamera)
-                    {
-                        setFloatToUniformLocation(gl, pipeLine, 'LightZNear', lightCamera.near);
-                        setFloatToUniformLocation(gl, pipeLine, 'LightZFar', lightCamera.far);
-                    }
-                }
-
-                for(var i=0;i<camera.lights.pointLights.length;++i)
-                {
-                    const light = camera.lights.pointLights[i];
-                    setPointLight(gl, this.pipeLineInfo.pipeLine, light);
-
-                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', light.getNear());
-                    setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', light.getFar());
-                }
-
-                for(var i=0;i<camera.lights.spotLights.length;++i)
-                {
-                    const light = camera.lights.spotLights[i];
-                    setSpotLight(gl, this.pipeLineInfo.pipeLine, light);
-
-                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', light.getNear());
-                    setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', light.getFar());
+                    light.bindLight(gl, pipeLine, materialArray);
+                    if (light.type == "Directional")
+                        numOfDirectionalLight = 1;
+                    else if (light.type == "Point")
+                        numOfPointLight = 1;
+                    else if (light.type == "Spot")
+                        numOfSpotLight = 1;
                 }
             }
+
+            setIntToUniformLocation(gl, pipeLine, 'NumOfDirectionalLight', numOfDirectionalLight);
+            setIntToUniformLocation(gl, pipeLine, 'NumOfPointLight', numOfPointLight);
+            setIntToUniformLocation(gl, pipeLine, 'NumOfSpotLight', numOfSpotLight);
         }
 
-        setIntToUniformLocation(gl, pipeLine, 'NumOfDirectionalLight', numOfDirectionalLight);
-        setIntToUniformLocation(gl, pipeLine, 'NumOfPointLight', numOfPointLight);
-        setIntToUniformLocation(gl, pipeLine, 'NumOfSpotLight', numOfSpotLight);
+        if (this.setMaterialProperty)
+            this.setMaterialProperty(materialArray);
 
         if (this.ebo)
         {
@@ -301,7 +268,8 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
     return {gl:gl, vbo:vbo, ebo:ebo, pipeLineInfo:pipeLineInfo, attribs:attribs, matWorld:matWorld, matWorld2:matWorld2, cameraIndex:cameraIndex, pos:pos
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
         , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
-        , collided:false, hide:false, twoSide:isTwoside, setPipeLine:setPipeLine, isDisablePipeLineChange:isDisablePipeLineChange};
+        , collided:false, hide:false, twoSide:isTwoside, setPipeLine:setPipeLine, isDisablePipeLineChange:isDisablePipeLineChange
+        , setMaterialProperty:setMaterialProperty};
 }
 
 var drawStaticTransparentObjects = function(camera, pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)

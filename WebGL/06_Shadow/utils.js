@@ -106,7 +106,7 @@ function CreateProgram(gl, shaderInfo)
     gl.compileShader(vs);
     if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS))
     {
-        alert('vs compile failed ' + gl.getShaderInfoLog(vs));
+        alert('vs compile failed ' + '(' + shaderInfo.vs + ')' + gl.getShaderInfoLog(vs));
         return gl.getShaderInfoLog(vs);
     }
 
@@ -115,7 +115,7 @@ function CreateProgram(gl, shaderInfo)
     gl.compileShader(fg);
     if (!gl.getShaderParameter(fg, gl.COMPILE_STATUS))
     {
-        alert('fs compile failed' + gl.getShaderInfoLog(fg));
+        alert('fs compile failed ' + '(' + shaderInfo.fs + ')'  + gl.getShaderInfoLog(fg));
         return gl.getShaderInfoLog(fg);
     }
 
@@ -125,14 +125,14 @@ function CreateProgram(gl, shaderInfo)
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS))
     {
-        alert('program link failed ' + gl.getProgramInfoLog(program));
+        alert('program link failed ' + '(' + shaderInfo.vs + ', ' + shaderInfo.fs + ')' + gl.getProgramInfoLog(program));
         return gl.getProgramInfoLog(program);
     }
 
     gl.validateProgram(program);
     if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS))
     {
-        alert('program validate failed ' + getProgramInfoLog(program));
+        alert('program validate failed ' + '(' + shaderInfo.vs + ', ' + shaderInfo.fs + ')' + getProgramInfoLog(program));
         return gl.getProgramInfoLog(program);
     }
 
@@ -175,6 +175,34 @@ var CraeteFramebuffer = function(gl, width, height)
     gl.bindTexture(gl.TEXTURE_2D, tbo);
     //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tbo, 0);
+
+    var rbo = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+    {
+        alert('failed to create framebuffer');
+        return null;
+    }
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    return {fbo:fbo, tbo:tbo, dbo:rbo};
+}
+
+var CraeteFramebufferRG = function(gl, width, height)
+{
+    var fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+    var tbo = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tbo);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG32F, width, height, 0, gl.RG, gl.FLOAT, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tbo, 0);

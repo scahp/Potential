@@ -2,6 +2,24 @@
 
 precision mediump float;
 
+#if defined(USE_VSM)
+
+#define VSM_AMOUNT_DIRECTIONAL 0.25
+#define VSM_AMOUNT_OMNIDIRECTIONAL 0.25
+float Linstep(float min, float max, float v)
+{
+    return clamp((v - min) / (max - min), 0.0, 1.0);
+}
+
+// Example 8-3. Applying a Light-Bleeding Reduction Function
+// https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch08.html
+float ReduceLightBleeding(float p_max, float Amount)
+{
+  // Remove the [0, Amount] tail and linearly rescale (Amount, 1].
+   return Linstep(Amount, 1.0, p_max);
+}
+#endif // USE_VSM
+
 //////////////////////////////////////////////////////////////////////
 // Poisson Sample
 
@@ -61,10 +79,10 @@ bool IsInShadowMapSpace(vec3 clipPos)
     return (clipPos.x >= 0.0 && clipPos.x <= 1.0 && clipPos.y >= 0.0 && clipPos.y <= 1.0 && clipPos.z >= 0.0 && clipPos.z <= 1.0);
 }
 
-bool IsShadowing(vec3 pos, sampler2D shadow_object)
+bool IsShadowing(vec3 lightClipPos, sampler2D shadow_object)
 {
-    if (IsInShadowMapSpace(pos))
-        return (pos.z >= texture(shadow_object, pos.xy).r + SHADOW_BIAS_DIRECTIONAL);
+    if (IsInShadowMapSpace(lightClipPos))
+        return (lightClipPos.z >= texture(shadow_object, lightClipPos.xy).r + SHADOW_BIAS_DIRECTIONAL);
 
     return false;
 }
@@ -230,9 +248,32 @@ float PCSS(vec3 lightClipPos, float shadowCameraDepth, sampler2D shadow_object, 
 
 #endif  // USE_POISSON_SAMPLE
 
+#if defined(USE_VSM)
+float VSM(vec3 lightClipPos, vec3 lightPos, vec3 pos, sampler2D shadow_object)
+{
+    float lit = 1.0;
+    if (IsInShadowMapSpace(lightClipPos))
+    {
+        vec3 toLight = lightPos - pos;
+        float distFromLight = sqrt(dot(toLight, toLight));
+
+        vec2 moments = texture(shadow_object, lightClipPos.xy).xy;
+        float E_x2 = moments.y;
+        float Ex_2 = moments.x * moments.x;
+        float variance = E_x2 - Ex_2;    
+        float mD = (moments.x - distFromLight);
+        float mD_2 = mD * mD;
+        float p = variance / (variance + mD_2);
+        p = ReduceLightBleeding(p, VSM_AMOUNT_DIRECTIONAL);
+        lit = max(p, float(distFromLight <= moments.x));
+    }
+
+    return lit;
+}
+#endif // USE_VSM
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-// PointLight Shadow
+// OmniDirectional Light Shadow
 #define SHADOW_BIAS_OMNIDIRECTIONAL 0.9
 #define SEARCH_RADIUS_OMNIDIRECTIONAL 0.05
 bool IsShadowing(vec3 pos, vec3 lightPos, sampler2DArray shadow_object_array)
@@ -267,7 +308,6 @@ float PCF_OmniDirectional_PoissonSample(TexArrayUV result, float distSqured, vec
         temp.u += offset.x;
         temp.v += offset.y;
         temp = MakeTexArrayUV(temp);
-        temp = MakeTexArrayUV(temp);
 
         // if (texture(shadow_object_array, vec3(temp.u, temp.v, temp.index)).r > distSqured)
         //     ++sum;
@@ -279,7 +319,6 @@ float PCF_OmniDirectional_PoissonSample(TexArrayUV result, float distSqured, vec
         TexArrayUV temp = result;
         temp.u += offset.x;
         temp.v += offset.y;
-        temp = MakeTexArrayUV(temp);
         temp = MakeTexArrayUV(temp);
 
         // if (texture(shadow_object_array, vec3(temp.u, temp.v, temp.index)).r > distSqured)
@@ -309,7 +348,6 @@ void FindBlocker_OmniDirectional_PoissonSample(out float accumBlockerDepth, out 
         TexArrayUV temp = pos;
         temp.u += offset.x;
         temp.v += offset.y;
-        temp = MakeTexArrayUV(temp);
         temp = MakeTexArrayUV(temp);
 
         // if (!IsInShadowMapSpace(vec2(temp.u, temp.v)))
@@ -371,7 +409,6 @@ float PCF_OmniDirectional(TexArrayUV result, float distSqured, vec2 radiusUV, sa
             temp.u += offset.x;
             temp.v += offset.y;
             temp = MakeTexArrayUV(temp);
-            temp = MakeTexArrayUV(temp);
 
             // if (texture(shadow_object_array, vec3(temp.u, temp.v, temp.index)).r <= distSqured)
             //     ++pcf_count;
@@ -406,7 +443,6 @@ void FindBlocker_OmniDirectional(out float accumBlockerDepth, out float numBlock
             TexArrayUV temp = pos;
             temp.u += offset.x;
             temp.v += offset.y;
-            temp = MakeTexArrayUV(temp);
             temp = MakeTexArrayUV(temp);
 
             // if (!IsInShadowMapSpace(vec2(temp.u, temp.v)))
@@ -452,3 +488,27 @@ float PCSS_OmniDirectional(vec3 pos, vec3 lightPos, float zLightNear, vec2 texel
 #endif
 
 #endif  // USE_POISSON_SAMPLE
+
+#if defined(USE_VSM)
+float VSM_OmniDirectional(vec3 lightPos, vec3 pos, sampler2DArray shadow_object, float biasDistance)
+{
+    vec3 toLight = (lightPos - pos);
+    float distFromLight = sqrt(dot(toLight, toLight));
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(-toLight));
+
+    vec2 moments = texture(shadow_object, vec3(result.u, result.v, result.index)).yx;   // OmniDirectional ShadowMap saves (dist * dist, dist, 0.0, 1.0)
+    float E_x2 = moments.y;
+    float Ex_2 = moments.x * moments.x;
+    float variance = E_x2 - Ex_2;
+    float mD = (moments.x - distFromLight);
+
+    // To alleviate artifacts that happend on the boundary of the textures, added distance bias.
+    if (abs(mD) < biasDistance)
+        mD = 0.0;
+
+    float mD_2 = mD * mD;
+    float p = variance / (variance + mD_2);
+    p = ReduceLightBleeding(p, VSM_AMOUNT_OMNIDIRECTIONAL);
+    return max(p, float(distFromLight <= moments.x));
+}
+#endif // USE_VSM

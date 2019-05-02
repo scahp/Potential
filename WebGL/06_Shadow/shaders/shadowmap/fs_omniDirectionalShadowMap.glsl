@@ -21,6 +21,7 @@ void main()
 
         float dist = dot(lightDir.xyz, lightDir.xyz);
         gl_FragData[0].x = dist;
+        gl_FragData[0].y = sqrt(dist);
         gl_FragData[0].w = 1.0;
     }
     else if (NumOfSpotLight > 0)
@@ -29,6 +30,7 @@ void main()
 
         float dist = dot(lightDir.xyz, lightDir.xyz);
         gl_FragData[0].x = dist;
+        gl_FragData[0].y = sqrt(dist);
         gl_FragData[0].w = 1.0;
     }
 }

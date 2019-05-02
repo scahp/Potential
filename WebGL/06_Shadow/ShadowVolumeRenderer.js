@@ -86,9 +86,8 @@ var RenderWithShadowVolume = function(camera)
     gl.depthMask(true);
     gl.colorMask(true, true, true, true);
 
-    camera.ambient = ambientLight;
+    camera.UseAmbient = true;
     drawStaticOpaqueObjects(ambientPipeLineHashCode, -1);
-    camera.ambient = null;
     //////////////////////////////////////////////////////////////////
     // 2. Stencil volume update & rendering (z-fail)
     const numOfLights = camera.getNumOfLights();
@@ -96,6 +95,7 @@ var RenderWithShadowVolume = function(camera)
     var isSpotlightInFrustum = camera.checkIsInFrustom(spotLightPos.CloneVec3(), spotLightRadius);
     var isPointlightInFrustum = camera.checkIsInFrustom(pointLightPos.CloneVec3(), pointLightRadius);
 
+    camera.UseAmbient = false;
     gl.enable(gl.STENCIL_TEST);
     for(var lightIndex=0;lightIndex<numOfLights;++lightIndex)
     {
@@ -176,6 +176,7 @@ var RenderWithShadowVolume = function(camera)
         gl.blendFunc(gl.ONE, gl.ONE);        
         drawStaticOpaqueObjects(defaultPipeLineHashCode, lightIndex);
     }
+    camera.UseAmbient = true;
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);

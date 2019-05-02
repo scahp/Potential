@@ -62,6 +62,14 @@ var CreateShadowMapShaderFile = function()
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
 }
 
+var CreateVarianceShadowMapShaderFile = function()
+{
+    const vs = "shaders/shadowmap/vs_varianceshadowMap.glsl";
+    const fs = "shaders/shadowmap/fs_varianceshadowMap.glsl";
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
+}
+
 var CreateOmniDirectionalShadowMapShaderFile = function()
 {
     const vs = "shaders/shadowmap/vs_omniDirectionalShadowMap.glsl";
@@ -126,6 +134,14 @@ var CreateBaseShadowMap_PCF_PoissonSample_ShaderFile = function()
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:"#define USE_PCF 1\r\n#define USE_POISSON_SAMPLE 1"};
 }
 
+var CreateBaseShadowMap_VarianceShadowMap_ShaderFile = function()
+{
+    const vs = "shaders/shadowmap/vs.glsl";
+    const fs = "shaders/shadowmap/fs.glsl";
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:"#define USE_VSM 1"};
+}
+
 var CreateBaseShadowVolumeAmbientOnlyShaderFile = function()
 {
     const vs = "shaders/shadowvolume/vs.glsl";
@@ -154,6 +170,22 @@ var CreateBaseUIShaderFile = function()
 {
     const vs = 'shaders/tex_ui_vs.glsl';
     const fs = 'shaders/tex_ui_fs.glsl';
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
+}
+
+var CreateFullscreenBlurShaderFile = function()
+{
+    const vs = 'shaders/vs_blur.glsl';
+    const fs = 'shaders/fs_blur.glsl';
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
+}
+
+var CreateFullscreenBlurOmnidirectionalShaderFile = function()
+{
+    const vs = 'shaders/vs_omnidirectional_blur.glsl';
+    const fs = 'shaders/fs_omnidirectional_blur.glsl';
 
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
 }
