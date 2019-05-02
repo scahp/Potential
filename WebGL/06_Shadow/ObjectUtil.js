@@ -228,6 +228,9 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         if (this.setMaterialProperty)
             this.setMaterialProperty(materialArray);
 
+        if (this.setMaterialProperty)
+            this.setMaterialProperty(materialArray);
+
         if (this.ebo)
         {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ebo);
