@@ -64,8 +64,8 @@ var CreateShadowMapShaderFile = function()
 
 var CreateVarianceShadowMapShaderFile = function()
 {
-    const vs = "shaders/shadowmap/vs_varianceshadowMap.glsl";
-    const fs = "shaders/shadowmap/fs_varianceshadowMap.glsl";
+    const vs = "shaders/shadowmap/vs_varianceShadowMap.glsl";
+    const fs = "shaders/shadowmap/fs_varianceShadowMap.glsl";
 
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
 }

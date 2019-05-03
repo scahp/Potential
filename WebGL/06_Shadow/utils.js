@@ -262,3 +262,166 @@ var createNullTexture = function(gl)
 
     return nullTex;
 }
+
+var CreateFramebufferHashCode = function(frameBufferInfo)
+{
+    var temp = frameBufferInfo.type.toString()
+    + frameBufferInfo.internalFormat.toString()
+    + frameBufferInfo.format.toString()
+    + frameBufferInfo.formatType.toString()
+    + frameBufferInfo.width.toString()
+    + frameBufferInfo.height.toString();
+    return temp.hashCode();
+}
+
+var CreateFramebufferInfo = function(type, internalFormat, format, formatType, width, height)
+{
+    return {type:type, internalFormat:internalFormat, format:format, formatType:formatType, width:width, height:height};
+}
+
+var returnFramebufferToPool = function(frameBuffer)
+{
+    if (frameBuffer)
+        frameBuffer.using = false;
+}
+
+var getFramebufferFromPool = function(gl, type, internalFormat, format, formatType, width, height)
+{
+    if (!gl)
+        return null;
+
+    var framebufferInfo = CreateFramebufferInfo(type, internalFormat, format, formatType, width, height);
+    var hashCode = CreateFramebufferHashCode(framebufferInfo);
+
+    var poolArray = FramebufferPool[hashCode];
+    if (poolArray)
+    {
+        for(var i=0;i<poolArray.length;++i)
+        {
+            if (!poolArray[i].using)
+            {
+                poolArray[i].using = true;
+                return poolArray[i];
+            }
+        }
+    }
+
+    var newFramebuffer = null;
+
+    if (type == "texture")
+    {
+        var fbo = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    
+        var tbo = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tbo);
+        gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, formatType, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tbo, 0);
+    
+        var rbo = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+    
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+        {
+            alert('failed to create framebuffer');
+            return null;
+        }
+    
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, fbo:fbo, tbo:[tbo], rbo:[rbo], using:false};
+    }
+    else if (type == "texture_array")
+    {
+        const texture2DArray = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture2DArray);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, internalFormat, width, height, 6, 0, format, formatType, null);
+    
+        var framebuffers = [];
+        var renderbuffers = [];
+    
+        for(var i=0;i<6;++i)
+        {
+            var depthMapFBO = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+            gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture2DArray, 0, i);
+    
+            var rbo = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+    
+            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+            {
+                var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+                alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+                return null;
+            }
+    
+            framebuffers.push(depthMapFBO);
+            renderbuffers.push(rbo);
+        }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, tbo:texture2DArray, fbo:framebuffers, rbo:renderbuffers, using:false};
+    }
+    else if (type == "cube")
+    {
+        const depthCubeMap = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, depthCubeMap);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+        var framebuffers = [];
+        var renderbuffers = [];
+        for(var i=0;i<6;++i)
+        {
+            gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, internalFormat
+                , width, height, 0, format, formatType, null);
+        }
+    
+        for(var i=0;i<6;++i)
+        {
+            var depthMapFBO = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, depthCubeMap, 0);
+    
+            var rbo = gl.createRenderbuffer();
+            gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+    
+            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+            {
+                var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+                alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+                return null;
+            }
+    
+            framebuffers.push(depthMapFBO);
+            renderbuffers.push(rbo);
+        }
+    
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, tbo:depthCubeMap, fbo:framebuffers, rbo:renderbuffers, using:false};
+    }
+
+    if (FramebufferPool[hashCode])
+    {
+        FramebufferPool[hashCode].push(newFramebuffer);
+    }
+    else
+    {
+        FramebufferPool[hashCode] = [newFramebuffer];
+    }
+    
+    return newFramebuffer;
+}
