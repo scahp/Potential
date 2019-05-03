@@ -30,7 +30,6 @@ var ShadowmapType = 0;
 var UsePoissonSample = 1;
 var ShowDirectionalLightMap = 0;
 var nullTexture = null;
-var vsmShadowMapBlurFrameBuffer = null;
 var vsmOmniDirectionalShadowMapBlurFrameBuffer = null;
 var fullscreenQuadBlur = null;
 
@@ -143,12 +142,10 @@ jGame.prototype.Setup = function()
     // Create frameBuffer to render at offscreen
     if (dirLight)
     {
-        vsmShadowMapBlurFrameBuffer = CraeteFramebufferRG(gl, shadow_width, shadow_height);
         vsmOmniDirectionalShadowMapBlurFrameBuffer = CraeteFramebufferRGForOmniDirectionalShadowMap(gl, shadow_width, shadow_height);
         fullscreenQuadBlur = CreateFullScreenQuad(gl, null, null);
 
         shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300
-            //, vsmShadowMapBlurFrameBuffer.tbo);
             , dirLight.directionalShadowMap.getDepthMap());
         shadowMapDebugQuad.hide = !document.getElementById("ShowDirectionalLightMap").checked;
     }

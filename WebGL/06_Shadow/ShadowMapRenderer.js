@@ -94,6 +94,7 @@ var GenerateShadowMap = function(camera)
             /////////////////////////////////////////////////
             // Blur
 
+            const vsmBlurFrameBuffer = getFramebufferFromPool(gl, gl.TEXTURE_2D, gl.RG32F, gl.RG, gl.FLOAT, shadow_width, shadow_height);
             fullscreenQuadBlur.textureArray = null;
 
             //////////////////////
@@ -101,7 +102,7 @@ var GenerateShadowMap = function(camera)
             fullscreenQuadBlur.maxDist = dirLight.directionalShadowMap.camera.far * 2.0;
 
             // vertical
-            gl.bindFramebuffer(gl.FRAMEBUFFER, vsmShadowMapBlurFrameBuffer.fbo);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, vsmBlurFrameBuffer.fbo);
             gl.viewport(0, 0, shadow_width, shadow_height);
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -117,21 +118,24 @@ var GenerateShadowMap = function(camera)
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             fullscreenQuadBlur.vertical = false;
-            fullscreenQuadBlur.texture = vsmShadowMapBlurFrameBuffer.tbo;
+            fullscreenQuadBlur.texture = vsmBlurFrameBuffer.tbo;
             fullscreenQuadBlur.drawFunc(null, blurPipeLineHashCode);
             // 임시 텍스쳐 -> 원본 텍스쳐
             gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             //////////////////////
 
+            returnFramebufferToPool(vsmBlurFrameBuffer);
+
             //////////////////////
             // Point Light OmniDirectional Shadow
 
+            const vsmTexArrayBlurFrameBuffer = getFramebufferFromPool(gl, gl.TEXTURE_2D_ARRAY, gl.RG32F, gl.RG, gl.FLOAT, shadow_width, shadow_height);
             fullscreenQuadBlur.texture = null;
 
             // vertical
-            for(var i=0;i<vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers.length;++i)
+            for(var i=0;i<vsmTexArrayBlurFrameBuffer.fbo.length;++i)
             {
-                gl.bindFramebuffer(gl.FRAMEBUFFER, vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers[i]);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, vsmTexArrayBlurFrameBuffer.fbo[i]);
                 gl.viewport(0, 0, shadow_width, shadow_height);
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -150,7 +154,7 @@ var GenerateShadowMap = function(camera)
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
                 fullscreenQuadBlur.vertical = false;
-                fullscreenQuadBlur.textureArray = vsmOmniDirectionalShadowMapBlurFrameBuffer.texture2DArray;
+                fullscreenQuadBlur.textureArray = vsmTexArrayBlurFrameBuffer.tbo;
                 fullscreenQuadBlur.texIndex = i;
                 fullscreenQuadBlur.drawFunc(null, blurOmniDirectionalPipeLineHashCode);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -163,9 +167,9 @@ var GenerateShadowMap = function(camera)
             fullscreenQuadBlur.texture = null;
 
             // vertical
-            for(var i=0;i<vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers.length;++i)
+            for(var i=0;i<vsmTexArrayBlurFrameBuffer.fbo.length;++i)
             {
-                gl.bindFramebuffer(gl.FRAMEBUFFER, vsmOmniDirectionalShadowMapBlurFrameBuffer.framebuffers[i]);
+                gl.bindFramebuffer(gl.FRAMEBUFFER, vsmTexArrayBlurFrameBuffer.fbo[i]);
                 gl.viewport(0, 0, shadow_width, shadow_height);
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -184,12 +188,14 @@ var GenerateShadowMap = function(camera)
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
                 fullscreenQuadBlur.vertical = false;
-                fullscreenQuadBlur.textureArray = vsmOmniDirectionalShadowMapBlurFrameBuffer.texture2DArray;
+                fullscreenQuadBlur.textureArray = vsmTexArrayBlurFrameBuffer.tbo;
                 fullscreenQuadBlur.texIndex = i;
                 fullscreenQuadBlur.drawFunc(null, blurOmniDirectionalPipeLineHashCode);
                 gl.bindFramebuffer(gl.FRAMEBUFFER, null);
             }
             ////////////////////
+
+            returnFramebufferToPool(vsmTexArrayBlurFrameBuffer);
         }
     }
     

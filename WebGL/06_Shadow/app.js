@@ -5,6 +5,7 @@ var TransparentStaticObjectArray = [];
 var UIStaticObjectArray = [];
 var LightArray = []
 var PipeLines = [];
+var FramebufferPool = [];
 var ShowSilhouetteDirectionalLight = false;
 var ShowSilhouettePointLight = false;
 var ShowSilhouetteSpotLight = false;

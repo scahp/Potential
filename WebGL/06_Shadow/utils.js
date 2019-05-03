@@ -308,7 +308,7 @@ var getFramebufferFromPool = function(gl, type, internalFormat, format, formatTy
 
     var newFramebuffer = null;
 
-    if (type == "texture")
+    if (type == gl.TEXTURE_2D)
     {
         var fbo = gl.createFramebuffer();
         gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -332,9 +332,9 @@ var getFramebufferFromPool = function(gl, type, internalFormat, format, formatTy
         }
     
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, fbo:fbo, tbo:[tbo], rbo:[rbo], using:false};
+        newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, fbo:fbo, tbo:tbo, rbo:[rbo], using:false};
     }
-    else if (type == "texture_array")
+    else if (type == gl.TEXTURE_2D_ARRAY)
     {
         const texture2DArray = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D_ARRAY, texture2DArray);
@@ -370,7 +370,7 @@ var getFramebufferFromPool = function(gl, type, internalFormat, format, formatTy
 
         newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, tbo:texture2DArray, fbo:framebuffers, rbo:renderbuffers, using:false};
     }
-    else if (type == "cube")
+    else if (type == gl.TEXTURE_CUBE_MAP)
     {
         const depthCubeMap = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_CUBE_MAP, depthCubeMap);
@@ -412,6 +412,11 @@ var getFramebufferFromPool = function(gl, type, internalFormat, format, formatTy
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, tbo:depthCubeMap, fbo:framebuffers, rbo:renderbuffers, using:false};
+    }
+    else
+    {
+        alert('unsupport type ' + type + ' texture in FramebufferPool');
+        return;
     }
 
     if (FramebufferPool[hashCode])
