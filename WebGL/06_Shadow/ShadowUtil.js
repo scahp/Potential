@@ -648,6 +648,25 @@ var CreateOmniDirectionalShadowMap2 = function(gl, light)
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
+    ////////////////////////////////////////
+    var fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    for(var i=0;i<6;++i)
+        gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, texture2DArray, 0, i);
+
+    var rbo = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, shadow_width, shadow_height);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+    {
+        var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+        return;
+    }
+    ////////////////////////////////////////
+
     var cameras = [];
     const lightPos = light.pos;
 
@@ -664,5 +683,5 @@ var CreateOmniDirectionalShadowMap2 = function(gl, light)
     for(var i=0;i<cameras.length;++i)
         cameras[i].addLight(light);
 
-    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras, near:near, far:far};
+    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras, near:near, far:far, mrt:{fbo:fbo, rbo:rbo}};
 }

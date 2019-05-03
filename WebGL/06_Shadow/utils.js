@@ -342,30 +342,49 @@ var getFramebufferFromPool = function(gl, type, internalFormat, format, formatTy
         gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texImage3D(gl.TEXTURE_2D_ARRAY, 0, internalFormat, width, height, 6, 0, format, formatType, null);
     
-        var framebuffers = [];
-        var renderbuffers = [];
+        ////////////////////////////////////////
+        // var framebuffers = [];
+        // var renderbuffers = [];
     
+        // for(var i=0;i<6;++i)
+        // {
+        //     var depthMapFBO = gl.createFramebuffer();
+        //     gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
+        //     gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture2DArray, 0, i);
+    
+        //     var rbo = gl.createRenderbuffer();
+        //     gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
+        //     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+        //     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
+    
+        //     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
+        //     {
+        //         var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+        //         alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+        //         return null;
+        //     }
+    
+        //     framebuffers.push(depthMapFBO);
+        //     renderbuffers.push(rbo);
+        // }
+        ////////////////////////////////////////
+        var framebuffers = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffers);
         for(var i=0;i<6;++i)
+            gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, texture2DArray, 0, i);
+
+        var renderbuffers = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffers);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffers);
+
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
         {
-            var depthMapFBO = gl.createFramebuffer();
-            gl.bindFramebuffer(gl.FRAMEBUFFER, depthMapFBO);
-            gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, texture2DArray, 0, i);
-    
-            var rbo = gl.createRenderbuffer();
-            gl.bindRenderbuffer(gl.RENDERBUFFER, rbo);
-            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rbo);
-    
-            if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE)
-            {
-                var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-                alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
-                return null;
-            }
-    
-            framebuffers.push(depthMapFBO);
-            renderbuffers.push(rbo);
+            var status_code = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+            alert("failed to create framebuffer, " + i + ", is not complete: " + status_code);
+            return;
         }
+        ////////////////////////////////////////
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         newFramebuffer = {hashCode:hashCode, framebufferInfo:framebufferInfo, tbo:texture2DArray, fbo:framebuffers, rbo:renderbuffers, using:false};
