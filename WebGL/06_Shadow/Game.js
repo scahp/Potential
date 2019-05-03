@@ -30,7 +30,6 @@ var ShadowmapType = 0;
 var UsePoissonSample = 1;
 var ShowDirectionalLightMap = 0;
 var nullTexture = null;
-var vsmOmniDirectionalShadowMapBlurFrameBuffer = null;
 var fullscreenQuadBlur = null;
 
 var jGame = function(gl)
@@ -142,7 +141,6 @@ jGame.prototype.Setup = function()
     // Create frameBuffer to render at offscreen
     if (dirLight)
     {
-        vsmOmniDirectionalShadowMapBlurFrameBuffer = CraeteFramebufferRGForOmniDirectionalShadowMap(gl, shadow_width, shadow_height);
         fullscreenQuadBlur = CreateFullScreenQuad(gl, null, null);
 
         shadowMapDebugQuad = CreateUIQuad(gl, UIStaticObjectArray, 10, 10, 300, 300
