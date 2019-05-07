@@ -12,12 +12,19 @@ var GenerateShadowMap = function(camera)
 {
     var gl = this.gl;
     var shadowMapPipeLineHashCode = null;
-    if (ShadowmapType == 3)     // VSM
-        shadowMapPipeLineHashCode =  LoadPipeline(CreateVarianceShadowMapShaderFile()).hashCode;
+    if (ShadowmapType == 3)         // VSM
+        shadowMapPipeLineHashCode = LoadPipeline(CreateVarianceShadowMapShaderFile()).hashCode;
+    else if (ShadowmapType == 4)    // ESM
+        shadowMapPipeLineHashCode = LoadPipeline(CreateExponentialShadowMapShaderFile()).hashCode;        
     else
         shadowMapPipeLineHashCode =  LoadPipeline(CreateShadowMapShaderFile()).hashCode;
     
-    const omniShadowMapPipeLineHashCode = LoadPipeline(CreateOmniDirectionalShadowMapShaderFile()).hashCode;
+    var omniShadowMapPipeLineHashCode = null;
+    if (ShadowmapType == 4)     // ESM
+        omniShadowMapPipeLineHashCode = LoadPipeline(CreateOmniDirectionalExponentialShadowMapShaderFile()).hashCode;
+    else
+        omniShadowMapPipeLineHashCode = LoadPipeline(CreateOmniDirectionalShadowMapShaderFile()).hashCode;
+
     const blurPipeLineHashCode = LoadPipeline(CreateFullscreenBlurShaderFile()).hashCode;
     const blurOmniDirectionalPipeLineHashCode = LoadPipeline(CreateFullscreenBlurOmnidirectionalShaderFile()).hashCode;
 
@@ -66,8 +73,10 @@ var GenerateShadowMap = function(camera)
         gl.viewport(0, 0, shadow_width, shadow_height);
         
         var maxDist = 0.0;
-        if (ShadowmapType == 3)     // VSM
+        if (ShadowmapType == 3)         // VSM
             maxDist = dirLight.directionalShadowMap.camera.far * 2.0;
+        else if (ShadowmapType == 4)    // ESM
+            maxDist = dirLight.directionalShadowMap.camera.far;
 
         gl.clearColor(maxDist, maxDist*maxDist, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -90,8 +99,9 @@ var GenerateShadowMap = function(camera)
         for(var i=0;i<camera.lights.spotLights.length;++i)
             drawOmniShadowMap(camera.lights.spotLights[i].omniShadowMap);
 
-
-        if (ShadowmapType == 3)     // VSM
+        if (ShadowmapType == 3          // VSM
+            || ShadowmapType == 4       // ESM
+            )     
         {
             /////////////////////////////////////////////////
             // Blur
@@ -219,6 +229,9 @@ var RenderWithShadowMap = function(camera)
         break;
         case 3:     // VSM
             defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_VarianceShadowMap_ShaderFile()).hashCode;
+        break;
+        case 4:     // ESM
+            defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMap_ExponentialShadowMap_ShaderFile()).hashCode;
         break;
         default:
             defaultPipeLineHashCode = LoadPipeline(CreateBaseShadowMapShaderFile()).hashCode;

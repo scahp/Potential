@@ -272,6 +272,21 @@ float VSM(vec3 lightClipPos, vec3 lightPos, vec3 pos, sampler2D shadow_object)
 }
 #endif // USE_VSM
 
+#if defined(USE_ESM)
+float ESM(vec3 lightClipPos, vec3 lightPos, vec3 pos, float near, float far, float ESM_C, sampler2D shadow_object)
+{
+    float lit = 1.0;
+    if (IsInShadowMapSpace(lightClipPos))
+    {
+        vec3 toLight = lightPos - pos;
+        float distFromLight = (sqrt(dot(toLight, toLight)) - near) / (far - near);
+        float expCZ = texture(shadow_object, lightClipPos.xy).r;
+        lit = clamp(exp(-distFromLight * ESM_C) * expCZ, 0.0, 1.0);
+    }
+    return lit;
+}
+#endif  // USE_ESM
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // OmniDirectional Light Shadow
 #define SHADOW_BIAS_OMNIDIRECTIONAL 0.9
@@ -512,3 +527,14 @@ float VSM_OmniDirectional(vec3 lightPos, vec3 pos, sampler2DArray shadow_object,
     return max(p, float(distFromLight <= moments.x));
 }
 #endif // USE_VSM
+
+#if defined(USE_ESM)
+float ESM_OmniDirectional(vec3 lightPos, vec3 pos, float near, float far, float ESM_C, sampler2DArray shadow_object)
+{
+    vec3 toLight = (lightPos - pos);
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(-toLight));
+    float expCZ = texture(shadow_object, vec3(result.u, result.v, result.index)).r;
+    float distFromLight = (sqrt(dot(toLight, toLight)) - near) / (far - near);
+    return clamp(exp(-distFromLight * ESM_C) * expCZ, 0.0, 1.0);
+}
+#endif  // USE_ESM

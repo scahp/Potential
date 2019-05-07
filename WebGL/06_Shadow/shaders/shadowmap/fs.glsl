@@ -31,11 +31,17 @@ uniform vec2 ShadowMapSize;
 uniform float PCF_Size_Directional;
 uniform float PCF_Size_OmniDirectional;
 uniform float LightZNear;
+uniform float LightZFar;
 uniform float PointLightZNear;
+uniform float PointLightZFar;
 uniform float SpotLightZNear;
+uniform float SpotLightZFar;
 uniform mat4 ShadowVP;
 uniform mat4 ShadowV;
 uniform vec3 LightPos;      // Directional Light Pos 임시
+uniform float ESM_C;
+uniform float PointLightESM_C;
+uniform float SpotLightESM_C;
 
 // in vec3 ShadowPos_;
 // in vec3 ShadowCameraPos_;
@@ -110,6 +116,12 @@ void main()
             if (lit > 0.0)
                 finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
         }
+#elif defined(USE_ESM)
+        {
+            float lit = ESM(ShadowPos, LightPos, Pos_, LightZNear, LightZFar, ESM_C, shadow_object);
+            if (lit > 0.0)
+                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
+        }
 #else
         {
             if (!IsShadowing(ShadowPos, shadow_object))
@@ -161,6 +173,12 @@ void main()
             if (lit > 0.0)
                 finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
         }
+#elif defined(USE_ESM)
+        {
+            float lit = ESM_OmniDirectional(PointLight[i].LightPos, Pos_, PointLightZNear, PointLightZFar, PointLightESM_C, shadow_object_point_array);
+            if (lit > 0.0)
+                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
+        }
 #else
         {
             if (!IsShadowing(Pos_, PointLight[i].LightPos, shadow_object_point_array))
@@ -208,6 +226,12 @@ void main()
 #elif defined(USE_VSM)
         {
             float lit = VSM_OmniDirectional(SpotLight[i].LightPos, Pos_, shadow_object_spot_array, vsmBiasForOmniDirectional);
+            if (lit > 0.0)
+                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
+        }
+#elif defined(USE_ESM)
+        {
+            float lit = ESM_OmniDirectional(SpotLight[i].LightPos, Pos_, SpotLightZNear, SpotLightZFar, SpotLightESM_C, shadow_object_spot_array);
             if (lit > 0.0)
                 finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
         }

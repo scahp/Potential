@@ -63,6 +63,10 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
     {
         return CloneMat4(this.directionalShadowMap.camera.matView);;
     }
+    DirectionalLight.getESM_C = function()
+    {
+        return this.directionalShadowMap.ESM_C;
+    }
     DirectionalLight.bindLight = function(gl, pipeLine, materialArray)
     {
         setDirectionalLight(gl, pipeLine, this);
@@ -73,6 +77,7 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
             setFloatToUniformLocation(gl, pipeLine, 'LightZNear', camera.near);
             setFloatToUniformLocation(gl, pipeLine, 'LightZFar', camera.far);
         }
+        setFloatToUniformLocation(gl, pipeLine, 'ESM_C', this.getESM_C());
         setMatrixToUniformLocation(gl, pipeLine, "ShadowVP", this.getShadowVP());
         setMatrixToUniformLocation(gl, pipeLine, "ShadowV", this.getShadowV());
         setVec3ToUniformLocation(gl, pipeLine, "LightPos", this.directionalShadowMap.camera.pos);
@@ -135,10 +140,15 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
     {
         return this.omniShadowMap.texture2DArray;
     }
+    PointLight.getESM_C = function()
+    {
+        return this.omniShadowMap.ESM_C;
+    }
     PointLight.bindLight = function(gl, pipeLine, materialArray)
     {
         setPointLight(gl, pipeLine, this);
 
+        setFloatToUniformLocation(gl, pipeLine, 'PointLightESM_C', this.getESM_C());
         setFloatToUniformLocation(gl, pipeLine, 'PointLightZNear', this.getNear());
         setFloatToUniformLocation(gl, pipeLine, 'PointLightZFar', this.getFar());
         materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D_ARRAY, this.getShadowMap(), "shadow_object_point_array", gl.LINEAR, gl.LINEAR));
@@ -224,9 +234,14 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
     {
         return this.omniShadowMap.texture2DArray;
     }
+    SpotLight.getESM_C = function()
+    {
+        return this.omniShadowMap.ESM_C;
+    }
     SpotLight.bindLight = function(gl, pipeLine, materialArray)
     {
         setSpotLight(gl, pipeLine, this);
+        setFloatToUniformLocation(gl, pipeLine, 'SpotLightESM_C', this.getESM_C());
         setFloatToUniformLocation(gl, pipeLine, 'SpotLightZNear', this.getNear());
         setFloatToUniformLocation(gl, pipeLine, 'SpotLightZFar', this.getFar());
         materialArray.push(CreateMaterialProperty(gl.TEXTURE_2D_ARRAY, this.getShadowMap(), "shadow_object_spot_array", gl.LINEAR, gl.LINEAR));

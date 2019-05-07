@@ -78,6 +78,14 @@ var CreateOmniDirectionalShadowMapShaderFile = function()
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
 }
 
+var CreateExponentialShadowMapShaderFile = function()
+{
+    const vs = "shaders/shadowmap/vs_exponentialShadowMap.glsl";
+    const fs = "shaders/shadowmap/fs_exponentialShadowMap.glsl";
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
+}
+
 var CreateBaseInfinityFarShaderFile = function()
 {
     const vs = "shaders/shadowvolume/vs_infinityFar.glsl";
@@ -189,3 +197,20 @@ var CreateFullscreenBlurOmnidirectionalShaderFile = function()
 
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
 }
+
+var CreateBaseShadowMap_ExponentialShadowMap_ShaderFile = function()
+{
+    const vs = "shaders/shadowmap/vs.glsl";
+    const fs = "shaders/shadowmap/fs.glsl";
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:"#define USE_ESM 1"};
+}
+
+var CreateOmniDirectionalExponentialShadowMapShaderFile = function()
+{
+    const vs = "shaders/shadowmap/vs_omniDirectionalExponentialShadowMap.glsl";
+    const fs = "shaders/shadowmap/fs_omniDirectionalExponentialShadowMap.glsl";
+
+    return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
+}
+

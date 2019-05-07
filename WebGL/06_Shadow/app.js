@@ -93,6 +93,8 @@ jWebGL.prototype.Init = function()
         OnChangedShadowMapType({value:"PCSS"});
     else if (document.getElementById("VSM").checked)
         OnChangedShadowMapType({value:"VSM"});
+    else if (document.getElementById("ESM").checked)
+        OnChangedShadowMapType({value:"ESM"});
 
     UsePoissonSample = document.getElementById("UsePoissonSample").checked;
 
