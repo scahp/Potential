@@ -4,7 +4,7 @@
   <li><a href="https://scahp.github.io/WebGL/02_FrameBuffer/index.html">FrameBuffer</a></li>
   <li><a href="https://scahp.github.io/WebGL/03_BasicCollisionPrimitives/index.html">BasicCollisionPrimitives</a></li>
   <li><a href="https://scahp.github.io/WebGL/05_PunctualLights/index.html">PunctualLights</a></li>  
-  <li><a href="https://scahp.github.io/WebGL/06_Shadow/index.html">Shadows - (ShadowVolume / ShadowMap(PCF/PCSS/VSM))</a>
+  <li><a href="https://scahp.github.io/WebGL/06_Shadow/index.html">Shadows</a>
     <ul>
     <li>ShadowVolum</li>    
     <li>ShadowMap
