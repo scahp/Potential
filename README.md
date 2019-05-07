@@ -8,6 +8,7 @@
     <ul>
     <li>ShadowVolum</li>    
     <li>ShadowMap
+        <ul>Standard Shadow Map</ul>
         <ul>PCF(Percentage Closer Filtering)</ul>
         <ul>PCSS(Percentage Closer Soft Shadow)</ul>
         <ul>VSM(Variance Shadow Map)</ul>
