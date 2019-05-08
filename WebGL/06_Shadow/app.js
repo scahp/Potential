@@ -95,6 +95,8 @@ jWebGL.prototype.Init = function()
         OnChangedShadowMapType({value:"VSM"});
     else if (document.getElementById("ESM").checked)
         OnChangedShadowMapType({value:"ESM"});
+    else if (document.getElementById("EVSM").checked)
+        OnChangedShadowMapType({value:"EVSM"});
 
     UsePoissonSample = document.getElementById("UsePoissonSample").checked;
 

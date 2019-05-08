@@ -252,7 +252,7 @@ TexArrayUV convert_xyz_to_texarray_uv(vec3 direction)
 
 TexArrayUV MakeTexArrayUV(TexArrayUV uv)
 {
-    for(int i=0;i<2;++i)        // to cover uv is out of range simultaneously. loop over 2 times.
+    //for(int i=0;i<2;++i)        // to cover uv is out of range simultaneously. loop over 2 times.
     {
         if (uv.index == 0)            // Positive X
         {

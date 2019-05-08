@@ -54,8 +54,12 @@ out vec4 color;
 void main()
 {
 #if defined(USE_VSM)
-    float vsmBiasForOmniDirectional = 1.5;      // Omnidirectional_blur 의 FilterSize / 10.0 한 크기로 설정 해야함.
-#endif // USE_VSM
+    float vsmBiasForOmniDirectional = 0.5;
+#endif // defined(USE_VSM) || defined(USE_EVSM)
+
+#if defined(USE_EVSM)
+    float evsmBiasForOmniDirectional = 0.5;
+#endif // USE_EVSM
 
     vec3 normal = normalize(Normal_);
     vec3 viewDir = normalize(Eye - Pos_);
@@ -84,50 +88,45 @@ void main()
     {
         if (i >= NumOfDirectionalLight)
             break;
-        
+
+        float lit = 0.0;
+
 #if defined(USE_PCSS)
         {
-            float lit = 0.0;
 #if defined(USE_POISSON_SAMPLE)
-                lit = PCSS_PoissonSample(ShadowPos, -shadowCameraPos.z, shadow_object, LightZNear, ShadowMapSize);
+            lit = PCSS_PoissonSample(ShadowPos, -shadowCameraPos.z, shadow_object, LightZNear, ShadowMapSize);
 #else // USE_POISSON_SAMPLE
-                lit = PCSS(ShadowPos, -shadowCameraPos.z, shadow_object, LightZNear, ShadowMapSize);
+            lit = PCSS(ShadowPos, -shadowCameraPos.z, shadow_object, LightZNear, ShadowMapSize);
 #endif // USE_POISSON_SAMPLE
-
-            if (lit > 0.0)
-                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
-
         }
 #elif defined(USE_PCF)
         {
-            float lit = 0.0;
 #if defined(USE_POISSON_SAMPLE)
-                lit = PCF_PoissonSample(ShadowPos, vec2(PCF_Size_Directional, PCF_Size_Directional) * ShadowMapSize, shadow_object);
+            lit = PCF_PoissonSample(ShadowPos, vec2(PCF_Size_Directional, PCF_Size_Directional) * ShadowMapSize, shadow_object);
 #else // USE_POISSON_SAMPLE
-                lit = PCF(ShadowPos, vec2(PCF_Size_Directional, PCF_Size_Directional) * ShadowMapSize, shadow_object);
+            lit = PCF(ShadowPos, vec2(PCF_Size_Directional, PCF_Size_Directional) * ShadowMapSize, shadow_object);
 #endif // USE_POISSON_SAMPLE
-
-            if (lit > 0.0)
-                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
         }
 #elif defined(USE_VSM)
         {
-            float lit = VSM(ShadowPos, LightPos, Pos_, shadow_object);
-            if (lit > 0.0)
-                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
+            lit = VSM(ShadowPos, LightPos, Pos_, shadow_object);
         }
 #elif defined(USE_ESM)
         {
-            float lit = ESM(ShadowPos, LightPos, Pos_, LightZNear, LightZFar, ESM_C, shadow_object);
-            if (lit > 0.0)
-                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
+            lit = ESM(ShadowPos, LightPos, Pos_, LightZNear, LightZFar, ESM_C, shadow_object);
+        }
+#elif defined(USE_EVSM)
+        {
+            lit = EVSM(ShadowPos, LightPos, Pos_, LightZNear, LightZFar, ESM_C, shadow_object);
         }
 #else
         {
-            if (!IsShadowing(ShadowPos, shadow_object))
-                finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir);
+            lit = float(!IsShadowing(ShadowPos, shadow_object));
         }
 #endif
+
+        if (lit > 0.0)
+            finalColor += GetDirectionalLight(DirectionalLight[i], normal, viewDir) * lit;
     }
 
     for(int i=0;i<MAX_NUM_OF_POINT_LIGHT;++i)
@@ -141,50 +140,46 @@ void main()
         if (distFromLightSqrt > (PointLight[i].MaxDistance * PointLight[i].MaxDistance))
             continue;
 
+        float lit = 0.0;
+
 #if defined(USE_PCSS)
         {
 
-            float lit = 0.0;
 #if defined(USE_POISSON_SAMPLE)
             lit = PCSS_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_point_array);
 #else // USE_POISSON_SAMPLE
             lit = PCSS_OmniDirectional(Pos_, PointLight[i].LightPos, PointLightZNear, ShadowMapSize, shadow_object_point_array);
 #endif // USE_POISSON_SAMPLE
-
-            if (lit > 0.0)
-                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
         }
 #elif defined(USE_PCF)
         {
             vec2 radiusSquredUV = vec2(PCF_Size_OmniDirectional, PCF_Size_OmniDirectional) * ShadowMapSize;
-            float lit = 0.0;
 #if defined(USE_POISSON_SAMPLE)
-                lit = PCF_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, radiusSquredUV, shadow_object_point_array);
+            lit = PCF_OmniDirectional_PoissonSample(Pos_, PointLight[i].LightPos, radiusSquredUV, shadow_object_point_array);
 #else
-                lit = PCF_OmniDirectional(Pos_, PointLight[i].LightPos, radiusSquredUV, shadow_object_point_array);
+            lit = PCF_OmniDirectional(Pos_, PointLight[i].LightPos, radiusSquredUV, shadow_object_point_array);
 #endif
-
-            if (lit > 0.0)
-               finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
         }
 #elif defined(USE_VSM)
         {
-            float lit = VSM_OmniDirectional(PointLight[i].LightPos, Pos_, shadow_object_point_array, vsmBiasForOmniDirectional);
-            if (lit > 0.0)
-                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
+            lit = VSM_OmniDirectional(PointLight[i].LightPos, Pos_, shadow_object_point_array, vsmBiasForOmniDirectional);
         }
 #elif defined(USE_ESM)
         {
-            float lit = ESM_OmniDirectional(PointLight[i].LightPos, Pos_, PointLightZNear, PointLightZFar, PointLightESM_C, shadow_object_point_array);
-            if (lit > 0.0)
-                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
+            lit = ESM_OmniDirectional(PointLight[i].LightPos, Pos_, PointLightZNear, PointLightZFar, PointLightESM_C, shadow_object_point_array);
+        }
+#elif defined(USE_EVSM)
+        {
+            lit = EVSM_OmniDirectional(PointLight[i].LightPos, Pos_, PointLightZNear, PointLightZFar, PointLightESM_C, shadow_object_point_array, evsmBiasForOmniDirectional);
         }
 #else
         {
-            if (!IsShadowing(Pos_, PointLight[i].LightPos, shadow_object_point_array))
-                finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir);
+            lit = float(!IsShadowing(Pos_, PointLight[i].LightPos, shadow_object_point_array));
         }
 #endif
+
+        if (lit > 0.0)
+            finalColor += GetPointLight(PointLight[i], normal, Pos_, viewDir) * lit;
     }
     
     for(int i=0;i<MAX_NUM_OF_SPOT_LIGHT;++i)
@@ -198,49 +193,45 @@ void main()
         if (distFromLightSqrt > (SpotLight[i].MaxDistance * SpotLight[i].MaxDistance))
             continue;
 
+        float lit = 0.0;
+
 #if defined(USE_PCSS)
         {
-            float lit = 0.0;
 #if defined(USE_POISSON_SAMPLE)
-                lit = PCSS_OmniDirectional_PoissonSample(Pos_, SpotLight[i].LightPos, SpotLightZNear, ShadowMapSize, shadow_object_spot_array);
+            lit = PCSS_OmniDirectional_PoissonSample(Pos_, SpotLight[i].LightPos, SpotLightZNear, ShadowMapSize, shadow_object_spot_array);
 #else // USE_POISSON_SAMPLE
-                lit = PCSS_OmniDirectional(Pos_, SpotLight[i].LightPos, SpotLightZNear, ShadowMapSize, shadow_object_spot_array);
+            lit = PCSS_OmniDirectional(Pos_, SpotLight[i].LightPos, SpotLightZNear, ShadowMapSize, shadow_object_spot_array);
 #endif // USE_POISSON_SAMPLE
-
-            if (lit > 0.0)
-               finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
         }
 #elif defined(USE_PCF)
         {
             vec2 radiusSquredUV = vec2(PCF_Size_OmniDirectional, PCF_Size_OmniDirectional) * ShadowMapSize;
-            float lit = 0.0;
 #if defined(USE_POISSON_SAMPLE)
-                lit = PCF_OmniDirectional_PoissonSample(Pos_, SpotLight[i].LightPos, radiusSquredUV, shadow_object_spot_array);
+            lit = PCF_OmniDirectional_PoissonSample(Pos_, SpotLight[i].LightPos, radiusSquredUV, shadow_object_spot_array);
 #else // USE_POISSON_SAMPLE
-                lit = PCF_OmniDirectional(Pos_, SpotLight[i].LightPos, radiusSquredUV, shadow_object_spot_array);
+            lit = PCF_OmniDirectional(Pos_, SpotLight[i].LightPos, radiusSquredUV, shadow_object_spot_array);
 #endif // USE_POISSON_SAMPLE
-
-            if (lit > 0.0)
-                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
         }
 #elif defined(USE_VSM)
         {
-            float lit = VSM_OmniDirectional(SpotLight[i].LightPos, Pos_, shadow_object_spot_array, vsmBiasForOmniDirectional);
-            if (lit > 0.0)
-                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
+            lit = VSM_OmniDirectional(SpotLight[i].LightPos, Pos_, shadow_object_spot_array, vsmBiasForOmniDirectional);
         }
 #elif defined(USE_ESM)
         {
-            float lit = ESM_OmniDirectional(SpotLight[i].LightPos, Pos_, SpotLightZNear, SpotLightZFar, SpotLightESM_C, shadow_object_spot_array);
-            if (lit > 0.0)
-                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
+            lit = ESM_OmniDirectional(SpotLight[i].LightPos, Pos_, SpotLightZNear, SpotLightZFar, SpotLightESM_C, shadow_object_spot_array);
+        }
+#elif defined(USE_EVSM)
+        {
+            lit = EVSM_OmniDirectional(SpotLight[i].LightPos, Pos_, SpotLightZNear, SpotLightZFar, SpotLightESM_C, shadow_object_spot_array, evsmBiasForOmniDirectional);
         }
 #else
         {
-            if (!IsShadowing(Pos_, SpotLight[i].LightPos, shadow_object_spot_array))
-                finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir);
+            lit = float(!IsShadowing(Pos_, SpotLight[i].LightPos, shadow_object_spot_array));
         }
 #endif
+
+        if (lit > 0.0)
+            finalColor += GetSpotLight(SpotLight[i], normal, Pos_, viewDir) * lit;
     }
 
     color = vec4(finalColor * diffuse, Color_.w);

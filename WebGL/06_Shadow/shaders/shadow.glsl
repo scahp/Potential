@@ -2,7 +2,7 @@
 
 precision mediump float;
 
-#if defined(USE_VSM)
+#if defined(USE_VSM) || defined(USE_EVSM)
 
 #define VSM_AMOUNT_DIRECTIONAL 0.25
 #define VSM_AMOUNT_OMNIDIRECTIONAL 0.25
@@ -18,7 +18,7 @@ float ReduceLightBleeding(float p_max, float Amount)
   // Remove the [0, Amount] tail and linearly rescale (Amount, 1].
    return Linstep(Amount, 1.0, p_max);
 }
-#endif // USE_VSM
+#endif // defined(USE_VSM) || defined(USE_EVSM)
 
 //////////////////////////////////////////////////////////////////////
 // Poisson Sample
@@ -287,6 +287,30 @@ float ESM(vec3 lightClipPos, vec3 lightPos, vec3 pos, float near, float far, flo
 }
 #endif  // USE_ESM
 
+#if defined(USE_EVSM)
+float EVSM(vec3 lightClipPos, vec3 lightPos, vec3 pos, float near, float far, float ESM_C, sampler2D shadow_object)
+{
+    float lit = 1.0;
+    if (IsInShadowMapSpace(lightClipPos))
+    {
+        vec3 toLight = lightPos - pos;
+        float distFromLight = (sqrt(dot(toLight, toLight)) - near) / (far - near);
+        float ed = exp(distFromLight * ESM_C);
+
+        vec2 moments = texture(shadow_object, lightClipPos.xy).xy;
+        float E_x2 = moments.y;
+        float Ex_2 = moments.x * moments.x;
+        float variance = E_x2 - Ex_2;    
+        float mD = (moments.x - ed);
+        float mD_2 = mD * mD;
+        float p = variance / (variance + mD_2);
+        p = ReduceLightBleeding(p, VSM_AMOUNT_DIRECTIONAL);
+        lit = max(p, float(ed <= moments.x));
+    }
+    return lit;
+}
+#endif // USE_EVSM
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // OmniDirectional Light Shadow
 #define SHADOW_BIAS_OMNIDIRECTIONAL 0.9
@@ -521,8 +545,10 @@ float VSM_OmniDirectional(vec3 lightPos, vec3 pos, sampler2DArray shadow_object,
     if (abs(mD) < biasDistance)
         mD = 0.0;
 
+    float falloff = biasDistance;
+
     float mD_2 = mD * mD;
-    float p = variance / (variance + mD_2);
+    float p = variance / (variance + mD_2) + falloff;
     p = ReduceLightBleeding(p, VSM_AMOUNT_OMNIDIRECTIONAL);
     return max(p, float(distFromLight <= moments.x));
 }
@@ -538,3 +564,30 @@ float ESM_OmniDirectional(vec3 lightPos, vec3 pos, float near, float far, float 
     return clamp(exp(-distFromLight * ESM_C) * expCZ, 0.0, 1.0);
 }
 #endif  // USE_ESM
+
+#if defined(USE_EVSM)
+float EVSM_OmniDirectional(vec3 lightPos, vec3 pos, float near, float far, float ESM_C, sampler2DArray shadow_object, float biasDistance)
+{
+    vec3 toLight = (lightPos - pos);
+    float distFromLight = (sqrt(dot(toLight, toLight)) - near) / (far - near);
+    float ed = exp(distFromLight * ESM_C);
+    TexArrayUV result = convert_xyz_to_texarray_uv(normalize(-toLight));
+
+    vec2 moments = texture(shadow_object, vec3(result.u, result.v, result.index)).yx;   // OmniDirectional ShadowMap saves (dist * dist, dist, 0.0, 1.0)
+    float E_x2 = moments.y;
+    float Ex_2 = moments.x * moments.x;
+    float variance = E_x2 - Ex_2;
+    float mD = (moments.x - ed);
+
+    // To alleviate artifacts that happend on the boundary of the textures, added distance bias.
+    if (abs(mD) < biasDistance)
+        mD = 0.0;
+
+    float falloff = biasDistance;
+
+    float mD_2 = mD * mD;
+    float p = variance / (variance + mD_2) + falloff;
+    p = ReduceLightBleeding(p, VSM_AMOUNT_OMNIDIRECTIONAL);
+    return max(p, float(ed <= moments.x));
+}
+#endif // USE_EVSM

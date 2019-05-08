@@ -133,6 +133,8 @@ var OnChangedShadowMapType = function(e)
         ShadowmapType = 3;
     else if (mode == 'ESM')
         ShadowmapType = 4;
+    else if (mode == 'EVSM')
+        ShadowmapType = 5;        
 }
 
 var OnUsePoissonSample = function(e)

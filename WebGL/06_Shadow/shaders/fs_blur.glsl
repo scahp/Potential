@@ -34,8 +34,8 @@ void main()
         
         if (tex.x < 0.0 || tex.x > 1.0 || tex.y < 0.0 || tex.y > 1.0)
         {
-            color.x += MaxDist;
-            color.y += MaxDist * MaxDist;
+            color.x += exp(MaxDist);
+            color.y += exp(MaxDist * MaxDist);
             color.w += 1.0;
         }
         else

@@ -515,7 +515,7 @@ var CreateDirectionalShadowMap = function(gl, dirLight, pos)
 
     camera.addLight(dirLight);
 
-    return {camera:camera, framebuffer:framebuffer, getDepthMap:getDepthMap, ESM_C:10.0};
+    return {camera:camera, framebuffer:framebuffer, getDepthMap:getDepthMap, ESM_C:40.0};
 }
 
 var CreateOmniDirectionalShadowMap = function(gl, light)
@@ -683,5 +683,5 @@ var CreateOmniDirectionalShadowMap2 = function(gl, light)
     for(var i=0;i<cameras.length;++i)
         cameras[i].addLight(light);
 
-    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras, near:near, far:far, mrt:{fbo:fbo, rbo:rbo}, ESM_C:10.0};
+    return {texture2DArray:texture2DArray, framebuffers:framebuffers, renderbuffers:renderbuffers, cameras:cameras, near:near, far:far, mrt:{fbo:fbo, rbo:rbo}, ESM_C:40.0};
 }
