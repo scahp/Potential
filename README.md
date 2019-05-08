@@ -4,7 +4,18 @@
   <li><a href="https://scahp.github.io/WebGL/02_FrameBuffer/index.html">FrameBuffer</a></li>
   <li><a href="https://scahp.github.io/WebGL/03_BasicCollisionPrimitives/index.html">BasicCollisionPrimitives</a></li>
   <li><a href="https://scahp.github.io/WebGL/05_PunctualLights/index.html">PunctualLights</a></li>  
-  <li><a href="https://scahp.github.io/WebGL/06_Shadow/index.html">Shadows - (ShadowVolume / ShadowMap(PCF/PCSS/VSM))</a></li>
+  <li><a href="https://scahp.github.io/WebGL/06_Shadow/index.html">Shadows</a>
+    <ul>
+    <li>ShadowVolum</li>    
+    <li>ShadowMap
+        <ul>Standard Shadow Map</ul>
+        <ul>PCF(Percentage Closer Filtering)</ul>
+        <ul>PCSS(Percentage Closer Soft Shadow)</ul>
+        <ul>VSM(Variance Shadow Map)</ul>
+        <ul>ESM(Exponential Shadow Map)</ul>
+    </li>
+    </ul>
+  </li>
 </ol>
 
 <h4>Realtime collision detection book's example</h4>
