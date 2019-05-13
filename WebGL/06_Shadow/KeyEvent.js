@@ -97,6 +97,18 @@ var OnCheckBoxShowSpotLightInfo = function(e)
         spotLight.setHideDebugInfo(!e.checked);
 }
 
+var OnCheckBoxShowBoundBox = function(e)
+{
+    //console.log(e.checked);
+    ShowBoundBox = e.checked;
+}
+
+var OnCheckBoxShowBoundSphere = function(e)
+{
+    //console.log(e.checked);
+    ShowBoundSphere = e.checked;
+}
+
 var OnChangedShadowMode = function(e)
 {
     const mode = e.value;

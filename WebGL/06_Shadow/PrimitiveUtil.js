@@ -26,6 +26,166 @@ var GenerateColor = function(color, count)
     return colors;
 }
 
+var GenerateBoundBox = function(vertices)
+{
+    var min = CreateVec3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+    var max = CreateVec3(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE);
+    for(var i=0;i<vertices.length/3;++i)
+    {
+        var curIndex = i * 3;
+        var x = vertices[curIndex];
+        var y = vertices[curIndex + 1];
+        var z = vertices[curIndex + 2];
+        if (max.x < x)
+            max.x = x;
+        if (max.y < y)
+            max.y = y;
+        if (max.z < z)
+            max.z = z;
+        
+        if (min.x > x)
+            min.x = x;
+        if (min.y > y)
+            min.y = y;
+        if (min.z > z)
+            min.z = z;
+    }
+
+    return {min:min, max:max};
+}
+
+var CreateBoundBox = function(gl, TargetObjectArray, boundBox, color, scale, owner, shaderInfo)
+{
+    var vertices = [
+        // 아래
+        boundBox.min.x, boundBox.min.y, boundBox.min.z,
+        boundBox.max.x, boundBox.min.y, boundBox.min.z,
+        boundBox.max.x, boundBox.min.y, boundBox.min.z,
+        boundBox.max.x, boundBox.min.y, boundBox.max.z,
+        boundBox.max.x, boundBox.min.y, boundBox.max.z,
+        boundBox.min.x, boundBox.min.y, boundBox.max.z,
+        boundBox.min.x, boundBox.min.y, boundBox.max.z,
+        boundBox.min.x, boundBox.min.y, boundBox.min.z,
+
+        // 위
+        boundBox.min.x, boundBox.max.y, boundBox.min.z,
+        boundBox.max.x, boundBox.max.y, boundBox.min.z,
+        boundBox.max.x, boundBox.max.y, boundBox.min.z,
+        boundBox.max.x, boundBox.max.y, boundBox.max.z,
+        boundBox.max.x, boundBox.max.y, boundBox.max.z,
+        boundBox.min.x, boundBox.max.y, boundBox.max.z,
+        boundBox.min.x, boundBox.max.y, boundBox.max.z,
+        boundBox.min.x, boundBox.max.y, boundBox.min.z,
+
+        // 옆
+        boundBox.min.x, boundBox.min.y, boundBox.min.z,
+        boundBox.min.x, boundBox.max.y, boundBox.min.z,
+        boundBox.max.x, boundBox.min.y, boundBox.min.z,
+        boundBox.max.x, boundBox.max.y, boundBox.min.z,
+        boundBox.max.x, boundBox.min.y, boundBox.max.z,
+        boundBox.max.x, boundBox.max.y, boundBox.max.z,
+        boundBox.min.x, boundBox.max.y, boundBox.max.z,
+        boundBox.min.x, boundBox.min.y, boundBox.max.z,
+    ];
+
+    var elementCount = vertices.length / 3;
+
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    attribs.push(createAttribParameter('Color', 4, GenerateColor(color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+    
+    var newStaticObject = createStaticObject(gl, shaderInfo, attribs, null, 0, elementCount, gl.LINES);
+
+    newStaticObject.pos = CreateVec3(0.0, 30.0, 0.0);
+    newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+    newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    addObject(TargetObjectArray, newStaticObject);
+    newStaticObject.updateFunc = function()
+    {
+        this.pos = owner.pos.CloneVec3();
+        this.rot = owner.rot.CloneVec3();
+        this.scale = owner.scale.CloneVec3();
+        this.hide = owner.hide || !ShowBoundBox || owner.hideBoundInfo;
+    };
+    newStaticObject.skipShadowMapGeneration = true;
+
+    return newStaticObject;    
+}
+
+var GenerateBoundSphere = function(vertices)
+{
+    var maxDist = Number.MIN_VALUE;
+    for(var i=0;i<vertices.length/3;++i)
+    {
+        var curIndex = i * 3;
+        var x = vertices[curIndex];
+        var y = vertices[curIndex + 1];
+        var z = vertices[curIndex + 2];
+        
+        var currentPos = CreateVec3(x, y, z);
+        const dist = currentPos.GetLength();
+        if (maxDist < dist)
+            maxDist = dist;
+    }
+    return {radius:maxDist};
+}
+
+var CreateBoundSphere = function(gl, TargetObjectArray, boundSphere, color, scale, owner, shaderInfo)
+{
+    var slice = 15;
+    if (slice % 2)
+        ++slice;
+
+    var vertices = [];
+
+    var stepRadian = DegreeToRadian(360.0 / slice);
+    var halfSlice = parseInt(slice / 2);
+    for(var j=0;j<=halfSlice;++j)
+    {
+        for(var i=0;i<=slice;++i)
+        {
+            var x = Math.cos(stepRadian * i) * boundSphere.radius * Math.sin(stepRadian * j);
+            var y = Math.cos(stepRadian * j) * boundSphere.radius;
+            var z = Math.sin(stepRadian * i) * boundSphere.radius * Math.sin(stepRadian * j);
+            vertices.push(x); vertices.push(y); vertices.push(z);
+        }
+    }
+    
+    var elementCount = vertices.length / 3;
+
+    var attribs = [];
+    attribs.push(createAttribParameter('Pos', 3, vertices, gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 3, 0));
+    attribs.push(createAttribParameter('Color', 4, GenerateColor(color, elementCount), gl.STATIC_DRAW, gl.FLOAT, false, Float32Array.BYTES_PER_ELEMENT * 4, 0));
+
+    var faces = [];
+    var iCount = 0;
+    var toNextSlice = slice+1;
+    for(var j=0;j<=halfSlice;++j)
+    {
+        for(var i=0;i<(slice-1);++i, iCount += 1)
+        {
+            faces.push(iCount); faces.push(iCount + 1); faces.push(iCount + toNextSlice);
+            faces.push(iCount + toNextSlice); faces.push(iCount + 1); faces.push(iCount + toNextSlice + 1);
+        }
+    }
+
+    var newStaticObject = createStaticObject(gl, shaderInfo, attribs, {faces:faces, bufferType:gl.STATIC_DRAW}, 0, elementCount, gl.LINES);
+    newStaticObject.pos = CreateVec3(0.0, 30.0, 0.0);
+    newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
+    newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
+    addObject(TargetObjectArray, newStaticObject);
+    newStaticObject.updateFunc = function()
+    {
+        this.pos = owner.pos.CloneVec3();
+        this.rot = owner.rot.CloneVec3();
+        this.scale = owner.scale.CloneVec3();
+        this.hide = owner.hide || !ShowBoundSphere || owner.hideBoundInfo;
+    };
+    newStaticObject.skipShadowMapGeneration = true;
+
+    return newStaticObject;    
+}
+
 var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color, shaderInfo)
 {
     var halfSize = size.CloneVec3().Div(2.0);
@@ -141,6 +301,8 @@ var CreateCube = function(gl, TargetObjectArray, pos, size, scale, color, shader
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     addObject(TargetObjectArray, newStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, newStaticObject, shaderInfo);
     return newStaticObject;
 }
 
@@ -189,6 +351,8 @@ var CreateQuad = function(gl, TargetObjectArray, pos, size, scale, color, shader
         this.pos = plane.n.CloneVec3().Mul(plane.d);
     };
     addObject(TargetObjectArray, newStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, newStaticObject, shaderInfo);
     return newStaticObject;
 }
 
@@ -224,6 +388,8 @@ var CreateTriangle = function(gl, TargetObjectArray, pos, size, scale, color, sh
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     addObject(TargetObjectArray, newStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, newStaticObject, shaderInfo);
     return newStaticObject;
 }
 
@@ -277,6 +443,8 @@ var CreateSphere = function(gl, TargetObjectArray, pos, radius, slice, scale, co
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     addObject(TargetObjectArray, newStaticObject);
     //newStaticObject.hide = true;
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, {radius:radius}, color, scale, newStaticObject, shaderInfo);
     return newStaticObject;
 }
 
@@ -351,6 +519,8 @@ var CreateTile = function(gl, TargetObjectArray, pos, numOfCol, numOfRow, size, 
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     addObject(TargetObjectArray, newStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, newStaticObject, shaderInfo);
     return newStaticObject;
 }
 
@@ -511,6 +681,8 @@ var CreateCone = function(gl, TargetObjectArray, pos, height, radius, slice, sca
     coneStaticObject.radius = radius;
     coneStaticObject.color = color;
     addObject(TargetObjectArray, coneStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, coneStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, coneStaticObject, shaderInfo);
     return coneStaticObject;
 }
 
@@ -610,6 +782,8 @@ var CreateCylinder = function(gl, TargetObjectArray, pos, height, radius, slice,
     cylinderStaticObject.radius = radius;
     cylinderStaticObject.color = color;
     addObject(TargetObjectArray, cylinderStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, scale, newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, newStaticObject, shaderInfo);
     return cylinderStaticObject;
 }
 
@@ -630,10 +804,16 @@ var CreateArrowSegment = function(gl, TargetObjectArray, start, end, time, coneH
         else
             pos = OneVec3.CloneVec3();
             
-        this.segment.pos = this.pos;
-        this.cone.pos = this.pos.CloneVec3().Add(this.segment.getCurrentEnd());
+        this.segment.pos = pos;
+        this.cone.pos = pos.CloneVec3().Add(this.segment.getCurrentEnd());
         this.cone.rot = GetEulerAngleFromVec3(this.segment.getDirectionNormalized());
+        this.cone.updateFunc();
     };
+    newStaticObject.setHideBoundInfo = function(hide)
+    {
+        this.segment.hideBoundInfo = hide;
+        this.cone.hideBoundInfo = hide;
+    }
     newStaticObject.pos = OneVec3.CloneVec3();
     addObject(TargetObjectArray, newStaticObject);
     return newStaticObject;
@@ -708,6 +888,8 @@ var CreateCapsule = function(gl, TargetObjectArray, pos, height, radius, slice, 
     newStaticObject.rot = CreateVec3(0.0, 0.0, 0.0);
     newStaticObject.scale = CreateVec3(scale, scale, scale);
     addObject(TargetObjectArray, newStaticObject);
+    CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), color, CreateVec3(scale, scale, scale), newStaticObject, shaderInfo);
+    CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), color, scale, newStaticObject, shaderInfo);
     return newStaticObject;
 }
 
@@ -953,7 +1135,11 @@ var CreateQuadTexture = function(gl, TargetObjectArray, pos, size, scale, textur
     newStaticObject.scale = CreateVec3(scale.x, scale.y, scale.z);
     newStaticObject.texture = texture;
     if (TargetObjectArray)
+    {
         addObject(TargetObjectArray, newStaticObject);
+        CreateBoundBox(gl, TargetObjectArray, GenerateBoundBox(vertices), CreateVec4(0.0, 0.0, 0.0, 1.0), scale, newStaticObject, CreateBaseColorOnlyShaderFile());
+        CreateBoundSphere(gl, TargetObjectArray, GenerateBoundSphere(vertices), CreateVec4(0.0, 0.0, 0.0, 1.0), scale, newStaticObject, CreateBaseColorOnlyShaderFile());
+    }
     return newStaticObject;
 }
 

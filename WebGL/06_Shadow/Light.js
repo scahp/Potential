@@ -14,6 +14,7 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
         var billboardObject = CreateBillboardQuadTexture(gl, debugObjectDesc.TargetObjectArray
                 , debugObjectDesc.pos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
+        billboardObject.hideBoundInfo = true;
 
         const colorOnlyShader = CreateBaseColorOnlyShaderFile();
 
@@ -21,6 +22,7 @@ var CreateDirectionalLight = function(gl, TargetArray, direction, lightColor, di
             , 3.0, 1.5, CreateVec4(1.0, 1.0, 1.0, 1.0), colorOnlyShader, CreateVec4(1.0, 1.0, 0.1, 1.0), colorOnlyShader);
         segment.pos = debugObjectDesc.pos.CloneVec3();
         segment.isDisablePipeLineChange = true;
+        segment.setHideBoundInfo(true);
 
         var newStaticObject = {updateFunc:null, drawFunc:null, segment:segment, billboardObject:billboardObject};
         DirectionalLight.__proto__ = newStaticObject;
@@ -95,6 +97,7 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
         var texture = LoadTextureFromFile(gl, debugObjectDesc.texture);
         var billboardObject = CreateBillboardQuadTexture(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
+        billboardObject.hideBoundInfo = true;
 
         var updateFunc = function()
         {
@@ -107,6 +110,7 @@ var CreatePointLight = function(gl, TargetArray, lightPos, lightColor, maxDistan
 
         var sphere = CreateSphere(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 20, CreateVec3(1.0, 1.0, 1.0), CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.5), CreateBaseColorOnlyShaderFile(), true);
         sphere.isDisablePipeLineChange = true;
+        sphere.hideBoundInfo = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, segment:null, billboardObject:billboardObject, sphere:sphere};
         PointLight.__proto__ = newStaticObject;
         addObject(debugObjectDesc.TargetObjectArray, newStaticObject);
@@ -165,6 +169,7 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
         var texture = LoadTextureFromFile(gl, debugObjectDesc.texture);
         var billboardObject = CreateBillboardQuadTexture(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), OneVec3.CloneVec3(), debugObjectDesc.size, texture);
         billboardObject.camera = debugObjectDesc.targetCamera;
+        billboardObject.hideBoundInfo = true;
 
         var updateFunc = function()
         {
@@ -194,7 +199,9 @@ var CreateSpotLight = function(gl, TargetArray, lightPos, lightDirection, lightC
         var umbraCone = CreateCone(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), CreateVec4(lightColor.x, lightColor.y, lightColor.z, 1.0), colorOnlyShader, true);
         var penumbraCone = CreateCone(gl, debugObjectDesc.TargetObjectArray, lightPos.CloneVec3(), 1.0, 1.0, 20.0, CreateVec3(1.0, 1.0, 1.0), CreateVec4(lightColor.x, lightColor.y, lightColor.z, 0.1), colorOnlyShader, true);
         umbraCone.isDisablePipeLineChange = true;
+        umbraCone.hideBoundInfo = true;
         penumbraCone.isDisablePipeLineChange = true;
+        penumbraCone.hideBoundInfo = true;
         var newStaticObject = {updateFunc:updateFunc, drawFunc:null, umbraCone:umbraCone, penumbraCone:penumbraCone, segment:null, billboardObject:billboardObject};
         SpotLight.__proto__ = newStaticObject;
         addObject(debugObjectDesc.TargetObjectArray, newStaticObject);

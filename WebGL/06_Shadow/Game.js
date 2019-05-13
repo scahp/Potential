@@ -108,6 +108,7 @@ jGame.prototype.Setup = function()
         , CreateVec4(1.0, 1.0, 1.0, 1.0), colorOnlyShader);
     quad.skipShadowMapGeneration = false;
     quad.skipShadowVolume = true;
+    quad.hideBoundInfo = true;
     var normal = CreateVec3(0.0, 1.0, 0.0).GetNormalize();
     quad.setPlane(CreatePlane(normal.x, normal.y, normal.z, -0.1));
 

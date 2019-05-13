@@ -269,7 +269,7 @@ var createStaticObject = function(gl, shaderInfo, attribParameters, faceInfo, ca
         , rot:rot, scale:scale, vertexCount:vertexCount, elementCount:elementCount, primitiveType:primitiveType
         , updateFunc:null, setRenderProperty:setRenderProperty, setCameraProperty:setCameraProperty, drawFunc:drawFunc, drawArray:drawArray
         , collided:false, hide:false, twoSide:isTwoside, setPipeLine:setPipeLine, isDisablePipeLineChange:isDisablePipeLineChange
-        , setMaterialProperty:setMaterialProperty};
+        , setMaterialProperty:setMaterialProperty, hideBoundInfo:false};
 }
 
 var drawStaticTransparentObjects = function(camera, pipeLineHashCode, lightIndex, drawShadowCasterOnly = false)

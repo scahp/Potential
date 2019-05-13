@@ -80,7 +80,7 @@ var CreateOmniDirectionalShadowMapShaderFile = function()
 
 var CreateExponentialShadowMapShaderFile = function()
 {
-    const vs = "shaders/shadowmap/vs_exponentialShadowMap.glsl";
+    const vs = "shaders/shadowmap/vs_omniDirectionalShadowMap.glsl";
     const fs = "shaders/shadowmap/fs_exponentialShadowMap.glsl";
 
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
@@ -216,7 +216,7 @@ var CreateBaseShadowMap_ExponentialShadowMap_ShaderFile = function()
 
 var CreateOmniDirectionalExponentialShadowMapShaderFile = function()
 {
-    const vs = "shaders/shadowmap/vs_omniDirectionalExponentialShadowMap.glsl";
+    const vs = "shaders/shadowmap/vs_omniDirectionalShadowMap.glsl";
     const fs = "shaders/shadowmap/fs_omniDirectionalExponentialShadowMap.glsl";
 
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};
@@ -224,7 +224,7 @@ var CreateOmniDirectionalExponentialShadowMapShaderFile = function()
 
 var CreateOmniDirectionalExponentialVarianceShadowMapShaderFile = function()
 {
-    const vs = "shaders/shadowmap/vs_omniDirectionalEVSM.glsl";
+    const vs = "shaders/shadowmap/vs_omniDirectionalShadowMap.glsl";
     const fs = "shaders/shadowmap/fs_omniDirectionalEVSM.glsl";
 
     return {vs:vs, fs:fs, vsPreprocessor:"", fsPreprocessor:""};

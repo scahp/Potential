@@ -12,6 +12,8 @@ var ShowSilhouetteSpotLight = false;
 var ShowDebugInfoOfDirectionalLight = false;
 var ShowDebugInfoOfSphereLight = false;
 var ShowDebugInfoOfSpotLight = false;
+var ShowBoundBox = false;
+var ShowBoundSphere = false;
 
 const shadow_width = 512.0;
 const shadow_height = 512.0;
@@ -97,6 +99,9 @@ jWebGL.prototype.Init = function()
         OnChangedShadowMapType({value:"ESM"});
     else if (document.getElementById("EVSM").checked)
         OnChangedShadowMapType({value:"EVSM"});
+
+    ShowBoundBox = document.getElementById("ShowBoundBox").checked;
+    ShowBoundSphere = document.getElementById("ShowBoundSphere").checked;
 
     UsePoissonSample = document.getElementById("UsePoissonSample").checked;
 
