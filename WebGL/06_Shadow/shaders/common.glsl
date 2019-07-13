@@ -38,6 +38,14 @@ struct jSpotLight
     float UmbraRadian;
 };
 
+struct jMaterial
+{
+    vec3 Diffuse;
+    vec3 Emissive;
+    vec3 Specular;
+    float Shininess;
+};
+
 vec3 TransformPos(mat4 m, vec3 v)
 {
     return (m * vec4(v, 1.0)).xyz;
@@ -354,7 +362,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             }            
             else if (uv.v > 1.0)
             {
-                uv.v = 1.0 - uv.v;
+                uv.v = uv.v - 1.0;
                 uv.index = 4;
             }
             else if (uv.v < 0.0)
