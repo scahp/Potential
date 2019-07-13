@@ -266,7 +266,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
         {
             if (uv.u > 1.0)
             {
-                uv.u = 1.0 - uv.u;
+                uv.u = uv.u - 1.0;
                 uv.index = 4;
             }
             else if (uv.u < 0.0)
@@ -276,9 +276,8 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             }            
             else if (uv.v > 1.0)
             {
-                float t = uv.u;
-                uv.u = uv.v - 1.0;
-                uv.v = 1.0 - t;
+                uv.u = 1.0 - uv.u;
+                uv.v = 2.0 - uv.v;
                 uv.index = 2;
             }
             else if (uv.v < 0.0)
@@ -293,7 +292,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
         {
             if (uv.u > 1.0)
             {
-                uv.u = 1.0 - uv.u;
+				uv.u = uv.u - 1.0;
                 uv.index = 5;
             }
             else if (uv.u < 0.0)
@@ -303,9 +302,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             }            
             else if (uv.v > 1.0)
             {
-                float t = uv.u;
-                uv.u = 2.0 - uv.v;
-                uv.v = t;
+                uv.v = uv.v - 1.0;
                 uv.index = 2;
             }
             else if (uv.v < 0.0)
@@ -323,25 +320,25 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
                 float t = uv.u;
                 uv.u = uv.v;
                 uv.v = 2.0 - t;
-                uv.index = 1;
+                uv.index = 5;
             }
             else if (uv.u < 0.0)
             {
                 float t = uv.u;
                 uv.u = 1.0 - uv.v;
                 uv.v = 1.0 + t;
-                uv.index = 0;
+                uv.index = 4;
             }            
             else if (uv.v > 1.0)
             {
                 uv.u = 1.0 - uv.u;
                 uv.v = 2.0 - uv.v;
-                uv.index = 5;
+                uv.index = 0;
             }
             else if (uv.v < 0.0)
             {
                 uv.v = 1.0 + uv.v;
-                uv.index = 4;
+                uv.index = 1;
             }
         }
         else if (uv.index == 3)       // Negative Y
@@ -350,7 +347,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             {
                 float t = uv.u;
                 uv.u = 1.0 - uv.v;
-                uv.v = 1.0 - t;
+                uv.v = t - 1.0;
                 uv.index = 1;
             }
             else if (uv.u < 0.0)
@@ -362,12 +359,12 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             }            
             else if (uv.v > 1.0)
             {
-                uv.v = uv.v - 1.0;
+				uv.v = uv.v - 1.0;
                 uv.index = 4;
             }
             else if (uv.v < 0.0)
             {
-                uv.u = 1.0-uv.u;
+                uv.u = 1.0 - uv.u;
                 uv.v = -uv.v;
                 uv.index = 5;
             }
@@ -376,7 +373,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
         {
             if (uv.u > 1.0)
             {
-                uv.u = 1.0 - uv.u;
+                uv.u = uv.u - 1.0;
                 uv.index = 1;
             }
             else if (uv.u < 0.0)
@@ -386,7 +383,9 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             }            
             else if (uv.v > 1.0)
             {
-                uv.v = uv.v - 1.0;
+				float t = uv.u;
+                uv.u = uv.v - 1.0;
+				uv.v = 1.0 - t;
                 uv.index = 2;
             }
             else if (uv.v < 0.0)
@@ -399,7 +398,7 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
         {
             if (uv.u > 1.0)
             {
-                uv.u = 1.0 - uv.u;
+				uv.u = uv.u - 1.0;
                 uv.index = 0;
             }
             else if (uv.u < 0.0)
@@ -409,8 +408,9 @@ TexArrayUV MakeTexArrayUV(TexArrayUV uv)
             }            
             else if (uv.v > 1.0)
             {
-                uv.u = 1.0 - uv.u;
-                uv.v = 2.0 - uv.v;
+				float t = uv.u;
+                uv.u = 2.0 - uv.v;
+				uv.v = t;
                 uv.index = 2;
             }
             else if (uv.v < 0.0)
